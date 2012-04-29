@@ -6,24 +6,23 @@ import Control.Monad.State
 import Control.Concurrent
 import System.Random
 
-data App = App (Float,Float) deriving Show
+data App = App (Float,Float)
 
 mainLoop :: App -> IO ()
 mainLoop app@(App (a,b)) = if a > 0.0 
-                           then loop
+                           then loop app'
                            else return ()
     where 
-      app'@(App (a',b')) = execState update app
+      app' = execState update app
 
-      loop :: IO ()
-      loop = do x <- randomRIO (-1.0, 1.0)
-                display app'
-                
-                mainLoop (App (a',x))
+      loop :: App -> IO ()
+      loop ap@(App (a,b)) = do x <- randomRIO (-1.0, 1.0 :: Float)
+                               display ap
+                               mainLoop (App (a,x))
 
       display :: App -> IO ()
-      display app@(App (a,b)) = if (b > 0.0) 
-                                then print app
+      display app@(App (a,b)) = if (a > 0.0) 
+                                then print (a,b)
                                 else return ()
 
       update :: State App App
@@ -39,5 +38,6 @@ mainLoop app@(App (a,b)) = if a > 0.0
       minus a = a - 0.1
 
 main :: IO ()
-main = mainLoop (App ((100000.0), 2.0))
-
+main = do replicateM_ 10 (forkIO $ mainLoop appState)
+          --forever $ return ()
+              where appState = App (4.0, 2.0)

@@ -9,7 +9,7 @@ data Action = Action (IO Action)
 main = do
   GLFW.initialize
   -- open window
-  GLFW.openWindow (GL.Size 960 480) [GLFW.DisplayAlphaBits 8] GLFW.Window
+  GLFW.openWindow (GL.Size 960 640) [GLFW.DisplayAlphaBits 8] GLFW.Window
   GLFW.windowTitle $= "GLFW Demo"
   GL.shadeModel    $= GL.Smooth
   -- enable antialiasing
