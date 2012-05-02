@@ -22,9 +22,20 @@ stateProgram2 str = do
   (s1, s2) <- get
   return $ (foldl (++) (reverse str) (replicate s1 str))
 
+-- not taking state into account
+-- return is identity operator which just passes state forward for the next computation
+stateProgram3 :: String -> State (Int,Int) String
+stateProgram3 str = return (str ++ str ++ str)
+
+stateProgram4 :: String -> State (Int,Int) String
+stateProgram4 str = do
+  (s1, s2) <- get
+  put (s2,s1)
+  return str
+
 run state = runState (stateProgram2 "aab") state
 
 run2 state = (fst $ run state) ++ (fst $ run state)
 
 -- stateProgram produce result based on state passed to it and then stateProgram2 transform the input based on the new state 
-test = runState (stateProgram >>= stateProgram2) (1,2)
+test = runState (stateProgram >>= stateProgram4 >>= stateProgram2 >>= stateProgram3 >>= stateProgram3) (5,2)
