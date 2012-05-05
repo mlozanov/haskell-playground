@@ -5,17 +5,16 @@ import Control.Monad.State.Strict
 type TheState = (Int,Int)
 
 -- state program that modify the passed state and produce value based on initial state
-stateProgram :: State TheState String
-stateProgram = do
-  (s1, s2) <- get
-  put (s1+2, s2-2)
-  return $ (concat . replicate s1) "yyz"
+stateProgram1 :: State TheState String
+stateProgram1 = do (s1,s2) <- get
+                   modify transform
+                   return $ (concat . replicate s1) "yyz"
+    where transform (s1,s2) = (s1+2, s2-2)
 
 -- state program with initial value run thru the State TheState and modified at the end 
 stateProgram2 :: String -> State TheState String
-stateProgram2 str = do
-  (s1, s2) <- get
-  return $ (foldl (++) (reverse str) (replicate s1 str))
+stateProgram2 str = do (s1, s2) <- get
+                       return $ (foldl (++) (reverse str) (replicate s1 str))
 
 -- not taking state into account
 -- return is identity operator which just passes state forward for the next computation
@@ -23,13 +22,10 @@ stateProgram3 :: String -> State TheState String
 stateProgram3 str = return (str ++ str ++ str)
 
 stateProgram4 :: String -> State TheState String
-stateProgram4 str = do
-  (s1, s2) <- get
-  put (s2,s1)
-  return str
+stateProgram4 str = modify transformState >> return str
 
 transformState :: TheState -> TheState
-transformState (a,b) = (a+1, b+2)
+transformState (a,b) = (b, a)
 
 run state = runState (stateProgram2 "aab") state
 
@@ -63,7 +59,7 @@ test5 (p,q) = do let (v, s) = updater (p,q)
                  then test5 s
                  else return ()
 
-    where state = stateProgram >>= stateProgram4 >>= stateProgram3 >>= stateProgram2 >>= stateProgram4
+    where state = stateProgram1 >>= stateProgram4 >>= stateProgram3 >>= stateProgram2 >>= stateProgram4
 
           updater (a,b) = runState state (a,b)
 
