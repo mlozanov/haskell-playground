@@ -1,13 +1,6 @@
-module S1 where
+module Main where
 
 import Control.Monad.State.Strict
-
-d :: (String, (Int,Float))
-d = ( "aab", (4, 2.0))
-
-foo :: (String, (Int, Float)) -> (String, (Int, Float))
-foo (a, (i, f)) = ( a', (i, f))
-    where a' = foldl (++) a (replicate i a)
 
 type TheState = (Int,Int)
 
@@ -61,16 +54,19 @@ test4 str = test4' str (1,1)
                            where state = stateProgram2 str >>= stateProgram2
 
 -- testing how to loop states and to simulate a gameloop with mutable state passed implicitly
-test5 :: IO ()
-test5 = do let (v, s) = updater (5,1)
+test5 :: TheState -> IO ()
+test5 (p,q) = do let (v, s) = updater (p,q)
 
-           print (v,s)
+                 print s
 
-           if (fst s) < 10 
-           then test5
-           else return ()
+                 if (fst s) < 100
+                 then test5 s
+                 else return ()
 
-    where state = stateProgram >>= stateProgram2 >>= stateProgram2
+    where state = stateProgram >>= stateProgram4 >>= stateProgram3 >>= stateProgram2 >>= stateProgram4
 
           updater (a,b) = runState state (a,b)
 
+
+main :: IO ()
+main = test5 (0,0)
