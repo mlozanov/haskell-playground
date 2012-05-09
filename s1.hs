@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Concurrent
 import Control.Monad.State.Strict
 
 type TheState = (Int,Int)
@@ -53,9 +54,9 @@ test4 str = test4' str (1,1)
 test5 :: TheState -> IO ()
 test5 (p,q) = do let (v, s) = updater (p,q)
 
-                 print s
+                 print v
 
-                 if (fst s) < 100
+                 if (fst s) < 1000
                  then test5 s
                  else return ()
 
@@ -65,4 +66,4 @@ test5 (p,q) = do let (v, s) = updater (p,q)
 
 
 main :: IO ()
-main = test5 (0,0)
+main = do test5 (0,0)

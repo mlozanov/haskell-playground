@@ -3,6 +3,7 @@ import Graphics.UI.GLFW as GLFW
 import Graphics.Rendering.OpenGL (($=))
 import Data.IORef
 import Control.Monad
+import Control.Concurrent
 
 data Action = Action (IO Action)
 
@@ -57,8 +58,8 @@ active lines = loop waitForPress
             GLFW.sleep 0.001
  
             -- only continue when the window is not closed
-            windowOpenStatus <- get $ windowParam Opened
-            unless (windowOpenStatus == 0) $
+            windowOpenStatus <- getParam Opened
+            unless (not windowOpenStatus) $
               loop action' -- loop with next action
  
     waitForPress = do
@@ -105,7 +106,7 @@ passive lines = do
         writeIORef quit True
  
   -- Terminate the program if the window is closed
-  GLFW.windowCloseCallback $= writeIORef quit True
+  GLFW.windowCloseCallback $= (writeIORef quit True >> return True)
  
   -- by default start with waitForPress
   waitForPress dirty
