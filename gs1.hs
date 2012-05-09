@@ -32,13 +32,13 @@ main = do GLFW.initialize
           -- keep all line strokes as a list of points in an IORef
           lines <- newIORef []
           -- invoke the active drawing loop
-          render lines 
+          update lines 
           -- finish up
           GLFW.closeWindow
           GLFW.terminate
 
 -- we start with waitForPress action
-render lines = loop waitForPress
+update lines = loop waitForPress
   where 
  
     loop action = do
@@ -83,3 +83,19 @@ render lines = loop waitForPress
           -- waitForPress action
           GLFW.Release -> return (Action waitForPress)
           GLFW.Press   -> return (Action waitForRelease)
+
+render lines = do
+  l <- readIORef lines
+  GL.clear [GL.ColorBuffer]
+  GL.color $ color3 1 0 0
+  GL.renderPrimitive GL.Lines $ mapM_
+      (\ (x, y) -> GL.vertex (vertex3 (fromIntegral x) (fromIntegral y) 0)) l
+ 
+ 
+vertex3 :: GLfloat -> GLfloat -> GLfloat -> GL.Vertex3 GLfloat
+vertex3 = GL.Vertex3
+ 
+ 
+color3 :: GLfloat -> GLfloat -> GLfloat -> GL.Color3 GLfloat
+color3 = GL.Color3
+
