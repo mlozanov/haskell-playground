@@ -2,6 +2,8 @@
 
 module Main where
 
+import Math
+
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
 import Graphics.UI.GLUT.Objects as O
@@ -10,6 +12,7 @@ import Data.IORef
 import Control.Monad
 import Control.Monad.State
 import Control.Concurrent
+
 
 data Action = Action (IO Action)
 
@@ -24,35 +27,8 @@ data Actor = SimpleActor
 type Cameras = [Camera]
 type Actors = [Actor]
 
-type Vec4 = [Float]
-type Vec3 = [Float]
-type Matrix44 = [Vec4]
-
 data World = World { cameras :: Cameras
                    , actors :: Actors }
-
-
-addVec :: Vec4 -> Vec4 -> Vec4
-addVec = zipWith (+)
-
-subVec :: Vec4 -> Vec4 -> Vec4
-subVec = zipWith (-)
-
-innerVec :: Vec4 -> Vec4 -> Vec4
-innerVec = zipWith (*)
-
-negateVec :: Vec4 -> Vec4
-negateVec = map negate
-
-dotVec :: Vec4 -> Vec4 -> Float
-dotVec a b = sum $ innerVec a b
-
-lengthVec :: Vec4 -> Float
-lengthVec a = sqrt . sum $ map square a
-    where square x = x*x
-
-degToRad a = a * pi / 180.0
-radToDeg a = a * 180.0 / pi
 
 
 cameraFixed :: Camera -> State Actors Camera
