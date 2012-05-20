@@ -3,6 +3,8 @@ module Main where
 import Control.Concurrent
 import Control.Monad.State.Strict
 
+import Data.IORef
+
 type TheState = (Int,Int)
 
 -- state program that modify the passed state and produce value based on initial state
@@ -56,7 +58,7 @@ test5 (p,q) = do let (v, s) = updater (p,q)
 
                  print v
 
-                 if (fst s) < 1000
+                 if (fst s) < 10
                  then test5 s
                  else return ()
 
@@ -64,6 +66,15 @@ test5 (p,q) = do let (v, s) = updater (p,q)
 
           updater (a,b) = runState state (a,b)
 
+
+
+test6 :: Int -> IO (Int -> IO Int)
+test6 n = do r <- newIORef n 
+             return (\i -> do modifyIORef r (+ i)
+                              readIORef r)
+
+test7 = test6 10 >>= (\r -> r 10) >>= print 
+ 
 
 main :: IO ()
 main = do test5 (0,0)

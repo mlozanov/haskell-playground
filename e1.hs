@@ -37,6 +37,15 @@ mainLoop app@(App (a,b)) = if a > 0.0
       minus :: Float -> Float
       minus a = a - 0.1
 
+      plus :: Double -> Double
+      plus b = let a = b
+                   c = a + a
+                   d = b + b
+                in a + b + c
+
+      plusminus :: Double -> [Double]
+      plusminus a = replicate 10 a
+        
 main :: IO ()
 main = do replicateM_ 10 (forkIO $ mainLoop appState)
           --forever $ return ()
