@@ -2,8 +2,6 @@
 
 module Main where
 
-import Math
-
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
 import Graphics.UI.GLUT.Objects as O
@@ -14,37 +12,14 @@ import Control.Monad.State
 import Control.Concurrent
 import System.Random
 
+import Math
+import Camera
+import Actor
 
 data Action = Action (IO Action)
 
-data Camera = EmptyCamera
-            | Camera [Double]
-              deriving (Eq, Ord, Show)
-
-data Actor = SimpleActor
-           | Actor [Double]
-             deriving (Eq, Ord, Show)
-
-type Cameras = [Camera]
-type Actors = [Actor]
-
 data World = World { cameras :: Cameras
                    , actors :: Actors }
-
-
-cameraFixed :: Camera -> State Actors Camera
-cameraFixed camera = return camera
-
-cameraOrbit :: Camera -> State Actors Camera
-cameraOrbit camera = return camera
-
-cameraDamp :: Camera -> State Actors Camera
-cameraDamp camera = return camera
-
-cameraFrameActors :: Camera -> State Actors Camera
-cameraFrameActors camera = return camera
-
-simpleFraming camera = cameraOrbit camera >>= cameraDamp >>= cameraFrameActors
 
 main = do 
   GLFW.initialize
