@@ -9,7 +9,7 @@ CPP_OBJS =
 
 # -fexcess-precision -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
 
-GHC_CC_OPT = -threaded -rtsopts -O2 -L/usr/lib --make -odir `uname -m` -hidir `uname -m`
+GHC_CC_OPT = -threaded -rtsopts -O3 -L/usr/lib --make -odir `uname -m` -hidir `uname -m`
 GHC_LD_OPT = 
 GHC_LD_PACKAGES =
 GHC_CC_PROF_OPT = -prof $(GHC_CC_OPT) 
@@ -43,7 +43,7 @@ clean:
 	@rm -rf `uname -m` $(TARGET)
 
 clean_coverage:
-	@rm *.html $(TARGET).tix
+	@rm -rf .hpc *.html $(TARGET).tix
 
 clean_maino:
 	@rm $(TARGET).o

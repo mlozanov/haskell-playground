@@ -12,6 +12,7 @@ import Data.IORef
 import Control.Monad
 import Control.Monad.State
 import Control.Concurrent
+import System.Random
 
 
 data Action = Action (IO Action)
@@ -48,7 +49,7 @@ simpleFraming camera = cameraOrbit camera >>= cameraDamp >>= cameraFrameActors
 main = do 
   GLFW.initialize
   -- open window
-  GLFW.openWindow (GL.Size 960 640) [GLFW.DisplayAlphaBits 8] GLFW.Window
+  GLFW.openWindow (GL.Size 1280 720) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
   GLFW.windowTitle $= "GLFW Demo"
   GL.shadeModel    $= GL.Smooth
   -- enable antialiasing
@@ -58,6 +59,17 @@ main = do
   GL.lineWidth  $= 1.5
   -- set the color to clear background
   GL.clearColor $= Color4 0 0 0 0
+
+  GL.depthFunc $= Just Less
+  
+  GL.ambient  (GL.Light 0) $= GL.Color4 0.3 0.3 0.3 1.0
+  GL.diffuse  (GL.Light 0) $= GL.Color4 1.0 1.0 1.0 1.0
+  GL.specular (GL.Light 0) $= GL.Color4 0.8 0.8 0.8 1.0
+  GL.lightModelAmbient  $= GL.Color4 0.2 0.2 0.2 1.0
+ 
+  GL.lighting $= GL.Enabled
+  GL.light (GL.Light 0) $= GL.Enabled
+  GL.position (GL.Light 0) $= GL.Vertex4 0 10 0 1.0
  
   -- set 2D orthogonal view inside windowSizeCallback because
   -- any change to the Window size should result in different
@@ -66,8 +78,10 @@ main = do
        do GL.viewport   $= (GL.Position 0 0, size)
           GL.matrixMode $= GL.Projection
           GL.loadIdentity
-          --GL.ortho2D 0 (realToFrac w) (realToFrac h) 0
-          GL.perspective (degToRad 45.0) (realToFrac w/realToFrac h) 0.1 1000.0
+
+          let m' = Math.glMatrix Math.perspective
+          p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
+          multMatrix p
  
   -- keep all line strokes as a list of points in an IORef
   lines <- newIORef []
@@ -96,11 +110,11 @@ updateCameras cameras state = loop
       --loop cameras state
 
 -- we start with waitForPress action
-update world render = loop waitForPress
+update world render = loop 0.0 world waitForPress
   where 
  
-    loop action = do
-      render world
+    loop t w action = do
+      render t w
 
       -- swap buffer
       GLFW.swapBuffers
@@ -110,13 +124,16 @@ update world render = loop waitForPress
         do
           -- perform action
           Action action' <- action
+
+          --let w' = World (cameras w) (actors w)
+
           -- sleep for 1ms to yield CPU to other applications
           GLFW.sleep 0.001
 
           -- only continue when the window is not closed
           windowOpenStatus <- getParam Opened
           unless (not windowOpenStatus) $
-            loop action' -- loop with next action
+            loop (t + 0.01) w action' -- loop with next action
 
     waitForPress = do
       b <- GLFW.getMouseButton GLFW.ButtonLeft
@@ -142,27 +159,44 @@ update world render = loop waitForPress
           GLFW.Release -> return (Action waitForPress)
           GLFW.Press   -> return (Action waitForRelease)
 
-renderer' world = do
+renderer' t world = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+
+  GL.matrixMode $= GL.Projection
+  GL.loadIdentity
+
+  let m' = Math.glMatrix Math.perspective
+  p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
+  multMatrix p
 
   GL.matrixMode $= GL.Modelview 0
   GL.loadIdentity
 
-  GL.translate (GL.Vector3 0.0 0.0 (-200.0 :: GLfloat))
-  GL.rotate (35.0::GLfloat)  (GL.Vector3 0 1 0)
+  GL.translate $ vector3 0.0 0.0 (-10.0)
 
-  GL.color $ color3 1 1 1
+  GL.rotate (180.0*(sin t)) (vector3 0.4 1 0)
+
+  GL.color $ color3 1 1 0
   O.renderObject O.Solid (O.Teapot 1.0) 
 
+  GL.translate $ vector3 0 2.0 0.0
+  O.renderObject O.Solid (O.Cube 1.0)
+
+  GL.translate $ vector3 0.0 0.0 (-101.0)
+  GL.color $ color3 1 0 0
+  renderString Fixed8x16 "kfjgkdgd"
+
+simulate' t world = world
  
 vertex3 :: GLfloat -> GLfloat -> GLfloat -> GL.Vertex3 GLfloat
 vertex3 = GL.Vertex3
  
+vector3 :: GLfloat -> GLfloat -> GLfloat -> GL.Vector3 GLfloat
+vector3 = GL.Vector3
  
 color3 :: GLfloat -> GLfloat -> GLfloat -> GL.Color3 GLfloat
 color3 = GL.Color3
 
-
-simulate :: forall model . model -> model
-simulate w = w
+toGLfloat :: Float -> GLfloat
+toGLfloat x = realToFrac x
 
