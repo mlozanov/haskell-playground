@@ -55,6 +55,15 @@ conjQ (Q a b c d) = Q a (-b) (-c) (-d)
 magQ :: Floating a => Quaternion a -> a
 magQ (Q a b c d) = sqrt (a*a + b*b + c*c + d*d)
 
+normQ :: (Floating a, Ord a) => Quaternion a -> Quaternion a
+normQ (Q w x y z) | mag < 0.0001 = Q w x y z
+                  | otherwise = Q w' x' y' z'
+    where mag = magQ (Q w x y z)
+          w' = w / mag
+          x' = x / mag 
+          y' = y / mag
+          z' = z / mag
+
 --toMatrixQ :: Floating t => Quaternion t -> Matrix44
 toMatrixQ (Q w x y z) = [ 1.0 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z - 2*y*w, 0.0
                         , 2*x*y + 2*z*w, 1.0 - 2*x*x - w*y*y, 2*y*z - 2*x*w, 0.0
@@ -71,6 +80,19 @@ fromMatrixQ [ a,b,c,d
           y = (i - c) / (4.0 * w)
           z = (e - b) / (4.0 * w)
 
+fromAxisAngleQ :: Floating a => a -> a -> a -> a -> Quaternion a
+fromAxisAngleQ x y z angle = Q ca (x*sa) (y*sa) (z*sa)
+    where ca = cos (angle * 0.5)
+          sa = sin (angle * 0.5)
+
+toAxisAngleQ :: (Floating a, Ord a) => Quaternion a -> ([a], a)
+toAxisAngleQ (Q w x y z) | abs w > 0.9999 = ([0,0,1.0], 0.0)
+                         | otherwise = ([ax,ay,az], angle)
+    where ww = 1.0 - w*w
+          angle = 2*acos w
+          ax = x / sqrt ww
+          ay = y / sqrt ww
+          az = z / sqrt ww
 
 fromList :: Floating a => [a] -> Matrix a
 fromList l = M l
@@ -107,8 +129,13 @@ perspective = frustum left right top bottom near far
           aspect = 1.78
 
 --debug
-{-
 a = Q 1.0 0 0 1.0
 b = Q 0.707 0 0.707 0 :: Quaternion Float
 c = conjQ a
--}
+d = Q 0.0 0 1.0 0
+
+q = normQ (Q 1 1 1 2)
+
+q' = toAxisAngleQ q
+
+testFromAxisAngleQ ([x,y,z], angle) = fromAxisAngleQ x y z angle
