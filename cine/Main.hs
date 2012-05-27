@@ -145,15 +145,26 @@ renderer' t worldRef = do
   p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
   multMatrix p
 
-  GL.translate $ vector3 0 0 (-(10.0 + 10 * sin t))
+  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (30.0 * sin t)))
+  let m'' = toMatrixQ q
+  p' <- newMatrix GL.RowMajor m'' :: IO (GLmatrix GLfloat)
+  multMatrix p'
+
+  tr <- newMatrix GL.RowMajor (Math.toList $ Math.translate 0 0 (-10)) :: IO (GLmatrix GLfloat)
+  multMatrix tr
 
   GL.matrixMode $= GL.Modelview 0
   GL.loadIdentity
 
   GL.translate $ vector3 0.0 0.0 (-2.0)
-
-  GL.rotate (180.0*0*(sin t)) $ vector3 0.707 0.707 0
 {-
+  let q' = normQ (fromAxisAngleQ 0 0 1 (degToRad (180.0 * sin t)))
+  let m''' = toMatrixQ q'
+  p'' <- newMatrix GL.RowMajor m''' :: IO (GLmatrix GLfloat)
+  multMatrix p''
+-}
+{-  GL.rotate (180.0*0*(sin t)) $ vector3 0.707 0.707 0
+
   GL.color $ color3 1 1 0
   mapM (\x -> preservingMatrix $ do
                 GL.translate $ vector3 x 0 0
@@ -165,6 +176,8 @@ renderer' t worldRef = do
 -}
 
   world <- readIORef worldRef 
+
+  GL.translate $ vector3 (-10) 0 0
 
   mapM (\a -> do GL.translate $ vector3 3.0 0 0 
                  Actor.draw a) 

@@ -16,7 +16,7 @@ draw SimpleActor = do
   GL.color $ color3 1 1 0
   O.renderObject O.Solid (O.Cube 2.0)
 
-draw (Actor actor) = do
+draw (Actor actor) = preservingMatrix $ do
   GL.color $ color3 1 0 0
   O.renderObject O.Solid (O.Cube 1.5)
   GL.translate $ vector3 0 (-1.0) 0
