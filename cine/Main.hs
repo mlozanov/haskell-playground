@@ -56,13 +56,11 @@ main = do
           GL.matrixMode $= GL.Projection
           GL.loadIdentity
 
-          let m' = Math.glMatrix Math.perspective
+          let m' = Math.toList Math.perspective
           p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
           multMatrix p
  
   -- keep all line strokes as a list of points in an IORef
-  lines <- newIORef []
-  cameras <- newIORef []
   world <- newIORef (World [EmptyCamera] [SimpleActor, Actor [], Actor [], SimpleActor])
 
   GL.get GL.vendor >>= print
@@ -79,8 +77,7 @@ main = do
 
 updateCameras cameras state = loop 
   where
-    loop = do
-      return $ evalState ((simpleFraming . head) cameras) state
+    loop = map (\c -> evalState (simpleFraming c) state) cameras
       --loop cameras state
 
 -- we start with waitForPress action
@@ -120,7 +117,6 @@ mainLoop world render simulate = loop 0.0 world waitForPress
           -- when left mouse button is pressed, add the point
           -- to lines and switch to waitForRelease action.
           (GL.Position x y) <- GL.get GLFW.mousePos 
-          --modifyIORef lines (((x,y):) . ((x,y):))
           return (Action waitForRelease)
  
     waitForRelease = do
@@ -128,7 +124,6 @@ mainLoop world render simulate = loop 0.0 world waitForPress
         -- release
         (GL.Position x y) <- GL.get GLFW.mousePos
         -- update the line with new ending position
-        --modifyIORef lines (((x,y):) . tail)
         b <- GLFW.getMouseButton GLFW.ButtonLeft
         case b of
           -- when button is released, switch back back to 
@@ -146,7 +141,7 @@ renderer' t worldRef = do
   GL.matrixMode $= GL.Projection
   GL.loadIdentity
 
-  let m' = Math.glMatrix Math.perspective
+  let m' = Math.toList Math.perspective
   p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
   multMatrix p
 
@@ -172,7 +167,8 @@ renderer' t worldRef = do
   world <- readIORef worldRef 
 
   mapM (\a -> do GL.translate $ vector3 3.0 0 0 
-                 Actor.draw a) $ actors world
+                 Actor.draw a) 
+       $ actors world
 
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
@@ -181,9 +177,10 @@ renderer' t worldRef = do
     GL.translate $ vector3 0.0 (-3.0) 0.0
     GL.color $ color3 1 0 0
     GL.scale (-0.02) 0.02 (0.02 :: GLfloat)
-    renderString Fixed8x16 "kfjgkdgd"
+    renderString Fixed8x16 "cine demo!"
 
 
 simulate' :: GLfloat -> World -> World
-simulate' t world = world
+simulate' t world = world { cameras = cs }
+    where cs = updateCameras (cameras world) (actors world)
  
