@@ -4,34 +4,33 @@ module Math where
 
 import Graphics.Rendering.OpenGL (GLfloat, GLmatrix)
 
-type Vec4 = [GLfloat]
+type Vector a = [a]
 data Matrix a = M [a] deriving Show
 data Quaternion a = Q a a a a deriving Show
 
-
-addVec :: Vec4 -> Vec4 -> Vec4
+addVec :: Floating a => Vector a -> Vector a -> Vector a
 addVec = zipWith (+)
 
-subVec :: Vec4 -> Vec4 -> Vec4
+subVec :: Floating a => Vector a -> Vector a -> Vector a
 subVec = zipWith (-)
 
-innerVec :: Vec4 -> Vec4 -> Vec4
+innerVec :: Floating a => Vector a -> Vector a -> Vector a
 innerVec = zipWith (*)
 
-negateVec :: Vec4 -> Vec4
+negateVec :: Floating a => Vector a -> Vector a
 negateVec = map negate
 
-dotVec :: Vec4 -> Vec4 -> GLfloat
+dotVec :: Floating a => Vector a -> Vector a -> a
 dotVec a b = sum $ innerVec a b
 
-lengthVec :: Vec4 -> GLfloat
+lengthVec :: Floating a => Vector a -> a
 lengthVec a = sqrt . sum $ map square a
     where square x = x*x
 
 degToRad a = a * pi / 180.0
 radToDeg a = a * 180.0 / pi
 
-lerp :: GLfloat -> Vec4 -> Vec4 -> Vec4
+lerp :: Floating a => a -> Vector a -> Vector a -> Vector a
 lerp x a b = addVec a' b'
     where a' = innerVec a $ replicate 4 (1-x)
           b' = innerVec b $ replicate 4 x
