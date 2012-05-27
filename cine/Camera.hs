@@ -19,6 +19,9 @@ cameraOrbit camera = return camera
 cameraDamp :: Camera -> State Actors Camera
 cameraDamp camera = return camera
 
+cameraPan :: Camera -> State Actors Camera
+cameraPan camera = return camera
+
 cameraFrameActors :: Camera -> State Actors Camera
 cameraFrameActors camera = return camera
 

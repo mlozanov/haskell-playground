@@ -12,6 +12,7 @@ import Control.Monad.State
 import Control.Concurrent
 import System.Random
 
+import Graphics
 import Math
 import Camera
 import Actor
@@ -25,7 +26,7 @@ main = do
   GLFW.initialize
   -- open window
   GLFW.openWindow (GL.Size 1280 720) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
-  GLFW.windowTitle $= "GLFW Demo"
+  GLFW.windowTitle $= "cine"
   GL.shadeModel    $= GL.Smooth
   -- enable antialiasing
   GL.lineSmooth $= GL.Enabled
@@ -44,7 +45,7 @@ main = do
  
   GL.lighting $= GL.Enabled
   GL.light (GL.Light 0) $= GL.Enabled
-  GL.position (GL.Light 0) $= GL.Vertex4 0 10 0 1.0
+  GL.position (GL.Light 0) $= GL.Vertex4 0 10 2.0 1.0
  
   -- set 2D orthogonal view inside windowSizeCallback because
   -- any change to the Window size should result in different
@@ -69,8 +70,8 @@ main = do
   GL.get GL.shadingLanguageVersion >>= print
   
   -- invoke the active drawing loop
-  let w = World [EmptyCamera] [SimpleActor]
-  update w renderer'
+  let w = World [EmptyCamera] [SimpleActor, Actor [], Actor [], SimpleActor]
+  mainLoop w renderer' simulate'
 
   --updateCameras cameras state
 
@@ -85,11 +86,11 @@ updateCameras cameras state = loop
       --loop cameras state
 
 -- we start with waitForPress action
-update world render = loop 0.0 world waitForPress
+mainLoop world render simulate = loop 0.0 world waitForPress
   where 
  
     loop t w action = do
-      render t w
+      render t (simulate t w)
 
       -- swap buffer
       GLFW.swapBuffers
@@ -137,6 +138,9 @@ update world render = loop 0.0 world waitForPress
 renderer' t world = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
+  GL.lighting $= GL.Enabled
+  GL.light (Light 0) $= GL.Enabled
+
   GL.matrixMode $= GL.Projection
   GL.loadIdentity
 
@@ -144,34 +148,37 @@ renderer' t world = do
   p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
   multMatrix p
 
+  GL.translate $ vector3 0 0 (-(10.0 + 10 * sin t))
+
   GL.matrixMode $= GL.Modelview 0
   GL.loadIdentity
 
-  GL.translate $ vector3 0.0 0.0 (-10.0)
+  GL.translate $ vector3 0.0 0.0 (-2.0)
 
-  GL.rotate (180.0*(sin t)) (vector3 0.4 1 0)
-
+  GL.rotate (180.0*0*(sin t)) $ vector3 0.707 0.707 0
+{-
   GL.color $ color3 1 1 0
-  O.renderObject O.Solid (O.Teapot 1.0) 
+  mapM (\x -> preservingMatrix $ do
+                GL.translate $ vector3 x 0 0
+                O.renderObject O.Solid (O.Cube 0.9)) [ -10.0, -9.0 .. 10.0 ]
 
-  GL.translate $ vector3 0 2.0 0.0
-  O.renderObject O.Solid (O.Cube 1.0)
+  preservingMatrix $ do
+    GL.translate $ vector3 0 2.0 0.0
+    O.renderObject O.Solid (O.Cube 2.0)
+-}
 
-  GL.translate $ vector3 0.0 0.0 (-101.0)
-  GL.color $ color3 1 0 0
-  renderString Fixed8x16 "kfjgkdgd"
+  mapM (\a -> do GL.translate $ vector3 3.0 0 0 
+                 Actor.draw a) $ actors world
+
+  GL.lighting $= GL.Disabled
+  GL.light (Light 0) $= GL.Disabled
+
+  preservingMatrix $ do
+    GL.translate $ vector3 0.0 (-3.0) 0.0
+    GL.color $ color3 1 0 0
+    GL.scale (-0.02) 0.02 (0.02 :: GLfloat)
+    renderString Fixed8x16 "kfjgkdgd"
+
 
 simulate' t world = world
  
-vertex3 :: GLfloat -> GLfloat -> GLfloat -> GL.Vertex3 GLfloat
-vertex3 = GL.Vertex3
- 
-vector3 :: GLfloat -> GLfloat -> GLfloat -> GL.Vector3 GLfloat
-vector3 = GL.Vector3
- 
-color3 :: GLfloat -> GLfloat -> GLfloat -> GL.Color3 GLfloat
-color3 = GL.Color3
-
-toGLfloat :: Float -> GLfloat
-toGLfloat x = realToFrac x
-

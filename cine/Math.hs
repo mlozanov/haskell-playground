@@ -37,6 +37,8 @@ class Matrix a where
     frustum :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> GLfloat -> GLfloat -> a
     perspective :: a
     ortho :: a
+    translate :: GLfloat -> GLfloat -> GLfloat -> a
+    rotate :: GLfloat -> GLfloat -> GLfloat -> a
 
 instance Matrix Matrix44 where
     identity = [ [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1] ]
@@ -62,6 +64,10 @@ instance Matrix Matrix44 where
               aspect = 1.78
 
     ortho = identity
+
+    translate x y z = identity
+
+    rotate x y z = identity
 
 
 lerp :: GLfloat -> Vec4 -> Vec4 -> Vec4
