@@ -12,6 +12,7 @@ import Control.Monad.State
 import Control.Concurrent
 import System.Random
 import System.Mem
+import Foreign.Marshal.Array
 
 import Graphics
 import Math
@@ -138,46 +139,23 @@ renderer' t worldRef = do
   GL.lighting $= GL.Enabled
   GL.light (Light 0) $= GL.Enabled
 
-  GL.matrixMode $= GL.Projection
-  GL.loadIdentity
-
-  let m' = Math.toList Math.perspective
-  p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
-  multMatrix p
-
-  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (30.0 * sin t)))
-  let m'' = toMatrixQ q
-  p' <- newMatrix GL.RowMajor m'' :: IO (GLmatrix GLfloat)
-  multMatrix p'
-
-  tr <- newMatrix GL.RowMajor (Math.toList $ Math.translate 0 0 (-10)) :: IO (GLmatrix GLfloat)
-  multMatrix tr
+  perspectiveMatrix <- newMatrix GL.RowMajor (Math.toList Math.perspective) :: IO (GLmatrix GLfloat)
+  matrix (Just GL.Projection) $= perspectiveMatrix
 
   GL.matrixMode $= GL.Modelview 0
   GL.loadIdentity
 
-  GL.translate $ vector3 0.0 0.0 (-2.0)
-{-
-  let q' = normQ (fromAxisAngleQ 0 0 1 (degToRad (180.0 * sin t)))
-  let m''' = toMatrixQ q'
-  p'' <- newMatrix GL.RowMajor m''' :: IO (GLmatrix GLfloat)
-  multMatrix p''
--}
-{-  GL.rotate (180.0*0*(sin t)) $ vector3 0.707 0.707 0
+  -- view matrix
+  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (60.0 * sin t)))
+   in let m = toMatrixQ q
+       in (newMatrix GL.RowMajor (toList m) :: IO (GLmatrix GLfloat)) >>= multMatrix
 
-  GL.color $ color3 1 1 0
-  mapM (\x -> preservingMatrix $ do
-                GL.translate $ vector3 x 0 0
-                O.renderObject O.Solid (O.Cube 0.9)) [ -10.0, -9.0 .. 10.0 ]
-
-  preservingMatrix $ do
-    GL.translate $ vector3 0 2.0 0.0
-    O.renderObject O.Solid (O.Cube 2.0)
--}
+  (newMatrix GL.RowMajor (Math.toList $ Math.translate (20 * sin t) 0 (-30)) :: IO (GLmatrix GLfloat)) >>= multMatrix
+  -- view matrix 
 
   world <- readIORef worldRef 
 
-  GL.translate $ vector3 (-10) 0 0
+  GL.translate $ vector3 (-6.0) 0 0
 
   mapM (\a -> do GL.translate $ vector3 3.0 0 0 
                  Actor.draw a) 

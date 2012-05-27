@@ -63,13 +63,12 @@ normQ (Q w x y z) | mag < 0.0001 = Q w x y z
           y' = y / mag
           z' = z / mag
 
---toMatrixQ :: Floating t => Quaternion t -> Matrix44
-toMatrixQ (Q w x y z) = [ 1.0 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0.0
-                        , 2*x*y + 2*z*w, 1.0 - 2*x*x - 2*z*z, 2*y*z + 2*x*w, 0.0
-                        , 2*x*z - 2*y*w, 2*y*z - 2*x*w, 1.0 - 2*x*x - 2*y*y, 0.0
-                        , 0.0, 0.0, 0.0, 1.0 ]
+toMatrixQ :: Floating a => Quaternion a -> Matrix a
+toMatrixQ (Q w x y z) = M [ 1.0 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0.0
+                          , 2*x*y + 2*z*w, 1.0 - 2*x*x - 2*z*z, 2*y*z + 2*x*w, 0.0
+                          , 2*x*z - 2*y*w, 2*y*z - 2*x*w, 1.0 - 2*x*x - 2*y*y, 0.0
+                          , 0.0, 0.0, 0.0, 1.0 ]
 
--- does not work yet
 fromMatrixQ [ a,b,c,d
             , e,f,g,h
             , i,j,k,l
@@ -127,21 +126,16 @@ perspective = frustum left right top bottom near far
           bottom = -top
           aspect = 1.78
 
+-- not correct yet
+lookat :: Floating a => Vector a -> Vector a -> Vector a -> Vector a -> Matrix a
+lookat up side forward position = M (concat [up,side,forward,position])
+
 translate :: Floating a => a -> a -> a -> Matrix a
 translate x y z = M [1,0,0,x
                     ,0,1,0,y
                     ,0,0,1,z
                     ,0,0,0,1]
 
---debug
-a = Q 1.0 0 0 1.0
-b = Q 0.707 0 0.707 0 :: Quaternion Float
-c = conjQ a
-d = Q 0.0 0 1.0 0
-
-q = normQ (Q 1 1 1 2)
-
-q' = toAxisAngleQ q
-
-testFromAxisAngleQ ([x,y,z], angle) = fromAxisAngleQ x y z angle
+rotate :: Floating a => a -> a -> a -> Matrix a
+rotate ax ay az = identity
 
