@@ -11,6 +11,7 @@ import Control.Monad
 import Control.Monad.State
 import Control.Concurrent
 import System.Random
+import System.Mem
 
 import Graphics
 import Math
@@ -62,7 +63,7 @@ main = do
   -- keep all line strokes as a list of points in an IORef
   lines <- newIORef []
   cameras <- newIORef []
-  state <- newIORef [SimpleActor, SimpleActor]
+  world <- newIORef (World [EmptyCamera] [SimpleActor, Actor [], Actor [], SimpleActor])
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -70,10 +71,7 @@ main = do
   GL.get GL.shadingLanguageVersion >>= print
   
   -- invoke the active drawing loop
-  let w = World [EmptyCamera] [SimpleActor, Actor [], Actor [], SimpleActor]
-  mainLoop w renderer' simulate'
-
-  --updateCameras cameras state
+  mainLoop world renderer' simulate'
 
   -- finish up
   GLFW.closeWindow
@@ -90,18 +88,21 @@ mainLoop world render simulate = loop 0.0 world waitForPress
   where 
  
     loop t w action = do
-      render t (simulate t w)
+      modifyIORef w (simulate t)
+
+      render t w
 
       -- swap buffer
       GLFW.swapBuffers
+
+      performGC
+
       -- check whether ESC is pressed for termination
       p <- GLFW.getKey GLFW.ESC
       unless (p == GLFW.Press) $
         do
           -- perform action
           Action action' <- action
-
-          --let w' = World (cameras w) (actors w)
 
           -- sleep for 1ms to yield CPU to other applications
           GLFW.sleep 0.001
@@ -135,7 +136,8 @@ mainLoop world render simulate = loop 0.0 world waitForPress
           GLFW.Release -> return (Action waitForPress)
           GLFW.Press   -> return (Action waitForRelease)
 
-renderer' t world = do
+renderer' :: GLfloat -> IORef World -> IO ()
+renderer' t worldRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   GL.lighting $= GL.Enabled
@@ -167,18 +169,21 @@ renderer' t world = do
     O.renderObject O.Solid (O.Cube 2.0)
 -}
 
+  world <- readIORef worldRef 
+
   mapM (\a -> do GL.translate $ vector3 3.0 0 0 
                  Actor.draw a) $ actors world
 
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
 
-  preservingMatrix $ do
+  preservingMatrix $ do 
     GL.translate $ vector3 0.0 (-3.0) 0.0
     GL.color $ color3 1 0 0
     GL.scale (-0.02) 0.02 (0.02 :: GLfloat)
     renderString Fixed8x16 "kfjgkdgd"
 
 
+simulate' :: GLfloat -> World -> World
 simulate' t world = world
  
