@@ -2,6 +2,7 @@
 
 module Math where
 
+import Data.List
 import Graphics.Rendering.OpenGL (GLfloat, GLmatrix)
 
 type Vector a = [a]
@@ -14,14 +15,14 @@ addVec = zipWith (+)
 subVec :: Floating a => Vector a -> Vector a -> Vector a
 subVec = zipWith (-)
 
-innerVec :: Floating a => Vector a -> Vector a -> Vector a
-innerVec = zipWith (*)
+mulVec :: Floating a => Vector a -> Vector a -> Vector a
+mulVec = zipWith (*)
 
 negateVec :: Floating a => Vector a -> Vector a
 negateVec = map negate
 
 dotVec :: Floating a => Vector a -> Vector a -> a
-dotVec a b = sum $ innerVec a b
+dotVec a b = sum $ mulVec a b
 
 lengthVec :: Floating a => Vector a -> a
 lengthVec a = sqrt . sum $ map square a
@@ -32,9 +33,24 @@ radToDeg a = a * 180.0 / pi
 
 lerp :: Floating a => a -> Vector a -> Vector a -> Vector a
 lerp x a b = addVec a' b'
-    where a' = innerVec a $ replicate 4 (1-x)
-          b' = innerVec b $ replicate 4 x
+    where a' = mulVec a $ replicate 4 (1-x)
+          b' = mulVec b $ replicate 4 x
 
+transposeM :: Floating a => Matrix a -> Matrix a
+transposeM = fromList . concat . transpose . unwords4 . toList
+
+mulMV :: Floating a => Vector a -> Matrix a ->  Vector a
+mulMV v (M ms) = map (dotVec v) $ f ms
+    where f = transpose . unwords4
+
+mulMM :: Floating a => Matrix a -> Matrix a -> Matrix a
+mulMM (M as) (M bs) = M (concat $ map (\row -> map (dotVec row) a') b')
+    where a' = unwords4 as
+          b' = unwords4 bs
+
+unwords4 [] = []
+unwords4 ys = r':(unwords4 rs)
+    where (r',rs) = splitAt 4 ys
 
 addQ :: Floating a => Quaternion a -> Quaternion a -> Quaternion a
 addQ (Q q a b c) (Q w x y z) = Q (q+w) (a+x) (b+y) (c+z)
@@ -139,3 +155,20 @@ translate x y z = M [1,0,0,x
 rotate :: Floating a => a -> a -> a -> Matrix a
 rotate ax ay az = identity
 
+--- debug
+
+t :: Floating a => Matrix a -> [[a]]
+t (M xs) = unwords4 xs
+
+t' = t (M [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15.0])
+l' = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15.0]
+m' = M [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15.0]
+
+q' = normQ $ fromAxisAngleQ 0.707 0.707 0 (degToRad 45.0)
+q'' = normQ $ fromAxisAngleQ 1.0 0.0 0 (degToRad 15.0)
+
+a' = mulMM a (transposeM a)
+    where a = toMatrixQ q'
+
+a'' = mulMM a (transposeM a)
+    where a = toMatrixQ q''

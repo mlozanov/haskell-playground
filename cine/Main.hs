@@ -12,6 +12,8 @@ import Control.Monad.State
 import Control.Concurrent
 import System.Random
 import System.Mem
+import System.CPUTime
+import Foreign.Ptr
 import Foreign.Marshal.Array
 
 import Graphics
@@ -24,11 +26,14 @@ data Action = Action (IO Action)
 data World = World { cameras :: Cameras
                    , actors :: Actors }
 
+data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
+                               , viewMatrix :: Ptr GLfloat }
+
 main = do 
   GLFW.initialize
   -- open window
   GLFW.openWindow (GL.Size 1280 720) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
-  GLFW.windowTitle $= "cine"
+  GLFW.windowTitle $= "cine-o-matic"
   GL.shadeModel    $= GL.Smooth
   -- enable antialiasing
   GL.lineSmooth $= GL.Enabled
@@ -62,7 +67,11 @@ main = do
           multMatrix p
  
   -- keep all line strokes as a list of points in an IORef
-  world <- newIORef (World [EmptyCamera] [SimpleActor, Actor [], Actor [], SimpleActor])
+  worldRef <- newIORef (World [EmptyCamera] [SimpleActor, Actor [], Actor [], SimpleActor])
+
+  projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
+  viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray)
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -70,7 +79,7 @@ main = do
   GL.get GL.shadingLanguageVersion >>= print
   
   -- invoke the active drawing loop
-  mainLoop world renderer' simulate'
+  mainLoop worldRef renderer' simulate'
 
   -- finish up
   GLFW.closeWindow
@@ -86,14 +95,17 @@ mainLoop world render simulate = loop 0.0 world waitForPress
   where 
  
     loop t w action = do
-      modifyIORef w (simulate t)
+      t0 <- getCPUTime
 
+      modifyIORef w $ simulate t
       render t w
-
-      -- swap buffer
       GLFW.swapBuffers
 
       performGC
+
+      t1 <- getCPUTime
+
+      --print $ fromIntegral (t1 - t0) / 10^6
 
       -- check whether ESC is pressed for termination
       p <- GLFW.getKey GLFW.ESC
@@ -156,6 +168,14 @@ renderer' t worldRef = do
   world <- readIORef worldRef 
 
   GL.translate $ vector3 (-6.0) 0 0
+
+  mapM (\a -> do GL.translate $ vector3 3.0 0 0 
+                 Actor.draw a) 
+       $ actors world
+
+  mapM (\a -> do GL.translate $ vector3 3.0 0 0 
+                 Actor.draw a) 
+       $ actors world
 
   mapM (\a -> do GL.translate $ vector3 3.0 0 0 
                  Actor.draw a) 
