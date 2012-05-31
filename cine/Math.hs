@@ -48,6 +48,9 @@ mulMM (M as) (M bs) = M (concat $ map (\row -> map (dotVec row) a') b')
     where a' = unwords4 as
           b' = unwords4 bs
 
+inverseM :: Floating a => Matrix a -> Matrix a
+inverseM (M ms) = M ms
+
 unwords4 [] = []
 unwords4 ys = r':(unwords4 rs)
     where (r',rs) = splitAt 4 ys
