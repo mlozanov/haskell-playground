@@ -67,7 +67,7 @@ main = do
           multMatrix p
  
   -- keep all line strokes as a list of points in an IORef
-  worldRef <- newIORef (World [EmptyCamera] [SimpleActor, Actor [], Actor [], SimpleActor])
+  worldRef <- newIORef (World [EmptyCamera] (concat $ replicate 3 ([SimpleActor, Actor [], Actor [], SimpleActor])))
 
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
@@ -154,8 +154,7 @@ renderer' t worldRef = do
   GL.lighting $= GL.Enabled
   GL.light (Light 0) $= GL.Enabled
 
-  perspectiveMatrix <- toGLMatrix Math.perspective
-  matrix (Just GL.Projection) $= perspectiveMatrix
+  toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
 
   GL.matrixMode $= GL.Modelview 0
   GL.loadIdentity
@@ -170,20 +169,6 @@ renderer' t worldRef = do
 
   world <- readIORef worldRef 
 
-  GL.translate $ vector3 (-6.0) 0 0
-
-  mapM (\a -> do GL.translate $ vector3 3.0 0 0 
-                 Actor.draw a) 
-       $ actors world
-
-  mapM (\a -> do GL.translate $ vector3 3.0 0 0 
-                 Actor.draw a) 
-       $ actors world
-
-  mapM (\a -> do GL.translate $ vector3 3.0 0 0 
-                 Actor.draw a) 
-       $ actors world
-
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
 
@@ -192,6 +177,17 @@ renderer' t worldRef = do
     GL.color $ color3 1 0 0
     GL.scale (-0.02) 0.02 (0.02 :: GLfloat)
     renderString Fixed8x16 "cine demo!"
+
+  GL.translate $ vector3 (-18.0) 0 0
+
+  GL.lighting $= GL.Enabled
+  GL.light (Light 0) $= GL.Enabled
+
+  mapM (\a -> do GL.translate $ vector3 3.0 0 0 
+                 Actor.draw a) 
+       $ actors world
+
+  return ()
 
 
 simulate' :: GLfloat -> World -> World
