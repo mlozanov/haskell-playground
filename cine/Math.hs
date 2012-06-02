@@ -28,6 +28,18 @@ lengthVec :: Floating a => Vector a -> a
 lengthVec a = sqrt . sum $ map square a
     where square x = x*x
 
+zeroV :: Floating a => Vector a
+zeroV = [0,0,0,0]
+
+x :: Floating a => Vector a -> a
+y :: Floating a => Vector a -> a
+z :: Floating a => Vector a -> a
+w :: Floating a => Vector a -> a
+x [x,_,_,_] = x
+y [_,y,_,_] = y
+z [_,_,z,_] = z
+w [_,_,_,w] = w
+
 degToRad a = a * pi / 180.0
 radToDeg a = a * 180.0 / pi
 
@@ -49,11 +61,15 @@ mulMM (M as) (M bs) = M (concat $ map (\row -> map (dotVec row) a') b')
           b' = unwords4 bs
 
 inverseM :: Floating a => Matrix a -> Matrix a
-inverseM (M ms) = M ms
+inverseM (M [m0,m1,m2,m3
+            ,m4,m5,m6,m7
+            ,m8,m9,m10,m11
+            ,m12,m13,m14,m15]) = M ms'
+    where ms' = []
 
 unwords4 [] = []
-unwords4 ys = r':(unwords4 rs)
-    where (r',rs) = splitAt 4 ys
+unwords4 ys = r:(unwords4 rs)
+    where (r,rs) = splitAt 4 ys
 
 addQ :: Floating a => Quaternion a -> Quaternion a -> Quaternion a
 addQ (Q q a b c) (Q w x y z) = Q (q+w) (a+x) (b+y) (c+z)
@@ -81,6 +97,9 @@ normQ (Q w x y z) | mag < 0.0001 = Q w x y z
           x' = x / mag 
           y' = y / mag
           z' = z / mag
+
+identityQ :: Floating a => Quaternion a
+identityQ = Q 1 0 0 0
 
 toMatrixQ :: Floating a => Quaternion a -> Matrix a
 toMatrixQ (Q w x y z) = M [ 1.0 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0.0

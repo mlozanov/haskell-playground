@@ -144,6 +144,9 @@ mainLoop world render simulate = loop 0.0 world waitForPress
           GLFW.Release -> return (Action waitForPress)
           GLFW.Press   -> return (Action waitForRelease)
 
+toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
+toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
+
 renderer' :: GLfloat -> IORef World -> IO ()
 renderer' t worldRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
@@ -151,7 +154,7 @@ renderer' t worldRef = do
   GL.lighting $= GL.Enabled
   GL.light (Light 0) $= GL.Enabled
 
-  perspectiveMatrix <- newMatrix GL.RowMajor (Math.toList Math.perspective) :: IO (GLmatrix GLfloat)
+  perspectiveMatrix <- toGLMatrix Math.perspective
   matrix (Just GL.Projection) $= perspectiveMatrix
 
   GL.matrixMode $= GL.Modelview 0
@@ -160,9 +163,9 @@ renderer' t worldRef = do
   -- view matrix
   let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (60.0 * sin t)))
    in let m = toMatrixQ q
-       in (newMatrix GL.RowMajor (toList m) :: IO (GLmatrix GLfloat)) >>= multMatrix
+       in toGLMatrix m >>= multMatrix
 
-  (newMatrix GL.RowMajor (Math.toList $ Math.translate (20 * sin t) 0 (-30)) :: IO (GLmatrix GLfloat)) >>= multMatrix
+  toGLMatrix (Math.translate (20 * sin t) 0 (-30)) >>= multMatrix
   -- view matrix 
 
   world <- readIORef worldRef 
