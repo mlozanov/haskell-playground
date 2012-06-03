@@ -20,8 +20,17 @@ data Camera = EmptyCamera
                            , fov :: Float }
               deriving (Show)
 
-type Cameras = [Camera]
+data Command a = Nop
+               | Pan (Quaternion a) (Quaternion a)
+               | Dolly (Vector a) (Vector a)
+               | Tilt (Quaternion a) (Quaternion a)
+               | Zoom a a
+                 deriving (Eq,Ord,Show)
 
+type Cameras = [Camera]
+type Commands a = [Command a]
+
+--- 
 cameraFixed :: Camera -> State Actors Camera
 cameraFixed camera = return camera
 
@@ -45,6 +54,14 @@ cameraFinalize c = return $ c { transform = r `mulMM` translate (x p) (y p) (z p
           r = toMatrixQ $ orientation c
 
 
--- compositions
+--- compositions
 simpleFraming camera = cameraOrbit camera >>= cameraDamp >>= cameraFrameActors >>= cameraFinalize
+
+--- commands execution
+executeCommand :: Floating a => Camera -> Command a -> Camera
+executeCommand cam Nop = cam
+executeCommand cam (Pan from to) = cam
+executeCommand cam (Dolly from to) = cam
+executeCommand cam (Tilt from to) = cam
+executeCommand cam (Zoom from to) = cam
 

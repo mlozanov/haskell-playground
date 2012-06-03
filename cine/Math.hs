@@ -7,7 +7,7 @@ import Graphics.Rendering.OpenGL (GLfloat, GLmatrix)
 
 type Vector a = [a]
 data Matrix a = M [a] deriving Show
-data Quaternion a = Q a a a a deriving Show
+data Quaternion a = Q a a a a deriving (Eq,Ord,Show)
 
 addVec :: Floating a => Vector a -> Vector a -> Vector a
 addVec = zipWith (+)
