@@ -50,6 +50,8 @@ main = do
   GL.specular (GL.Light 0) $= GL.Color4 0.8 0.8 0.8 1.0
   GL.lightModelAmbient  $= GL.Color4 0.2 0.2 0.2 1.0
  
+  GL.colorMaterial $= Just (GL.FrontAndBack, GL.AmbientAndDiffuse)
+
   GL.lighting $= GL.Enabled
   GL.light (GL.Light 0) $= GL.Enabled
   GL.position (GL.Light 0) $= GL.Vertex4 0 10 2.0 1.0
@@ -151,10 +153,10 @@ renderer' :: GLfloat -> IORef World -> IO ()
 renderer' t worldRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
+  toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
+
   GL.lighting $= GL.Enabled
   GL.light (Light 0) $= GL.Enabled
-
-  toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
 
   GL.matrixMode $= GL.Modelview 0
   GL.loadIdentity
@@ -169,8 +171,8 @@ renderer' t worldRef = do
 
   world <- readIORef worldRef 
 
-  GL.lighting $= GL.Disabled
-  GL.light (Light 0) $= GL.Disabled
+  --GL.lighting $= GL.Disabled
+  --GL.light (Light 0) $= GL.Disabled
 
   preservingMatrix $ do 
     GL.translate $ vector3 0.0 (-3.0) 0.0
@@ -180,12 +182,15 @@ renderer' t worldRef = do
 
   GL.translate $ vector3 (-18.0) 0 0
 
-  GL.lighting $= GL.Enabled
-  GL.light (Light 0) $= GL.Enabled
+  --GL.lighting $= GL.Enabled
+  --GL.light (Light 0) $= GL.Enabled
 
   mapM (\a -> do GL.translate $ vector3 3.0 0 0 
                  Actor.draw a) 
        $ actors world
+
+  --GL.lighting $= GL.Disabled
+  --GL.light (Light 0) $= GL.Disabled
 
   return ()
 
