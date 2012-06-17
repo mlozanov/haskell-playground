@@ -21,6 +21,10 @@ import Math
 import Camera
 import Actor
 
+import Vbo
+import Fbo
+import Shader
+
 data Action = Action (IO Action)
 
 data World = World { cameras :: Cameras
