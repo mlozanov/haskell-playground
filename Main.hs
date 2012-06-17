@@ -69,7 +69,7 @@ main = do
           multMatrix p
  
   -- keep all line strokes as a list of points in an IORef
-  worldRef <- newIORef (World [EmptyCamera] (concat $ replicate 3 ([SimpleActor, Actor [], Actor [], SimpleActor])))
+  worldRef <- newIORef (World [EmptyCamera] [])
 
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
@@ -162,35 +162,20 @@ renderer' t worldRef = do
   GL.loadIdentity
 
   -- view matrix
-  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (60.0 * sin t)))
+  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin t)))
    in let m = toMatrixQ q
        in toGLMatrix m >>= multMatrix
 
-  toGLMatrix (Math.translate (20 * sin t) 0 (-30)) >>= multMatrix
+  toGLMatrix (Math.translate (0 * sin t) 0 (-30)) >>= multMatrix
   -- view matrix 
 
   world <- readIORef worldRef 
 
-  --GL.lighting $= GL.Disabled
-  --GL.light (Light 0) $= GL.Disabled
-
   preservingMatrix $ do 
-    GL.translate $ vector3 0.0 (-3.0) 0.0
+    GL.translate $ vector3 0.0 0.0 0.0
     GL.color $ color3 1 0 0
-    GL.scale (-0.02) 0.02 (0.02 :: GLfloat)
-    renderString Fixed8x16 "cine demo!"
-
-  GL.translate $ vector3 (-18.0) 0 0
-
-  --GL.lighting $= GL.Enabled
-  --GL.light (Light 0) $= GL.Enabled
-
-  mapM (\a -> do GL.translate $ vector3 3.0 0 0 
-                 Actor.draw a) 
-       $ actors world
-
-  --GL.lighting $= GL.Disabled
-  --GL.light (Light 0) $= GL.Disabled
+    GL.scale (-0.05) 0.05 (0.05 :: GLfloat)
+    renderString Fixed8x16 "ROOM"
 
   return ()
 
