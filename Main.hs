@@ -31,7 +31,9 @@ data World = World { cameras :: Cameras
                    , actors :: Actors }
 
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
-                               , viewMatrix :: Ptr GLfloat }
+                               , viewMatrix :: Ptr GLfloat
+                               , shaderPrograms :: [ShaderProgram] 
+                               }
 
 main = do 
   GLFW.initialize
@@ -77,7 +79,9 @@ main = do
 
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray)
+  defaultProgram <- newProgram "../../data/shaders/default.vert" "../../data/shaders/default.frag" 
+  badPrintProgram <- newProgram "../../data/shaders/badprint.vert" "../../data/shaders/badprint.frag" 
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram])
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -85,7 +89,7 @@ main = do
   GL.get GL.shadingLanguageVersion >>= print
   
   -- invoke the active drawing loop
-  mainLoop worldRef renderer' simulate'
+  mainLoop worldRef renderStateRef renderer' simulate'
 
   -- finish up
   GLFW.closeWindow
@@ -97,14 +101,14 @@ updateCameras cameras state = loop
       --loop cameras state
 
 -- we start with waitForPress action
-mainLoop world render simulate = loop 0.0 world waitForPress
+mainLoop world renderState render simulate = loop 0.0 world renderState waitForPress
   where 
  
-    loop t w action = do
+    loop t w r action = do
       t0 <- getCPUTime
 
       modifyIORef w $ simulate t
-      render t w
+      render t w r
       GLFW.swapBuffers
 
       performGC
@@ -126,7 +130,7 @@ mainLoop world render simulate = loop 0.0 world waitForPress
           -- only continue when the window is not closed
           windowOpenStatus <- getParam Opened
           unless (not windowOpenStatus) $
-            loop (t + 0.01) w action' -- loop with next action
+            loop (t + 0.01) w r action' -- loop with next action
 
     waitForPress = do
       b <- GLFW.getMouseButton GLFW.ButtonLeft
@@ -153,9 +157,11 @@ mainLoop world render simulate = loop 0.0 world waitForPress
 toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
 toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 
-renderer' :: GLfloat -> IORef World -> IO ()
-renderer' t worldRef = do
+renderer' :: GLfloat -> IORef World -> IORef RenderState -> IO ()
+renderer' t worldRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+
+  renderState <- readIORef renderStateRef
 
   toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
 
@@ -175,14 +181,27 @@ renderer' t worldRef = do
 
   world <- readIORef worldRef 
 
-  preservingMatrix $ do 
-    GL.translate $ vector3 0.0 0.0 0.0
-    GL.color $ color3 1 0 0
-    GL.scale (-0.05) 0.05 (0.05 :: GLfloat)
-    renderString Fixed8x16 "ROOM"
+  withProgram ((shaderPrograms renderState) !! 0) (f1 t)
+  withProgram ((shaderPrograms renderState) !! 1) (f2 t)
 
   return ()
 
+
+f t = preservingMatrix $ do 
+        GL.translate $ vector3 0.0 0.0 0.0
+        GL.color $ color3 1 0 0
+        GL.scale (-0.05) 0.05 (0.05 :: GLfloat)
+        renderString Fixed8x16 "ROOM"
+
+f1 t = preservingMatrix $ do
+         GL.translate $ vector3 10.0 0.0 0.0
+         GL.rotate (180 * sin t) (vector3 0 (sin t) 1)
+         O.renderObject O.Solid (O.Cube 15.5)
+
+f2 t = preservingMatrix $ do
+         GL.translate $ vector3 (-10.0) 0.0 0.0
+         GL.rotate (180 * sin t) (vector3 0 (sin t) 1)
+         O.renderObject O.Solid (O.Cube 15.5)
 
 simulate' :: GLfloat -> World -> World
 simulate' t world = world { cameras = cs }
