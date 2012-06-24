@@ -2,14 +2,16 @@ module Fbo where
 
 import Graphics.Rendering.OpenGL 
 
-data Fbo = Fbo { buffer :: GLint }
+data Fbo = Fbo { buffer :: GLint 
+               , buferSize :: GLint
+               }
 
 newFbo :: IO Fbo
-newFbo = return $ Fbo 0
+newFbo = return $ Fbo 0 0
 
-withFbo :: Fbo -> IO ()
-withFbo fbo = return ()
+withFbo :: Fbo -> IO () -> IO ()
+withFbo fbo actions = actions >> return ()
 
-fromList :: [GLfloat] -> Fbo
-fromList l = Fbo 0
+fromList :: [GLfloat] -> IO Fbo
+fromList l = return $ Fbo 0 0
 

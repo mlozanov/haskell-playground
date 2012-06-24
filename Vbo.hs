@@ -5,37 +5,53 @@ import Data.Array.MArray
 import Data.Array.Storable
 import Foreign
 
-data Vbo = Vbo { bufferObject :: BufferObject
-               , bufferSize :: GLint 
+data Vbo = Vbo { vertexBuffer :: BufferObject
+               , indexBuffer :: BufferObject
+               , vertexBufferSize :: GLuint
+               , indexBufferSize :: GLuint
                }
 
 newVbo :: IO Vbo
-newVbo = do [array] <- genObjectNames 1
-            bindBuffer ArrayBuffer $= Just array
-            bindBuffer ArrayBuffer $= Nothing
-            --reportErrors
-            return $ Vbo array 0
+newVbo = do [v] <- genObjectNames 1
+            [i] <- genObjectNames 1
+            return $ Vbo v i 0 0
 
-withVbo :: IO () -> Vbo -> IO ()
-withVbo actions vbo = bindBuffer ArrayBuffer $= Just (bufferObject vbo) >> actions >> bindBuffer ArrayBuffer $= Nothing >> return ()
+withVertexBuffer :: Vbo -> IO ()
+withVertexBuffer vbo = bindBuffer ArrayBuffer $= Just (vertexBuffer vbo)
 
-fromList :: [GLfloat] -> IO Vbo
-fromList l = do vbo <- newVbo
-                let size = 4 * length l
-                let f l = do arr <- newListArray (0, size - 1) l
-                             withStorableArray arr (\ptr -> bufferData ArrayBuffer $= (toEnum size, ptr, StaticDraw))
-                             return ()
+withIndexBuffer :: Vbo -> IO ()
+withIndexBuffer vbo = bindBuffer ElementArrayBuffer $= Just (indexBuffer vbo)
 
-                withVbo (f l) vbo
-                return vbo { bufferSize = toEnum size }
+fromList :: [GLfloat] -> [GLuint] -> IO Vbo
+fromList v i = do 
+  vbo <- newVbo
 
+  withVertexBuffer vbo
+  let vsize = 4 * length v
+  print vsize
+  
+  arr <- newListArray (0, vsize - 1) v 
+  withStorableArray arr (\ptr -> bufferData ArrayBuffer $= (toEnum vsize, ptr, StaticDraw))
 
-drawVbo :: Vbo -> IO ()
-drawVbo vbo = do arrayPointer VertexArray $= VertexArrayDescriptor 3 Float 0 (offset 0)
-                 --arrayPointer ColorArray $= VertexArrayDescriptor 4 Float 28 (offset 12)
-                 clientState VertexArray $= Enabled
-                 --clientState ColorArray $= Enabled
+  withIndexBuffer vbo
+  let isize = length i
+  print isize
+  arri <- newListArray (0, isize - 1) i
+  withStorableArray arri (\ptr -> bufferData ElementArrayBuffer $= (toEnum (4*isize), ptr, StaticDraw))
 
-                 drawArrays LineStrip 0 $ (toEnum . fromEnum) (bufferSize vbo)
-    where offset a = plusPtr nullPtr a
+  return vbo { vertexBufferSize = toEnum vsize, indexBufferSize = toEnum isize }
 
+renderVbo :: Vbo -> IO ()
+renderVbo vbo = do 
+  withVertexBuffer vbo
+  arrayPointer VertexArray $= VertexArrayDescriptor 3 Float 0 offset0
+  clientState VertexArray $= Enabled
+  withIndexBuffer vbo
+  clientState IndexArray $= Enabled
+  drawElements Triangles ((toEnum . fromEnum) (indexBufferSize vbo)) UnsignedInt offset0
+
+  clientState VertexArray $= Disabled
+  clientState IndexArray $= Disabled
+
+      where offset a = plusPtr nullPtr a
+            offset0 = offset 0
