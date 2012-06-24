@@ -83,7 +83,16 @@ main = do
   defaultProgram <- newProgram "../../data/shaders/default.vert" "../../data/shaders/default.frag" 
   badPrintProgram <- newProgram "../../data/shaders/badprint.vert" "../../data/shaders/badprint.frag" 
 
-  vbo <- Vbo.fromList $ map (* 10.0) (concat [ [x,y,z] | x <- [-2, -1.5 .. 2.0], y <- [-2, -1.5 .. 2.0], z <- [-2.0, -1.9 .. 2.0] ])
+  let vertexList = ([ (-1.0), (-1.0), (-1.0)
+                   , (-1.0), (-1.0), 1.0
+                   , 1.0, (-1.0), 1.0
+                   , 1.0, (-1.0), (-1.0)
+                   , (-1.0), 1.0, (-1.0)
+                   , (-1.0), 1.0, 1.0
+                   , 1.0, 1.0, 1.0
+                   , 1.0, 1.0, (-1.0) ] :: [GLfloat])
+  let indexList = ([ 0,1,3, 1,2,3, 4,7,5, 7,6,5, 0,4,1, 4,5,1, 2,6,3, 6,7,3, 1,5,2, 5,6,2, 3,7,0, 7,4,0 ] :: [GLuint])
+  vbo <- Vbo.fromList vertexList indexList
 
   renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram] [vbo])
 
@@ -179,44 +188,33 @@ renderer' t worldRef renderStateRef = do
 
   world <- readIORef worldRef 
 
-
   GL.lighting $= GL.Enabled
   GL.light (Light 0) $= GL.Enabled
 
+  let vbo = (bufferObjects renderState) !! 0
+  withProgram ((shaderPrograms renderState) !! 0) (f3 vbo t)
 
-  let vbo = head $ bufferObjects renderState
-   in let f4 t = withVbo (f3 vbo t) vbo 
-       in withProgram ((shaderPrograms renderState) !! 0) (f4 t)
 
-  f t
+  GL.lighting $= GL.Disabled
+  GL.light (Light 0) $= GL.Disabled
 
-  withProgram ((shaderPrograms renderState) !! 0) (f1 t)
---  withProgram ((shaderPrograms renderState) !! 1) (f2 t)
+  title t
 
   return ()
 
 
-f t = preservingMatrix $ do 
-        GL.translate $ vector3 0.0 0.0 0.0
-        GL.color $ color3 1 0 0
-        GL.scale (-0.05) 0.05 (0.05 :: GLfloat)
-        renderString Fixed8x16 "ROOM"
-        GL.color $ color3 1 1 1
-
-f1 t = preservingMatrix $ do
-         GL.translate $ vector3 10.0 0.0 0.0
-         GL.rotate (180 * sin t) (vector3 0 (sin t) 1)
-         O.renderObject O.Solid (O.Cube 10.0)
-
-f2 t = preservingMatrix $ do
-         GL.translate $ vector3 (-10.0) 0.0 0.0
-         GL.rotate (180 * sin t) (vector3 0 (sin t) 1)
-         O.renderObject O.Solid (O.Cube 10.0)
+title t = preservingMatrix $ do 
+            GL.translate $ vector3 (-24.0) 0.0 0.0
+            GL.color $ color3 1 1 1
+            GL.scale (-0.05) 0.05 (0.05 :: GLfloat)
+            renderString Fixed8x16 "ROOM"
+            GL.color $ color3 1 1 1
 
 f3 vbo t = preservingMatrix $ do
-             GL.translate $ vector3 (-30.0) 0.0 (-100.0)
+             GL.translate $ vector3 (0.0) 0.0 (-100.0)
+             GL.scale 5.0 5.0 (5.0::GLfloat)
              GL.rotate (180 * sin t) (vector3 0 (sin t) 1)
-             drawVbo vbo
+             renderVbo vbo
 
 simulate' :: GLfloat -> World -> World
 simulate' t world = world { cameras = cs }
