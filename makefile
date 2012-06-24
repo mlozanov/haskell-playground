@@ -1,7 +1,7 @@
 
 .PHONY: build
 
-TARGET = room
+TARGET = main
 HASKELL_OBJS =  Main.hs 
 
 C_OBJS = 
