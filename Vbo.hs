@@ -9,6 +9,10 @@ data Vbo = Vbo { vertexBuffer :: BufferObject
                , indexBuffer :: BufferObject
                , vertexBufferSize :: GLuint
                , indexBufferSize :: GLuint
+
+--               , primitiveMode :: PrimitiveMode
+--               , vertexCount :: GLuint
+--               , normalCount :: GLuint
                }
 
 newVbo :: IO Vbo
@@ -45,13 +49,17 @@ renderVbo :: Vbo -> IO ()
 renderVbo vbo = do 
   withVertexBuffer vbo
   arrayPointer VertexArray $= VertexArrayDescriptor 3 Float 0 offset0
+  arrayPointer NormalArray $= VertexArrayDescriptor 3 Float 0 (offset 96)
   clientState VertexArray $= Enabled
+  clientState NormalArray $= Enabled
+
   withIndexBuffer vbo
   clientState IndexArray $= Enabled
   drawElements Triangles ((toEnum . fromEnum) (indexBufferSize vbo)) UnsignedInt offset0
 
   clientState VertexArray $= Disabled
+  clientState NormalArray $= Disabled
   clientState IndexArray $= Disabled
 
-      where offset a = plusPtr nullPtr a
-            offset0 = offset 0
+offset a = plusPtr nullPtr a
+offset0 = offset 0
