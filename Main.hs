@@ -36,11 +36,65 @@ data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , bufferObjects :: [Vbo]
                                }
 
+vertexList = ([ (-2.0), (-1.0), (-1.0)
+              , (-2.0), (-1.0), 1.0
+              , 2.0, (-1.0), 1.0
+              , 2.0, (-1.0), (-1.0)
+              , (-2.0), 1.0, (-1.0)
+              , (-2.0), 1.0, 1.0
+              , 2.0, 1.0, 1.0
+              , 2.0, 1.0, (-1.0) 
+              ] :: [GLfloat])
+
+normalList = ([ 0.0, (1.0), 0.0  
+              , 0.0, (1.0), 0.0
+              , 0.0, (1.0), 0.0
+              , 0.0, (1.0), 0.0
+ 
+              , 0.0, (-1.0), 0.0
+              , 0.0, (-1.0), 0.0
+              , 0.0, (-1.0), 0.0
+              , 0.0, (-1.0), 0.0
+
+{-
+              , 1.0, 0.0, 0.0 
+              , 1.0, 0.0, 0.0
+              , 1.0, 0.0, 0.0
+
+              , (-1.0), 0.0, 0.0 
+              , (-1.0), 0.0, 0.0
+              , (-1.0), 0.0, 0.0
+
+              , 0.0, 0.0, (-1.0)
+              , 0.0, 0.0, (-1.0)
+              , 0.0, 0.0, (-1.0)
+
+              , 0.0, 0.0, 1.0
+              , 0.0, 0.0, 1.0
+              , 0.0, 0.0, 1.0
+
+              , 0.0, 0.0, 1.0
+              , 0.0, 0.0, 1.0
+              , 0.0, 0.0, 1.0
+
+              , 0.0, 0.0, 1.0
+              , 0.0, 0.0, 1.0
+              , 0.0, 0.0, 1.0 -}
+              ] :: [GLfloat])
+indexList = ([ 0,1,3, 1,2,3  -- floor
+             , 4,7,5, 7,6,5  -- ceiling
+             , 0,4,1, 4,5,1  -- right
+             , 2,6,3, 6,7,3 -- left
+--             , 1,5,2, 5,6,2 -- front
+             , 3,7,0, 7,4,0 -- back
+             ] :: [GLuint])
+
+
 main = do 
   GLFW.initialize
   -- open window
   GLFW.openWindow (GL.Size 1280 720) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
-  GLFW.windowTitle $= "cine-o-matic"
+  GLFW.windowTitle $= "das zimmer"
   GL.shadeModel    $= GL.Smooth
   -- enable antialiasing
   GL.lineSmooth $= GL.Enabled
@@ -61,7 +115,7 @@ main = do
 
   GL.lighting $= GL.Enabled
   GL.light (GL.Light 0) $= GL.Enabled
-  GL.position (GL.Light 0) $= GL.Vertex4 0 100.0 (0.0) 0.0
+  GL.position (GL.Light 0) $= GL.Vertex4 100.0 0.0 (0.0) 1.0
  
   -- set 2D perspective view inside windowSizeCallback because
   -- any change to the Window size should result in different
@@ -80,21 +134,13 @@ main = do
 
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
-  defaultProgram <- newProgram "../../data/shaders/default.vert" "../../data/shaders/default.frag" 
-  badPrintProgram <- newProgram "../../data/shaders/badprint.vert" "../../data/shaders/badprint.frag" 
+  defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
+  badPrintProgram <- newProgram "../data/shaders/badprint.vert" "../data/shaders/badprint.frag" 
+  sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"
 
-  let vertexList = ([ (-1.0), (-1.0), (-1.0)
-                   , (-1.0), (-1.0), 1.0
-                   , 1.0, (-1.0), 1.0
-                   , 1.0, (-1.0), (-1.0)
-                   , (-1.0), 1.0, (-1.0)
-                   , (-1.0), 1.0, 1.0
-                   , 1.0, 1.0, 1.0
-                   , 1.0, 1.0, (-1.0) ] :: [GLfloat])
-  let indexList = ([ 0,1,3, 1,2,3, 4,7,5, 7,6,5, 0,4,1, 4,5,1, 2,6,3, 6,7,3, 1,5,2, 5,6,2, 3,7,0, 7,4,0 ] :: [GLuint])
-  vbo <- Vbo.fromList vertexList indexList
+  vbo <- Vbo.fromList ((map (* 40) vertexList) ++  normalList)  indexList
 
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram] [vbo])
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram, sphericalProgram] [vbo])
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -172,28 +218,33 @@ renderer' t worldRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   renderState <- readIORef renderStateRef
+  world <- readIORef worldRef 
 
+  -- projection matrix
+  GL.matrixMode $= GL.Projection
   toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
-
-  GL.matrixMode $= GL.Modelview 0
-  GL.loadIdentity
+  -- projection matrix
 
   -- view matrix
+  GL.matrixMode $= GL.Modelview 0
+  toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
+
   let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin t)))
    in let m = toMatrixQ q
        in toGLMatrix m >>= multMatrix
 
-  toGLMatrix (Math.translate (0 * sin t) 0 (-30)) >>= multMatrix
+  toGLMatrix (Math.translate (0 * sin t) 0 (-20)) >>= multMatrix
   -- view matrix 
 
-  world <- readIORef worldRef 
-
-  GL.lighting $= GL.Enabled
-  GL.light (Light 0) $= GL.Enabled
+  --GL.lighting $= GL.Enabled
+  --GL.light (Light 0) $= GL.Enabled
 
   let vbo = (bufferObjects renderState) !! 0
   withProgram ((shaderPrograms renderState) !! 0) (f3 vbo t)
 
+  withProgram ((shaderPrograms renderState) !! 0) (f2 t)
+
+  withProgram ((shaderPrograms renderState) !! 0) (f2' t)
 
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
@@ -204,17 +255,26 @@ renderer' t worldRef renderStateRef = do
 
 
 title t = preservingMatrix $ do 
-            GL.translate $ vector3 (-24.0) 0.0 0.0
+            GL.translate $ vector3 (-16.0) 0.0 0.0
             GL.color $ color3 1 1 1
-            GL.scale (-0.05) 0.05 (0.05 :: GLfloat)
+            GL.scale (-0.04) 0.04 (0.04 :: GLfloat)
             renderString Fixed8x16 "ROOM"
             GL.color $ color3 1 1 1
 
 f3 vbo t = preservingMatrix $ do
-             GL.translate $ vector3 (0.0) 0.0 (-100.0)
-             GL.scale 5.0 5.0 (5.0::GLfloat)
-             GL.rotate (180 * sin t) (vector3 0 (sin t) 1)
+             GL.translate $ vector3 (0.0) 0.0 (-90.0)
+             --GL.rotate (10 * sin t) (vector3 1 0 0)
              renderVbo vbo
+
+f2 t = preservingMatrix $ do
+         GL.translate $ vector3 (10.0) 0.0 0.0
+         GL.rotate (45 * sin t) (vector3 1 0 0)
+         O.renderObject O.Solid (O.Teapot 4.0)
+
+f2' t = preservingMatrix $ do
+          GL.translate $ vector3 (-10.0) 0.0 0.0
+          GL.rotate (90 * sin t) (vector3 1 0 0)
+          O.renderObject O.Solid (O.Cube 4.0)
 
 simulate' :: GLfloat -> World -> World
 simulate' t world = world { cameras = cs }
