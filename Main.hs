@@ -79,8 +79,8 @@ main = do
 
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
-  defaultProgram <- newProgram "../../data/shaders/default.vert" "../../data/shaders/default.frag" 
-  badPrintProgram <- newProgram "../../data/shaders/badprint.vert" "../../data/shaders/badprint.frag" 
+  defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
+  badPrintProgram <- newProgram "../data/shaders/badprint.vert" "../data/shaders/badprint.frag" 
   renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram])
 
   GL.get GL.vendor >>= print
