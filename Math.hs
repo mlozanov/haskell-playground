@@ -162,7 +162,7 @@ perspective = frustum left right top bottom near far
           right = bottom * aspect
           top = near * tan (60.0 * pi / 360.0)
           bottom = -top
-          aspect = 1.78
+          aspect = 1.85
 
 -- not correct yet
 lookat :: Floating a => Vector a -> Vector a -> Vector a -> Vector a -> Matrix a

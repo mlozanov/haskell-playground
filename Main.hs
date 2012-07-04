@@ -44,6 +44,24 @@ vertexList = ([ (-2.0), (-1.0), (-1.0)
               , (-2.0), 1.0, 1.0
               , 2.0, 1.0, 1.0
               , 2.0, 1.0, (-1.0) 
+
+              , (-2.0), (-1.0), (-1.0)
+              , (-2.0), (-1.0), 1.0
+              , 2.0, (-1.0), 1.0
+              , 2.0, (-1.0), (-1.0)
+              , (-2.0), 1.0, (-1.0)
+              , (-2.0), 1.0, 1.0
+              , 2.0, 1.0, 1.0
+              , 2.0, 1.0, (-1.0) 
+
+              , (-2.0), (-1.0), (-1.0)
+              , (-2.0), (-1.0), 1.0
+              , 2.0, (-1.0), 1.0
+              , 2.0, (-1.0), (-1.0)
+              , (-2.0), 1.0, (-1.0)
+              , (-2.0), 1.0, 1.0
+              , 2.0, 1.0, 1.0
+              , 2.0, 1.0, (-1.0) 
               ] :: [GLfloat])
 
 normalList = ([ 0.0, (1.0), 0.0  
@@ -56,20 +74,29 @@ normalList = ([ 0.0, (1.0), 0.0
               , 0.0, (-1.0), 0.0
               , 0.0, (-1.0), 0.0
 
-{-
-              , 1.0, 0.0, 0.0 
-              , 1.0, 0.0, 0.0
-              , 1.0, 0.0, 0.0
+              , (1.0), 0.0, 0.0 
+              , (1.0), 0.0, 0.0
+
+              , (-1.0), 0.0, 0.0
+              , (-1.0), 0.0, 0.0
+
+              , (1.0), 0.0, 0.0
+              , (1.0), 0.0, 0.0
 
               , (-1.0), 0.0, 0.0 
               , (-1.0), 0.0, 0.0
-              , (-1.0), 0.0, 0.0
 
-              , 0.0, 0.0, (-1.0)
-              , 0.0, 0.0, (-1.0)
-              , 0.0, 0.0, (-1.0)
 
-              , 0.0, 0.0, 1.0
+              , 0.0, 0.0, (1.0)
+              , 0.0, 0.0, (1.0)
+              , 0.0, 0.0, (1.0)
+              , 0.0, 0.0, (1.0)
+              , 0.0, 0.0, (1.0)
+              , 0.0, 0.0, (1.0)
+              , 0.0, 0.0, (1.0)
+              , 0.0, 0.0, (1.0)
+
+{-              , 0.0, 0.0, 1.0
               , 0.0, 0.0, 1.0
               , 0.0, 0.0, 1.0
 
@@ -83,17 +110,17 @@ normalList = ([ 0.0, (1.0), 0.0
               ] :: [GLfloat])
 indexList = ([ 0,1,3, 1,2,3  -- floor
              , 4,7,5, 7,6,5  -- ceiling
-             , 0,4,1, 4,5,1  -- right
-             , 2,6,3, 6,7,3 -- left
+             , 8,12,9, 12,13,9  -- right
+             , 10,14,11, 14,15,11 -- left
 --             , 1,5,2, 5,6,2 -- front
-             , 3,7,0, 7,4,0 -- back
+             , 19,23,16, 23,20,16 -- back
              ] :: [GLuint])
 
 
 main = do 
   GLFW.initialize
   -- open window
-  GLFW.openWindow (GL.Size 1280 720) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
+  GLFW.openWindow (GL.Size 1280 690) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
   GLFW.windowTitle $= "das zimmer"
   GL.shadeModel    $= GL.Smooth
   -- enable antialiasing
@@ -238,6 +265,8 @@ renderer' t worldRef renderStateRef = do
 
   --GL.lighting $= GL.Enabled
   --GL.light (Light 0) $= GL.Enabled
+  GL.lighting $= GL.Disabled
+  GL.light (Light 0) $= GL.Disabled
 
   let vbo = (bufferObjects renderState) !! 0
   withProgram ((shaderPrograms renderState) !! 0) (f3 vbo t)

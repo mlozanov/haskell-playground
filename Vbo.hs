@@ -49,7 +49,7 @@ renderVbo :: Vbo -> IO ()
 renderVbo vbo = do 
   withVertexBuffer vbo
   arrayPointer VertexArray $= VertexArrayDescriptor 3 Float 0 offset0
-  arrayPointer NormalArray $= VertexArrayDescriptor 3 Float 0 (offset 96)
+  arrayPointer NormalArray $= VertexArrayDescriptor 3 Float 0 (offset 288)
   clientState VertexArray $= Enabled
   clientState NormalArray $= Enabled
 
