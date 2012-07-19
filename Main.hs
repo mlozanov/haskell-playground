@@ -36,86 +36,21 @@ data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , bufferObjects :: [Vbo]
                                }
 
-vertexList = ([ (-2.0), (-1.0), (-1.0)
-              , (-2.0), (-1.0), 1.0
-              , 2.0, (-1.0), 1.0
-              , 2.0, (-1.0), (-1.0)
-              , (-2.0), 1.0, (-1.0)
-              , (-2.0), 1.0, 1.0
-              , 2.0, 1.0, 1.0
-              , 2.0, 1.0, (-1.0) 
-
-              , (-2.0), (-1.0), (-1.0)
-              , (-2.0), (-1.0), 1.0
-              , 2.0, (-1.0), 1.0
-              , 2.0, (-1.0), (-1.0)
-              , (-2.0), 1.0, (-1.0)
-              , (-2.0), 1.0, 1.0
-              , 2.0, 1.0, 1.0
-              , 2.0, 1.0, (-1.0) 
-
-              , (-2.0), (-1.0), (-1.0)
-              , (-2.0), (-1.0), 1.0
-              , 2.0, (-1.0), 1.0
-              , 2.0, (-1.0), (-1.0)
-              , (-2.0), 1.0, (-1.0)
-              , (-2.0), 1.0, 1.0
-              , 2.0, 1.0, 1.0
-              , 2.0, 1.0, (-1.0) 
-              ] :: [GLfloat])
-
-normalList = ([ 0.0, (1.0), 0.0  
-              , 0.0, (1.0), 0.0
-              , 0.0, (1.0), 0.0
-              , 0.0, (1.0), 0.0
- 
-              , 0.0, (-1.0), 0.0
-              , 0.0, (-1.0), 0.0
-              , 0.0, (-1.0), 0.0
-              , 0.0, (-1.0), 0.0
-
-              , (1.0), 0.0, 0.0 
-              , (1.0), 0.0, 0.0
-
-              , (-1.0), 0.0, 0.0
-              , (-1.0), 0.0, 0.0
-
-              , (1.0), 0.0, 0.0
-              , (1.0), 0.0, 0.0
-
-              , (-1.0), 0.0, 0.0 
-              , (-1.0), 0.0, 0.0
+cubeVertices = [ [x,y,z] | x <- [(-1.85),1.85], y <- [(-1.0),1.0], z <- [(-1.85),1] ] :: [[GLfloat]]
+cubeNormals = map (concat.replicate 3) ([ [1,0,0], [(1),0,0], 
+                                          [(-1),0,0], [(-1),0,0], 
+                                          [0,1,0], [0,1,0], 
+                                          [0,(-1),0], [0,(-1),0],
+                                          [0,0,(-1)], [0,0,(-1)] ] :: [[GLfloat]])
+cubeIndecies = [ 0,1,2, 1,2,3  -- right
+               , 4,5,6, 5,6,7  -- left
+               , 0,4,1, 4,5,1  -- floor
+               , 2,6,3, 6,7,3 -- ceiling
+               , 6,4,0, 6,2,0 -- back
+               ] :: [GLuint]
 
 
-              , 0.0, 0.0, (1.0)
-              , 0.0, 0.0, (1.0)
-              , 0.0, 0.0, (1.0)
-              , 0.0, 0.0, (1.0)
-              , 0.0, 0.0, (1.0)
-              , 0.0, 0.0, (1.0)
-              , 0.0, 0.0, (1.0)
-              , 0.0, 0.0, (1.0)
-
-{-              , 0.0, 0.0, 1.0
-              , 0.0, 0.0, 1.0
-              , 0.0, 0.0, 1.0
-
-              , 0.0, 0.0, 1.0
-              , 0.0, 0.0, 1.0
-              , 0.0, 0.0, 1.0
-
-              , 0.0, 0.0, 1.0
-              , 0.0, 0.0, 1.0
-              , 0.0, 0.0, 1.0 -}
-              ] :: [GLfloat])
-indexList = ([ 0,1,3, 1,2,3  -- floor
-             , 4,7,5, 7,6,5  -- ceiling
-             , 8,12,9, 12,13,9  -- right
-             , 10,14,11, 14,15,11 -- left
---             , 1,5,2, 5,6,2 -- front
-             , 19,23,16, 23,20,16 -- back
-             ] :: [GLuint])
-
+cube = (concat $ map (\i -> (cubeVertices !! (fromEnum i))  ) cubeIndecies)
 
 main = do 
   GLFW.initialize
@@ -128,6 +63,7 @@ main = do
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
   GL.lineWidth  $= 1.5
+  GL.pointSize  $= 5.0
   -- set the color to clear background
   GL.clearColor $= Color4 0.18 0.18 0.18 1.0
 
@@ -165,9 +101,11 @@ main = do
   badPrintProgram <- newProgram "../data/shaders/badprint.vert" "../data/shaders/badprint.frag" 
   sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"
 
-  vbo <- Vbo.fromList ((map (* 40) vertexList) ++  normalList)  indexList
+  vbo <- Vbo.fromList GL.Triangles (map (* 40) cube) (concat cubeNormals)
 
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram, sphericalProgram] [vbo])
+  vboPoints <- Vbo.fromList GL.Points (map (* 40.0) (concat [[x,y,z] | x <- [(-1.0), (-0.93) .. 1.0], y <- [(-1.0), (-0.93) .. 1.0], z <- [(-1.0), (-0.9) .. 1.0], sqrt (x*x + y*y + z*z) < 1.0 ])) []
+
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram, sphericalProgram] [vbo, vboPoints])
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -269,11 +207,17 @@ renderer' t worldRef renderStateRef = do
   GL.light (Light 0) $= GL.Disabled
 
   let vbo = (bufferObjects renderState) !! 0
+  let vbo' = (bufferObjects renderState) !! 1
+
   withProgram ((shaderPrograms renderState) !! 0) (f3 vbo t)
+  
+  withProgram ((shaderPrograms renderState) !! 0) (f3 vbo' t)
 
-  withProgram ((shaderPrograms renderState) !! 0) (f2 t)
+  --withProgram ((shaderPrograms renderState) !! 0) (f2 t)
 
-  withProgram ((shaderPrograms renderState) !! 0) (f2' t)
+  --withProgram ((shaderPrograms renderState) !! 0) (f2' t)
+
+  --withProgram ((shaderPrograms renderState) !! 0) (cube' t)
 
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
@@ -287,12 +231,12 @@ title t = preservingMatrix $ do
             GL.translate $ vector3 (-16.0) 0.0 0.0
             GL.color $ color3 1 1 1
             GL.scale (-0.04) 0.04 (0.04 :: GLfloat)
-            renderString Fixed8x16 "ROOM"
+            renderString Fixed8x16 "DAS.ZIMMER"
             GL.color $ color3 1 1 1
 
 f3 vbo t = preservingMatrix $ do
              GL.translate $ vector3 (0.0) 0.0 (-90.0)
-             --GL.rotate (10 * sin t) (vector3 1 0 0)
+             GL.rotate (10 * sin t) (vector3 0 1 1)
              renderVbo vbo
 
 f2 t = preservingMatrix $ do

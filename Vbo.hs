@@ -4,58 +4,60 @@ import Graphics.Rendering.OpenGL
 import Data.Array.MArray
 import Data.Array.Storable
 import Foreign
+import Foreign.Storable
 
-data Vbo = Vbo { vertexBuffer :: BufferObject
-               , indexBuffer :: BufferObject
+data Vbo = Vbo { buffer :: BufferObject 
+               , bufferSize :: GLuint
                , vertexBufferSize :: GLuint
-               , indexBufferSize :: GLuint
-
---               , primitiveMode :: PrimitiveMode
---               , vertexCount :: GLuint
---               , normalCount :: GLuint
+               , normalBufferSize :: GLuint
+               , primitiveMode :: PrimitiveMode
                }
+         | IndexVbo { vertexBuffer :: BufferObject
+                    , indexBuffer :: BufferObject
+                    , vertexBufferSize :: GLuint
+                    , indexBufferSize :: GLuint
+                    }
 
-newVbo :: IO Vbo
-newVbo = do [v] <- genObjectNames 1
-            [i] <- genObjectNames 1
-            return $ Vbo v i 0 0
+fromList :: PrimitiveMode -> [GLfloat] -> [GLfloat] -> IO Vbo
+fromList mode vs ns = 
+    do [buffer] <- genObjectNames 1
+       arr <- newListArray (0, vsize - 1) elems
+                        
+       bindBuffer ArrayBuffer $= Just buffer                     
+       withStorableArray arr (\ptr -> bufferData ArrayBuffer $= (toEnum vsize, ptr, StaticDraw))
+       bindBuffer ArrayBuffer $= Nothing
 
-withVertexBuffer :: Vbo -> IO ()
-withVertexBuffer vbo = bindBuffer ArrayBuffer $= Just (vertexBuffer vbo)
+       return $ Vbo buffer (toEnum vsize) vsLength nsLength mode
+           where elems = vs ++ ns
+                 vsize = 4 * length elems
+                 vsLength = toEnum $ length vs
+                 nsLength = toEnum $ length ns
 
-withIndexBuffer :: Vbo -> IO ()
-withIndexBuffer vbo = bindBuffer ElementArrayBuffer $= Just (indexBuffer vbo)
-
-fromList :: [GLfloat] -> [GLuint] -> IO Vbo
-fromList v i = do 
-  vbo <- newVbo
-
-  withVertexBuffer vbo
-  let vsize = 4 * length v
-  print vsize
-  
-  arr <- newListArray (0, vsize - 1) v 
-  withStorableArray arr (\ptr -> bufferData ArrayBuffer $= (toEnum vsize, ptr, StaticDraw))
-
-  withIndexBuffer vbo
-  let isize = length i
-  print isize
-  arri <- newListArray (0, isize - 1) i
-  withStorableArray arri (\ptr -> bufferData ElementArrayBuffer $= (toEnum (4*isize), ptr, StaticDraw))
-
-  return vbo { vertexBufferSize = toEnum vsize, indexBufferSize = toEnum isize }
 
 renderVbo :: Vbo -> IO ()
-renderVbo vbo = do 
-  withVertexBuffer vbo
+renderVbo (Vbo vs vsize vssize nssize mode) = do
+  bindBuffer ArrayBuffer $= Just vs
+  arrayPointer VertexArray $= VertexArrayDescriptor 3 Float 0 offset0
+  arrayPointer NormalArray $= VertexArrayDescriptor 3 Float 0 (offset (fromIntegral (4 * vssize)))
+  clientState VertexArray $= Enabled
+  clientState NormalArray $= Enabled
+
+  drawArrays mode 0 $ (toEnum . fromEnum) vsize
+
+  clientState VertexArray $= Disabled
+  clientState NormalArray $= Disabled
+  bindBuffer ArrayBuffer $= Nothing
+
+renderVbo vbo@(IndexVbo v i vsize _) = do 
+  bindBuffer ArrayBuffer $= Just v
   arrayPointer VertexArray $= VertexArrayDescriptor 3 Float 0 offset0
   arrayPointer NormalArray $= VertexArrayDescriptor 3 Float 0 (offset 288)
   clientState VertexArray $= Enabled
   clientState NormalArray $= Enabled
 
-  withIndexBuffer vbo
+  bindBuffer ElementArrayBuffer $= Just i
   clientState IndexArray $= Enabled
-  drawElements Triangles ((toEnum . fromEnum) (indexBufferSize vbo)) UnsignedInt offset0
+  drawElements Triangles ((toEnum . fromEnum) vsize) UnsignedInt offset0
 
   clientState VertexArray $= Disabled
   clientState NormalArray $= Disabled
