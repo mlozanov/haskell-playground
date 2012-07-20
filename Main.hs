@@ -37,20 +37,20 @@ data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                }
 
 cubeVertices = [ [x,y,z] | x <- [(-1.85),1.85], y <- [(-1.0),1.0], z <- [(-1.85),1] ] :: [[GLfloat]]
-cubeNormals = map (concat.replicate 3) ([ [1,0,0], [(1),0,0], 
+cubeNormals = map (concat.replicate 3) ([ [(1),0,0], [(1),0,0], 
                                           [(-1),0,0], [(-1),0,0], 
                                           [0,1,0], [0,1,0], 
                                           [0,(-1),0], [0,(-1),0],
                                           [0,0,(-1)], [0,0,(-1)] ] :: [[GLfloat]])
-cubeIndecies = [ 0,1,2, 1,2,3  -- right
-               , 4,5,6, 5,6,7  -- left
+cubeIndecies = [ 0,1,2, 1,2,3  -- left
+               , 4,5,6, 5,6,7  -- right
                , 0,4,1, 4,5,1  -- floor
                , 2,6,3, 6,7,3 -- ceiling
                , 6,4,0, 6,2,0 -- back
                ] :: [GLuint]
 
 
-cube = (concat $ map (\i -> (cubeVertices !! (fromEnum i))  ) cubeIndecies)
+cube = concat $ map (\i -> (cubeVertices !! (fromEnum i))  ) cubeIndecies
 
 main = do 
   GLFW.initialize
@@ -198,7 +198,7 @@ renderer' t worldRef renderStateRef = do
    in let m = toMatrixQ q
        in toGLMatrix m >>= multMatrix
 
-  toGLMatrix (Math.translate (0 * sin t) 0 (-20)) >>= multMatrix
+  toGLMatrix (Math.translate (0 * sin t) 0 (-100)) >>= multMatrix
   -- view matrix 
 
   --GL.lighting $= GL.Enabled
@@ -211,11 +211,11 @@ renderer' t worldRef renderStateRef = do
 
   withProgram ((shaderPrograms renderState) !! 0) (f3 vbo t)
   
-  withProgram ((shaderPrograms renderState) !! 0) (f3 vbo' t)
+  --withProgram ((shaderPrograms renderState) !! 0) (f3 vbo' t)
 
-  --withProgram ((shaderPrograms renderState) !! 0) (f2 t)
+  withProgram ((shaderPrograms renderState) !! 2) (f2 t)
 
-  --withProgram ((shaderPrograms renderState) !! 0) (f2' t)
+  withProgram ((shaderPrograms renderState) !! 0) (f2' t)
 
   --withProgram ((shaderPrograms renderState) !! 0) (cube' t)
 
@@ -228,26 +228,26 @@ renderer' t worldRef renderStateRef = do
 
 
 title t = preservingMatrix $ do 
-            GL.translate $ vector3 (-16.0) 0.0 0.0
+            GL.translate $ vector3 (54.0) 0.0 (-40.0)
             GL.color $ color3 1 1 1
-            GL.scale (-0.04) 0.04 (0.04 :: GLfloat)
+            GL.scale (0.2) 0.2 (0.2 :: GLfloat)
             renderString Fixed8x16 "DAS.ZIMMER"
             GL.color $ color3 1 1 1
 
 f3 vbo t = preservingMatrix $ do
-             GL.translate $ vector3 (0.0) 0.0 (-90.0)
-             GL.rotate (10 * sin t) (vector3 0 1 1)
+             GL.translate $ vector3 (0.0) 0.0 (0.0)
+             --GL.rotate (10 * sin t) (vector3 0 1 1)
              renderVbo vbo
 
 f2 t = preservingMatrix $ do
          GL.translate $ vector3 (10.0) 0.0 0.0
-         GL.rotate (45 * sin t) (vector3 1 0 0)
+         GL.rotate (90 * sin (2*t)) (vector3 1 0 0)
          O.renderObject O.Solid (O.Teapot 4.0)
 
 f2' t = preservingMatrix $ do
-          GL.translate $ vector3 (-10.0) 0.0 0.0
-          GL.rotate (90 * sin t) (vector3 1 0 0)
-          O.renderObject O.Solid (O.Cube 4.0)
+          GL.translate $ vector3 ((10.0 * sin t)-10.0) 0.0 0.0
+          GL.rotate (45 * sin t) (vector3 1 0 0)
+          O.renderObject O.Solid (O.Cube 10.0)
 
 simulate' :: GLfloat -> World -> World
 simulate' t world = world { cameras = cs }
