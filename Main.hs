@@ -36,21 +36,20 @@ data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , bufferObjects :: [Vbo]
                                }
 
-cubeVertices = [ [x,y,z] | x <- [(-1.85),1.85], y <- [(-1.0),1.0], z <- [(-1.85),1] ] :: [[GLfloat]]
-cubeNormals = map (concat.replicate 3) ([ [(1),0,0], [(1),0,0], 
+roomVertices = [ [x,y,z] | x <- [(-1.85),1.85], y <- [(-1.0),1.0], z <- [(-1.85),1] ] :: [[GLfloat]]
+roomNormals = map (concat.replicate 3) ([ [(1),0,0], [(1),0,0], 
                                           [(-1),0,0], [(-1),0,0], 
                                           [0,1,0], [0,1,0], 
                                           [0,(-1),0], [0,(-1),0],
                                           [0,0,(-1)], [0,0,(-1)] ] :: [[GLfloat]])
-cubeIndecies = [ 0,1,2, 1,2,3  -- left
+roomIndecies = [ 0,1,2, 1,2,3  -- left
                , 4,5,6, 5,6,7  -- right
                , 0,4,1, 4,5,1  -- floor
                , 2,6,3, 6,7,3 -- ceiling
                , 6,4,0, 6,2,0 -- back
                ] :: [GLuint]
 
-
-cube = concat $ map (\i -> (cubeVertices !! (fromEnum i))  ) cubeIndecies
+room = concat $ map (\i -> (roomVertices !! (fromEnum i))  ) roomIndecies
 
 main = do 
   GLFW.initialize
@@ -63,7 +62,7 @@ main = do
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
   GL.lineWidth  $= 1.5
-  GL.pointSize  $= 5.0
+  GL.pointSize  $= 1.5
   -- set the color to clear background
   GL.clearColor $= Color4 0.18 0.18 0.18 1.0
 
@@ -98,14 +97,11 @@ main = do
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
-  badPrintProgram <- newProgram "../data/shaders/badprint.vert" "../data/shaders/badprint.frag" 
   sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"
 
-  vbo <- Vbo.fromList GL.Triangles (map (* 40) cube) (concat cubeNormals)
+  vbo <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
 
-  vboPoints <- Vbo.fromList GL.Points (map (* 40.0) (concat [[x,y,z] | x <- [(-1.0), (-0.93) .. 1.0], y <- [(-1.0), (-0.93) .. 1.0], z <- [(-1.0), (-0.9) .. 1.0], sqrt (x*x + y*y + z*z) < 1.0 ])) []
-
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram, sphericalProgram] [vbo, vboPoints])
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, sphericalProgram] [vbo])
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -194,38 +190,26 @@ renderer' t worldRef renderStateRef = do
   GL.matrixMode $= GL.Modelview 0
   toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
 
+  toGLMatrix (Math.translate 0 0 (-100)) >>= multMatrix
+
   let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin t)))
    in let m = toMatrixQ q
        in toGLMatrix m >>= multMatrix
-
-  toGLMatrix (Math.translate (0 * sin t) 0 (-100)) >>= multMatrix
   -- view matrix 
 
-  --GL.lighting $= GL.Enabled
-  --GL.light (Light 0) $= GL.Enabled
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
 
-  let vbo = (bufferObjects renderState) !! 0
-  let vbo' = (bufferObjects renderState) !! 1
-
-  withProgram ((shaderPrograms renderState) !! 0) (f3 vbo t)
+  -- draw all VBOs in renderstate
+  mapM (\vbo -> withProgram ((shaderPrograms renderState) !! 0) (animate t vbo)) (bufferObjects renderState)
   
-  --withProgram ((shaderPrograms renderState) !! 0) (f3 vbo' t)
-
-  withProgram ((shaderPrograms renderState) !! 2) (f2 t)
-
-  withProgram ((shaderPrograms renderState) !! 0) (f2' t)
-
-  --withProgram ((shaderPrograms renderState) !! 0) (cube' t)
-
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
 
+  -- draw the title
   title t
 
   return ()
-
 
 title t = preservingMatrix $ do 
             GL.translate $ vector3 (54.0) 0.0 (-40.0)
@@ -234,20 +218,10 @@ title t = preservingMatrix $ do
             renderString Fixed8x16 "DAS.ZIMMER"
             GL.color $ color3 1 1 1
 
-f3 vbo t = preservingMatrix $ do
-             GL.translate $ vector3 (0.0) 0.0 (0.0)
-             --GL.rotate (10 * sin t) (vector3 0 1 1)
-             renderVbo vbo
-
-f2 t = preservingMatrix $ do
-         GL.translate $ vector3 (10.0) 0.0 0.0
-         GL.rotate (90 * sin (2*t)) (vector3 1 0 0)
-         O.renderObject O.Solid (O.Teapot 4.0)
-
-f2' t = preservingMatrix $ do
-          GL.translate $ vector3 ((10.0 * sin t)-10.0) 0.0 0.0
-          GL.rotate (45 * sin t) (vector3 1 0 0)
-          O.renderObject O.Solid (O.Cube 10.0)
+animate t vbo = preservingMatrix $ do
+                  GL.translate $ vector3 0 0 0
+                  GL.rotate (0.0 * sin t) (vector3 1 0 0)
+                  renderVbo vbo
 
 simulate' :: GLfloat -> World -> World
 simulate' t world = world { cameras = cs }
