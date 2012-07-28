@@ -33,36 +33,53 @@ data World = World { cameras :: Cameras
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , viewMatrix :: Ptr GLfloat
                                , shaderPrograms :: [ShaderProgram] 
+                               , bufferObjects :: [Vbo]
                                }
+
+roomVertices = [ [x,y,z] | x <- [(-1.85),1.85], y <- [(-1.0),1.0], z <- [(-1.85),1] ] :: [[GLfloat]]
+roomNormals = map (concat.replicate 3) ([ [(1),0,0], [(1),0,0], 
+                                          [(-1),0,0], [(-1),0,0], 
+                                          [0,1,0], [0,1,0], 
+                                          [0,(-1),0], [0,(-1),0],
+                                          [0,0,(-1)], [0,0,(-1)] ] :: [[GLfloat]])
+roomIndecies = [ 0,1,2, 1,2,3  -- left
+               , 4,5,6, 5,6,7  -- right
+               , 0,4,1, 4,5,1  -- floor
+               , 2,6,3, 6,7,3 -- ceiling
+               , 6,4,0, 6,2,0 -- back
+               ] :: [GLuint]
+
+room = concat $ map (\i -> (roomVertices !! (fromEnum i))  ) roomIndecies
 
 main = do 
   GLFW.initialize
   -- open window
-  GLFW.openWindow (GL.Size 1280 720) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
-  GLFW.windowTitle $= "cine-o-matic"
+  GLFW.openWindow (GL.Size 1280 690) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
+  GLFW.windowTitle $= "das zimmer"
   GL.shadeModel    $= GL.Smooth
   -- enable antialiasing
   GL.lineSmooth $= GL.Enabled
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
   GL.lineWidth  $= 1.5
+  GL.pointSize  $= 1.5
   -- set the color to clear background
-  GL.clearColor $= Color4 0 0 0 0
+  GL.clearColor $= Color4 0.18 0.18 0.18 1.0
 
   GL.depthFunc $= Just Less
   
-  GL.ambient  (GL.Light 0) $= GL.Color4 0.3 0.3 0.3 1.0
-  GL.diffuse  (GL.Light 0) $= GL.Color4 1.0 1.0 1.0 1.0
+  GL.ambient  (GL.Light 0) $= GL.Color4 0.2 0.2 0.2 1.0
+  GL.diffuse  (GL.Light 0) $= GL.Color4 0.4 0.6 0.8 1.0
   GL.specular (GL.Light 0) $= GL.Color4 0.8 0.8 0.8 1.0
-  GL.lightModelAmbient  $= GL.Color4 0.2 0.2 0.2 1.0
+--  GL.lightModelAmbient  $= GL.Color4 1.0 1.0 1.0 1.0
  
   GL.colorMaterial $= Just (GL.FrontAndBack, GL.AmbientAndDiffuse)
 
   GL.lighting $= GL.Enabled
   GL.light (GL.Light 0) $= GL.Enabled
-  GL.position (GL.Light 0) $= GL.Vertex4 0 10 2.0 1.0
+  GL.position (GL.Light 0) $= GL.Vertex4 100.0 0.0 (0.0) 1.0
  
-  -- set 2D orthogonal view inside windowSizeCallback because
+  -- set 2D perspective view inside windowSizeCallback because
   -- any change to the Window size should result in different
   -- OpenGL Viewport.
   GLFW.windowSizeCallback $= \ size@(GL.Size w h) ->
@@ -80,8 +97,11 @@ main = do
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
-  badPrintProgram <- newProgram "../data/shaders/badprint.vert" "../data/shaders/badprint.frag" 
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, badPrintProgram])
+  sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"
+
+  vbo <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
+
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, sphericalProgram] [vbo])
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -98,7 +118,6 @@ main = do
 updateCameras cameras state = loop 
   where
     loop = map (\c -> evalState (simpleFraming c) state) cameras
-      --loop cameras state
 
 -- we start with waitForPress action
 mainLoop world renderState render simulate = loop 0.0 world renderState waitForPress
@@ -114,8 +133,6 @@ mainLoop world renderState render simulate = loop 0.0 world renderState waitForP
       performGC
 
       t1 <- getCPUTime
-
-      --print $ fromIntegral (t1 - t0) / 10^6
 
       -- check whether ESC is pressed for termination
       p <- GLFW.getKey GLFW.ESC
@@ -162,46 +179,49 @@ renderer' t worldRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   renderState <- readIORef renderStateRef
+  world <- readIORef worldRef 
 
+  -- projection matrix
+  GL.matrixMode $= GL.Projection
   toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
-
-  GL.lighting $= GL.Enabled
-  GL.light (Light 0) $= GL.Enabled
-
-  GL.matrixMode $= GL.Modelview 0
-  GL.loadIdentity
+  -- projection matrix
 
   -- view matrix
+  GL.matrixMode $= GL.Modelview 0
+  toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
+
+  toGLMatrix (Math.translate 0 0 (-100)) >>= multMatrix
+
   let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin t)))
    in let m = toMatrixQ q
        in toGLMatrix m >>= multMatrix
-
-  toGLMatrix (Math.translate (0 * sin t) 0 (-30)) >>= multMatrix
   -- view matrix 
 
-  world <- readIORef worldRef 
+  GL.lighting $= GL.Disabled
+  GL.light (Light 0) $= GL.Disabled
 
-  withProgram ((shaderPrograms renderState) !! 0) (f1 t)
-  withProgram ((shaderPrograms renderState) !! 1) (f2 t)
+  -- draw all VBOs in renderstate
+  mapM (\vbo -> withProgram ((shaderPrograms renderState) !! 0) (animate t vbo)) (bufferObjects renderState)
+  
+  GL.lighting $= GL.Disabled
+  GL.light (Light 0) $= GL.Disabled
+
+  -- draw the title
+  title t
 
   return ()
 
+title t = preservingMatrix $ do 
+            GL.translate $ vector3 (54.0) 0.0 (-40.0)
+            GL.color $ color3 1 1 1
+            GL.scale (0.2) 0.2 (0.2 :: GLfloat)
+            renderString Fixed8x16 "DAS.ZIMMER"
+            GL.color $ color3 1 1 1
 
-f t = preservingMatrix $ do 
-        GL.translate $ vector3 0.0 0.0 0.0
-        GL.color $ color3 1 0 0
-        GL.scale (-0.05) 0.05 (0.05 :: GLfloat)
-        renderString Fixed8x16 "ROOM"
-
-f1 t = preservingMatrix $ do
-         GL.translate $ vector3 10.0 0.0 0.0
-         GL.rotate (180 * sin t) (vector3 0 (sin t) 1)
-         O.renderObject O.Solid (O.Cube 15.5)
-
-f2 t = preservingMatrix $ do
-         GL.translate $ vector3 (-10.0) 0.0 0.0
-         GL.rotate (180 * sin t) (vector3 0 (sin t) 1)
-         O.renderObject O.Solid (O.Cube 15.5)
+animate t vbo = preservingMatrix $ do
+                  GL.translate $ vector3 0 0 0
+                  GL.rotate (0.0 * sin t) (vector3 1 0 0)
+                  renderVbo vbo
 
 simulate' :: GLfloat -> World -> World
 simulate' t world = world { cameras = cs }
