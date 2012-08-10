@@ -21,8 +21,7 @@ withProgram s a = do currentProgram $= Just (program s)
                      a
                      currentProgram $= Nothing
 
-
-
+getUniformLocation p s = GL.get $ uniformLocation (program p) s 
 
 readAndCompileShader :: Shader s => FilePath -> IO s
 readAndCompileShader filePath = do

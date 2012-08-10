@@ -66,19 +66,10 @@ main = do
   -- set the color to clear background
   GL.clearColor $= Color4 0.18 0.18 0.18 1.0
 
-  GL.depthFunc $= Just Less
-  
-  GL.ambient  (GL.Light 0) $= GL.Color4 0.2 0.2 0.2 1.0
-  GL.diffuse  (GL.Light 0) $= GL.Color4 0.4 0.6 0.8 1.0
-  GL.specular (GL.Light 0) $= GL.Color4 0.8 0.8 0.8 1.0
---  GL.lightModelAmbient  $= GL.Color4 1.0 1.0 1.0 1.0
- 
+  GL.depthFunc $= Just Lequal
+   
   GL.colorMaterial $= Just (GL.FrontAndBack, GL.AmbientAndDiffuse)
 
-  GL.lighting $= GL.Enabled
-  GL.light (GL.Light 0) $= GL.Enabled
-  GL.position (GL.Light 0) $= GL.Vertex4 100.0 0.0 (0.0) 1.0
- 
   -- set 2D perspective view inside windowSizeCallback because
   -- any change to the Window size should result in different
   -- OpenGL Viewport.
@@ -197,11 +188,26 @@ renderer' t worldRef renderStateRef = do
        in toGLMatrix m >>= multMatrix
   -- view matrix 
 
-  GL.lighting $= GL.Disabled
-  GL.light (Light 0) $= GL.Disabled
-
   -- draw all VBOs in renderstate
-  mapM (\vbo -> withProgram ((shaderPrograms renderState) !! 0) (animate t vbo)) (bufferObjects renderState)
+  let p = shaderPrograms renderState !! 0
+  let lx = 60.0 * cos (2.0 * t)
+  let ly = 50.0 * sin t
+  let lz = 100.0 -- + (50.0 * sin (8.0 * t))
+  mapM (\vbo -> withProgram p (do uniformLightPosition <- getUniformLocation p "lightPos"
+                                  uniformCameraPosition <- getUniformLocation p "cameraPos"
+                                  uniformTermCoeff <- getUniformLocation p "termCoeff"
+                                  uniformColorDiffuse <- getUniformLocation p "colorDiffuse"
+                                  uniformColorSpecular <- getUniformLocation p "colorSpecular"
+  
+                                  uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
+                                  uniform uniformCameraPosition $= Vertex4 0 0 100 (0 :: GLfloat)
+                                  uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.001 (0.0001 :: GLfloat)
+                                  uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
+                                  uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+                                  animate t vbo)) 
+           (bufferObjects renderState)
+
+  withProgram ((shaderPrograms renderState) !! 0) (animateCube t)
   
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
@@ -212,16 +218,20 @@ renderer' t worldRef renderStateRef = do
   return ()
 
 title t = preservingMatrix $ do 
-            GL.translate $ vector3 (54.0) 0.0 (-40.0)
+            GL.translate $ vector3 (54.0) 0.0 (-68.0)
             GL.color $ color3 1 1 1
-            GL.scale (0.2) 0.2 (0.2 :: GLfloat)
+            GL.scale (0.22) 0.22 (0.22 :: GLfloat)
             renderString Fixed8x16 "DAS.ZIMMER"
             GL.color $ color3 1 1 1
 
 animate t vbo = preservingMatrix $ do
                   GL.translate $ vector3 0 0 0
-                  GL.rotate (0.0 * sin t) (vector3 1 0 0)
                   renderVbo vbo
+
+animateCube t = preservingMatrix $ do
+                  GL.translate $ vector3 30 0 (0.0)
+                  --GL.rotate (180.0 * sin t) (vector3 1 0.2 0)
+                  O.renderObject O.Solid (O.Torus 10.0 20.0 16 32)
 
 simulate' :: GLfloat -> World -> World
 simulate' t world = world { cameras = cs }
