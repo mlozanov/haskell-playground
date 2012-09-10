@@ -177,6 +177,19 @@ translate x y z = M [1,0,0,x
 rotate :: Floating a => a -> a -> a -> Matrix a
 rotate ax ay az = identity
 
+rotatex :: Floating a => a -> Matrix a
+rotatex ax = rotate ax 0 0
+
+
+-- curves
+--linearInterpolate :: Floating a => [a] -> a -> a
+linearInterpolate :: [Float] -> Float -> Float
+linearInterpolate cs t = (1.0 - ((fromIntegral high) - t)) * (a-b) + b
+  where high = ceiling t
+        low = floor t
+        a = cs !! high
+        b = cs !! low
+
 --- debug
 
 t :: Floating a => Matrix a -> [[a]]
@@ -194,3 +207,5 @@ a' = mulMM a (transposeM a)
 
 a'' = mulMM a (transposeM a)
     where a = toMatrixQ q''
+
+
