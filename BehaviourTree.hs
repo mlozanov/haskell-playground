@@ -74,22 +74,6 @@ processTreeActions tree ms = process actions ms
         action (Action rule) ms = ms'
           where ms' = rule ims ms
 
---processTreeActions :: BehaviourTree -> MutableState -> MutableState
---processTreeActions tree ms = process actions ms
---  where process :: [BehaviourTreeNode] -> MutableState -> MutableState
---        process [] ms = ms
---        process (a:as) ms = process as (action a ms)
-
---        actions = flatten tree
-
---        action :: BehaviourTreeNode -> MutableState -> MutableState
-
---        action (Condition rule) ms = ms'
---          where ms' = rule ims ms
-
---        action (Action rule) ms = ms'
---          where ms' = rule ims ms
-
 mutableStateRef = unsafePerformIO $ newIORef (MS [3.0,4.0,5.0])
 
 simulate = do mutableState <- readIORef mutableStateRef
