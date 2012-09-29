@@ -43,10 +43,17 @@ testTree = Node 1.0 [ Node 2.0 []
                     , Node 9.5 []
                     ]
 
-test = traverse t testTree
+test :: Tree Double -> (Double -> Double) -> Tree Double
+test = traverse t
 
 t :: Double -> (Double -> Double) -> Double
-t x f = f x + 1
+t x f = if (r > 2.0) then 0.0
+        else r
+  where r = f x + 1
+
+tr :: Tree Double -> [Double]
+tr (Node v []) = []
+tr (Node v ts) = tr ts
 
 theTree = Node (Condition passThru) [ Node (Condition passThru) [ Node (Action addValue) []
                                                                 , Node (Action addValue) []
@@ -80,5 +87,7 @@ simulate = do mutableState <- readIORef mutableStateRef
               writeIORef mutableStateRef (processTreeActions theTree mutableState)
 
 main = replicateM_ 5 simulate >> readIORef mutableStateRef >>= print
+
+
 
 
