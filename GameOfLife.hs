@@ -14,10 +14,11 @@ data Command = Nop
              | Update Double
              | Quit
 
-data World = World Command Cells
+data World = World StdGen Command Cells
 
-worldCmd w@(World cmd _) = cmd
-worldCells w@(World _ cells) = cells
+worldGen w@(World gen _ _) = gen
+worldCmd w@(World _ cmd _) = cmd
+worldCells w@(World _ _ cells) = cells
 
 cellX c@(Cell x y value) = x
 cellY c@(Cell x y value) = y
@@ -98,21 +99,23 @@ main = do putStrLn "Game Of Life"
 
           print $ length vs
 
-          loop $ World (Update 0.01) (zipWith (\c@(Cell x y _) v -> Cell x y (cellKind v)) grid vs)
+          loop $ World (mkStdGen 1023) (Update 0.01) (zipWith (\c@(Cell x y _) v -> Cell x y (cellKind v)) grid vs)
 
   where loop :: World -> IO ()
         loop world = 
             case cmd of
               Update dt -> if dt < 10.0 then simulation dt world
-                           else loop $ World Quit cells'
+                           else loop $ World genNext Quit cells'
               Quit -> print "quit" >> return ()
 
           where cmd = worldCmd world
                 cells = worldCells world
                 cells' = step 0.01 rule cells
 
+                (genThis, genNext) = split (worldGen world)
+
                 simulation dt world = render cells >>
-                                      loop (World (Update (dt+0.01)) cells')
+                                      loop (World (genNext) (Update (dt+0.01)) cells')
 
 
 
