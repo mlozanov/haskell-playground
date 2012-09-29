@@ -25,32 +25,32 @@ import Vbo
 import Fbo
 import Shader
 
+import Simulation
+import Renderer
+
 data Action = Action (IO Action)
 
-data World = World { cameras :: Cameras
-                   , actors :: Actors }
+roomVertices :: [[GLfloat]]
+roomVertices = [ [x,y,z] | x <- [(-1.85),1.85], y <- [(-1.0),1.0], z <- [(-1.85),1] ]
 
-data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
-                               , viewMatrix :: Ptr GLfloat
-                               , shaderPrograms :: [ShaderProgram] 
-                               , bufferObjects :: [Vbo]
-                               }
-
-roomVertices = [ [x,y,z] | x <- [(-1.85),1.85], y <- [(-1.0),1.0], z <- [(-1.85),1] ] :: [[GLfloat]]
+roomNormals :: [[GLfloat]]
 roomNormals = map (concat.replicate 3) ([ [(1),0,0], [(1),0,0], 
                                           [(-1),0,0], [(-1),0,0], 
                                           [0,1,0], [0,1,0], 
                                           [0,(-1),0], [0,(-1),0],
-                                          [0,0,(-1)], [0,0,(-1)] ] :: [[GLfloat]])
+                                          [0,0,(-1)], [0,0,(-1)] ])
+roomIndecies :: [GLuint]
 roomIndecies = [ 0,1,2, 1,2,3  -- left
                , 4,5,6, 5,6,7  -- right
                , 0,4,1, 4,5,1  -- floor
                , 2,6,3, 6,7,3 -- ceiling
                , 6,4,0, 6,2,0 -- back
-               ] :: [GLuint]
+               ]
 
+room :: [GLfloat]
 room = concat $ map (\i -> (roomVertices !! (fromEnum i))  ) roomIndecies
 
+main :: IO ()
 main = do 
   GLFW.initialize
   -- open window
@@ -106,14 +106,12 @@ main = do
   GLFW.closeWindow
   GLFW.terminate
 
-updateCameras cameras state = loop 
-  where
-    loop = map (\c -> evalState (simpleFraming c) state) cameras
-
 -- we start with waitForPress action
+mainLoop :: IORef World -> IORef RenderState -> (GLfloat -> IORef World -> IORef RenderState -> IO ()) -> (GLfloat -> World -> World) -> IO ()
 mainLoop world renderState render simulate = loop 0.0 world renderState waitForPress
   where 
  
+    loop :: GLfloat -> IORef World -> IORef RenderState -> IO Action -> IO ()
     loop t w r action = do
       t0 <- getCPUTime
 
@@ -140,6 +138,7 @@ mainLoop world renderState render simulate = loop 0.0 world renderState waitForP
           unless (not windowOpenStatus) $
             loop (t + 0.01) w r action' -- loop with next action
 
+    waitForPress :: IO Action
     waitForPress = do
       b <- GLFW.getMouseButton GLFW.ButtonLeft
       case b of
@@ -150,6 +149,7 @@ mainLoop world renderState render simulate = loop 0.0 world renderState waitForP
           (GL.Position x y) <- GL.get GLFW.mousePos 
           return (Action waitForRelease)
  
+    waitForRelease :: IO Action
     waitForRelease = do
         -- keep track of mouse movement while waiting for button 
         -- release
@@ -162,78 +162,4 @@ mainLoop world renderState render simulate = loop 0.0 world renderState waitForP
           GLFW.Release -> return (Action waitForPress)
           GLFW.Press   -> return (Action waitForRelease)
 
-toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
-toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 
-renderer' :: GLfloat -> IORef World -> IORef RenderState -> IO ()
-renderer' t worldRef renderStateRef = do
-  GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-
-  renderState <- readIORef renderStateRef
-  world <- readIORef worldRef 
-
-  -- projection matrix
-  GL.matrixMode $= GL.Projection
-  toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
-  -- projection matrix
-
-  -- view matrix
-  GL.matrixMode $= GL.Modelview 0
-  toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
-
-  toGLMatrix (Math.translate 0 0 (-100)) >>= multMatrix
-
-  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin t)))
-   in let m = toMatrixQ q
-       in toGLMatrix m >>= multMatrix
-  -- view matrix 
-
-  -- draw all VBOs in renderstate
-  let p = shaderPrograms renderState !! 0
-  let lx = 60.0 * cos (2.0 * t)
-  let ly = 50.0 * sin t
-  let lz = 100.0 -- + (50.0 * sin (8.0 * t))
-  mapM (\vbo -> withProgram p (do uniformLightPosition <- getUniformLocation p "lightPos"
-                                  uniformCameraPosition <- getUniformLocation p "cameraPos"
-                                  uniformTermCoeff <- getUniformLocation p "termCoeff"
-                                  uniformColorDiffuse <- getUniformLocation p "colorDiffuse"
-                                  uniformColorSpecular <- getUniformLocation p "colorSpecular"
-  
-                                  uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
-                                  uniform uniformCameraPosition $= Vertex4 0 0 100 (0 :: GLfloat)
-                                  uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.001 (0.0001 :: GLfloat)
-                                  uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
-                                  uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
-                                  animate t vbo)) 
-           (bufferObjects renderState)
-
-  withProgram ((shaderPrograms renderState) !! 0) (animateCube t)
-  
-  GL.lighting $= GL.Disabled
-  GL.light (Light 0) $= GL.Disabled
-
-  -- draw the title
-  title t
-
-  return ()
-
-title t = preservingMatrix $ do 
-            GL.translate $ vector3 (54.0) 0.0 (-68.0)
-            GL.color $ color3 1 1 1
-            GL.scale (0.22) 0.22 (0.22 :: GLfloat)
-            renderString Fixed8x16 "DAS.ZIMMER"
-            GL.color $ color3 1 1 1
-
-animate t vbo = preservingMatrix $ do
-                  GL.translate $ vector3 0 0 0
-                  renderVbo vbo
-
-animateCube t = preservingMatrix $ do
-                  GL.translate $ vector3 30 0 (0.0)
-                  --GL.rotate (180.0 * sin t) (vector3 1 0.2 0)
-                  O.renderObject O.Solid (O.Torus 10.0 20.0 16 32)
-
-simulate' :: GLfloat -> World -> World
-simulate' t world = world { cameras = cs }
-    where cs = updateCameras (cameras world) (actors world)
- 

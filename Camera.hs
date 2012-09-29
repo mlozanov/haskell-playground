@@ -38,7 +38,7 @@ cameraOrbit :: Camera -> State Actors Camera
 cameraOrbit camera = return camera
 
 cameraDamp :: Camera -> State Actors Camera
-cameraDamp camera = return camera
+cameraDamp camera = return $ executeCommand camera Nop
 
 cameraPan :: Camera -> State Actors Camera
 cameraPan EmptyCamera = return EmptyCamera
@@ -56,6 +56,7 @@ cameraFinalize c = return $ c { transform = r `mulMM` translate (x p) (y p) (z p
 
 --- compositions
 simpleFraming camera = cameraOrbit camera >>= cameraDamp >>= cameraFrameActors >>= cameraFinalize
+americanFraming camera = cameraFrameActors camera >>= cameraDamp >>= cameraFinalize 
 
 --- commands execution
 executeCommand :: Floating a => Camera -> Command a -> Camera
