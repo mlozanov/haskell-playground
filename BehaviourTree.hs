@@ -51,9 +51,24 @@ t x f = if (r > 2.0) then 0.0
         else r
   where r = f x + 1
 
-tr :: Tree Double -> [Double]
-tr (Node v []) = []
-tr (Node v ts) = tr ts
+fb v | v == 0 = True
+     | v == 2 = True
+     | v > 5 = True
+     | otherwise = False
+
+fbn (Node v _) = fb v
+
+traverse' :: (Fractional a, Ord a) => (a -> b) -> (a -> Bool) -> Tree a -> [b]
+traverse' f fb (Node v []) = [f v]
+traverse' f fb (Node v (n:ns)) = ns' ++ n'
+  where ns' = traverse' f fb (Node v ns)
+        n'  = if (fb v) then traverse' f fb n
+              else []
+
+traverse'' :: (Fractional a, Ord a) => (a -> a) -> Tree a -> Tree a
+traverse'' f (Node v []) = Node (f v) []
+traverse'' f (Node v ns) = Node (f v) (filter (fbn) (map (traverse'' f) ns))
+
 
 theTree = Node (Condition passThru) [ Node (Condition passThru) [ Node (Action addValue) []
                                                                 , Node (Action addValue) []
