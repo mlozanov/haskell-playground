@@ -22,18 +22,23 @@ theTree = Node 0 [ Node 1 [ Node 3 []
 
 
 traverse' :: (Fractional a, Ord a) => (a -> b) -> (a -> Bool) -> Tree a -> [b]
-traverse' f b (Node v []) = [f v]
-
-traverse' f b (Node v (n:ns)) = ns' ++ n'
-  where ns' = traverse' f b (Node v ns)
-        n'  = if (b v) then traverse' f b n
+traverse' f fb (Node v []) = [f v]
+traverse' f fb (Node v (n:ns)) = ns' ++ n'
+  where ns' = traverse' f fb (Node v ns)
+        n'  = if (fb v) then traverse' f fb n
               else []
+
+traverse'' :: (Fractional a, Ord a) => (a -> a) -> Tree a -> Tree a
+traverse'' f (Node v []) = Node (f v) []
+traverse'' f (Node v ns) = Node (f v) (filter (fbn) (map (traverse'' f) ns))
 
 
 fb v | v == 0 = True
      | v == 2 = True
      | v > 5 = True
      | otherwise = False
+
+fbn (Node v _) = fb v
 
 
 f :: Float -> Float
@@ -62,3 +67,5 @@ main = do print $ traverse' f fb theTree
           print $ theTree
 
           assemble genesis setup animate >>= print
+
+          putStr $ drawTree $ fmap (\i -> show i) (traverse'' f theTree)
