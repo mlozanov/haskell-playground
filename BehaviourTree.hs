@@ -15,8 +15,10 @@ data MutableState = MS [Float] deriving Show
 
 data ImmutableState = IMS [Float] deriving Show
 
-data BehaviourTreeNode = Condition (ImmutableState -> MutableState -> MutableState)
-                       | Action (ImmutableState -> MutableState -> MutableState)
+type LocalState = (ImmutableState, MutableState)
+
+data BehaviourTreeNode = Condition (ImmutableState -> MutableState -> MutableState) LocalState
+                       | Action (ImmutableState -> MutableState -> MutableState) LocalState
 
 type BehaviourTree = Tree BehaviourTreeNode
 
@@ -32,52 +34,43 @@ changeValue ims (MS fs) = MS (map f fs)
               then v-1.0
               else v
 
-testTree = Node 1.0 [ Node 2.0 []
-                    , Node 3.0 [ Node 4.0 []
-                               , Node 5.0 []
-                               , Node 6.0 []
-                               ]
-                    , Node 7.0 [ Node 8.0 []
-                               , Node 9.0 []
-                               ]
-                    , Node 9.5 []
-                    ]
+traverse' :: (a -> b) -> (b -> Bool) -> Tree a -> [b]
+traverse' f c (Node v []) = [f v]
+traverse' f c (Node v (n:ns)) = ns' ++ n'
+  where ns' = traverse' f c (Node v ns)
+        n' = filter c (traverse' f c n)
 
-test :: Tree Double -> (Double -> Double) -> Tree Double
-test = traverse t
-
-t :: Double -> (Double -> Double) -> Double
-t x f = if (r > 2.0) then 0.0
-        else r
-  where r = f x + 1
-
-fb v | v == 0 = True
-     | v == 2 = True
-     | v > 5 = True
-     | otherwise = False
-
-fbn (Node v _) = fb v
-
-traverse' :: (Fractional a, Ord a) => (a -> b) -> (a -> Bool) -> Tree a -> [b]
-traverse' f fb (Node v []) = [f v]
-traverse' f fb (Node v (n:ns)) = ns' ++ n'
-  where ns' = traverse' f fb (Node v ns)
-        n'  = if (fb v) then traverse' f fb n
-              else []
-
-traverse'' :: (Fractional a, Ord a) => (a -> a) -> Tree a -> Tree a
-traverse'' f (Node v []) = Node (f v) []
-traverse'' f (Node v ns) = Node (f v) (filter (fbn) (map (traverse'' f) ns))
+traverse'' :: (a -> a) -> (a -> Bool) -> Tree a -> Tree a
+traverse'' f c (Node v []) = Node (f v) []
+traverse'' f c (Node v ns) = Node (f v) (filter c' (map (traverse'' f c) ns))
+  where c' (Node value ns) = c value
 
 
-theTree = Node (Condition passThru) [ Node (Condition passThru) [ Node (Action addValue) []
-                                                                , Node (Action addValue) []
-                                                                ]
-                                    , Node (Condition passThru) [ Node (Action addValue) []
-                                                                , Node (Action changeValue) []
-                                                                ]
-                                    , Node (Action changeValue) []
-                                    ]
+ntoa :: (Num a, Show a) => a -> String
+ntoa i = show i
+
+btnToA :: BehaviourTreeNode -> String
+btnToA (Condition f s) = "Condition:" ++ show s
+btnToA (Action f s) = "Action:" ++ show s
+
+hermite :: Float -> Float
+hermite x = a*x^5 + b*x^3 + c*x + d
+  where a =  1.0
+        b = -10.0
+        c = 15.0
+        d = 0
+
+emptyLocalState = (IMS [], MS [])
+
+theTree :: BehaviourTree
+theTree = Node (Condition passThru emptyLocalState) [ Node (Condition passThru emptyLocalState) [ Node (Action addValue emptyLocalState) []
+                                                                            , Node (Action addValue emptyLocalState) []
+                                                                            ]
+                                          , Node (Condition passThru emptyLocalState) [ Node (Action addValue emptyLocalState) []
+                                                                         , Node (Action changeValue emptyLocalState) []
+                                                                         ]
+                                          , Node (Action changeValue emptyLocalState) []
+                                          ]
 
 theImmutableState = IMS [1.0, 2.0, 3.0]
 ims = theImmutableState
@@ -88,21 +81,38 @@ processTreeActions tree ms = process actions ms
         process [] ms = ms
         process (a:as) ms = process as (action a ms)
 
-        actions = flatten tree
+        actions = flatten $ traverse'' transformer evaluator theTree
 
         action :: BehaviourTreeNode -> MutableState -> MutableState
-        action (Condition rule) ms = ms'
+        action (Condition rule s) ms = ms'
           where ms' = rule ims ms
-        action (Action rule) ms = ms'
+        action (Action rule s) ms = ms'
           where ms' = rule ims ms
 
+evaluator :: BehaviourTreeNode -> Bool
+evaluator (Condition f s) = length s' == 0
+  where (IMS s1, MS s2) = s
+        s' = zip s1 s2
+evaluator (Action f s) = True
+
+transformer :: BehaviourTreeNode -> BehaviourTreeNode
+transformer (Condition f (IMS s1, MS s2)) = (Action f (IMS s1, MS s2))
+transformer (Action f (IMS s1, MS s2)) = (Condition f (IMS s1, MS s2))
+
+mutableStateRef :: IORef MutableState
 mutableStateRef = unsafePerformIO $ newIORef (MS [3.0,4.0,5.0])
 
+simulate :: IO ()
 simulate = do mutableState <- readIORef mutableStateRef
               writeIORef mutableStateRef (processTreeActions theTree mutableState)
 
-main = replicateM_ 5 simulate >> readIORef mutableStateRef >>= print
+empty :: a -> a
+empty a = a
 
+main :: IO ()
+main = do replicateM_ 5 simulate >> readIORef mutableStateRef >>= print
+          putStr $ drawTree $ fmap btnToA (traverse'' transformer evaluator theTree )
 
+          print $ map hermite [0.0, 0.01 .. 1.0]
 
 
