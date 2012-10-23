@@ -74,7 +74,21 @@ test6 n = do r <- newIORef n
                               readIORef r)
 
 test7 = test6 10 >>= (\r -> r 10) >>= print 
- 
+
+
+data Fu = F1 Int
+        | F2 Int
+        | F3 Int
+        deriving Show
+
+
+fus = [ F1 2, F1 3, F2 4, F3 2, F2 5, F3 10, F1 20, F2 3, F3 0 ]
+
+predicat :: Fu -> Bool
+predicat (F1 v) = v > 1
+predicat (F2 v) = v == 4
+predicat f = False
 
 main :: IO ()
-main = do test5 (0,0)
+main = do print fus
+          print [ F1 v | (F2 v) <- fus ]

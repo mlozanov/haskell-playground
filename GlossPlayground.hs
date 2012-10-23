@@ -32,7 +32,6 @@ main = simulate (InWindow "gloss playground" (1280, 720) (64,64)) k1 60 w render
         ps = rndPositions nbCircles
 
 
-
 render :: World -> Picture
 render w = Pictures [circles, lines]
   where World (a,b) rs ps = w --unpack world state using language pattern match 
@@ -67,5 +66,5 @@ rndPositions n = zip as bs
         rs2 = unsafePerformIO $ rnds n
 
 
-f :: World -> Picture
-f = undefined
+renderGrids :: World -> Picture
+renderGrids = undefined
