@@ -60,10 +60,12 @@ renderer' t worldRef renderStateRef = do
        in toGLMatrix m >>= multMatrix
   -- view matrix 
 
+  ([jlx,jly,jrx,jry]) <- GL.get $ GLFW.joystickPos (GLFW.Joystick 0) 4
+
   -- draw all VBOs in renderstate
   let p = shaderPrograms renderState !! 0
-  let lx = 60.0 * cos (2.0 * t)
-  let ly = 50.0 * sin t
+  let lx = 60.0 * (realToFrac jlx) --cos (2.0 * t)
+  let ly = 50.0 * (realToFrac jly) --sin t
   let lz = 100.0 -- + (50.0 * sin (8.0 * t))
   mapM (\vbo -> withProgram p (do uniformLightPosition <- getUniformLocation p "lightPos"
                                   uniformCameraPosition <- getUniformLocation p "cameraPos"
