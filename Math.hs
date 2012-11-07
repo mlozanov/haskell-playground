@@ -107,6 +107,7 @@ toMatrixQ (Q w x y z) = M [ 1.0 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0
                           , 2*x*z - 2*y*w, 2*y*z - 2*x*w, 1.0 - 2*x*x - 2*y*y, 0.0
                           , 0.0, 0.0, 0.0, 1.0 ]
 
+fromMatrixQ :: Floating a => [a] -> Quaternion a
 fromMatrixQ [ a,b,c,d
             , e,f,g,h
             , i,j,k,l
@@ -180,6 +181,10 @@ rotate ax ay az = identity
 rotatex :: Floating a => a -> Matrix a
 rotatex ax = rotate ax 0 0
 
+rotate2d :: Floating a => a -> Vector a -> Vector a
+rotate2d angle (x:y:rest) = x':y':rest
+  where x' = x*cos angle - y*sin angle
+        y' = y*cos angle + x*sin angle
 
 -- curves
 --linearInterpolate :: Floating a => [a] -> a -> a
