@@ -4,16 +4,20 @@ import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
 import Graphics.UI.GLUT.Objects as O
 import Graphics.Rendering.OpenGL (($=))
-import Data.IORef
+
 import Control.Monad
 import Control.Monad.State
 import Control.Concurrent
+
 import System.Random
 import System.Mem
 import System.CPUTime
+
 import Foreign.Ptr
 import Foreign.Marshal.Array
 
+import Data.IORef
+import qualified Data.Map as M
 
 import Graphics
 import Math
@@ -29,7 +33,7 @@ import Simulation
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , viewMatrix :: Ptr GLfloat
                                , shaderPrograms :: [ShaderProgram] 
-                               , bufferObjects :: [Vbo]
+                               , bufferObjectsMap :: M.Map String Vbo
                                }
 
 
@@ -64,23 +68,25 @@ renderer' t worldRef renderStateRef = do
   bs <- GL.get $ GLFW.joystickButtons (GLFW.Joystick 0)
 
   -- draw all VBOs in renderstate
-  let p = shaderPrograms renderState !! 0
+  let p = shaderPrograms renderState !! 1
   let lx = 60.0 * cos (2.0 * (realToFrac t))
   let ly = 50.0 * sin (realToFrac t)
   let lz = 100.0 -- + (50.0 * sin (8.0 * t))
-  mapM (\vbo -> withProgram p (do uniformLightPosition <- getUniformLocation p "lightPos"
-                                  uniformCameraPosition <- getUniformLocation p "cameraPos"
-                                  uniformTermCoeff <- getUniformLocation p "termCoeff"
-                                  uniformColorDiffuse <- getUniformLocation p "colorDiffuse"
-                                  uniformColorSpecular <- getUniformLocation p "colorSpecular"
+  --mapM (\vbo -> withProgram p (do uniformLightPosition <- getUniformLocation p "lightPos"
+  --                                uniformCameraPosition <- getUniformLocation p "cameraPos"
+  --                                uniformTermCoeff <- getUniformLocation p "termCoeff"
+  --                                uniformColorDiffuse <- getUniformLocation p "colorDiffuse"
+  --                                uniformColorSpecular <- getUniformLocation p "colorSpecular"
   
-                                  uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
-                                  uniform uniformCameraPosition $= Vertex4 0 0 100 (0 :: GLfloat)
-                                  uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.001 (0.0001 :: GLfloat)
-                                  uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
-                                  uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
-                                  animate t vbo)) 
-           (bufferObjects renderState)
+  --                                uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
+  --                                uniform uniformCameraPosition $= Vertex4 0 0 100 (0 :: GLfloat)
+  --                                uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.001 (0.0001 :: GLfloat)
+  --                                uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
+  --                                uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+  --                                animate t vbo)) 
+  --         (bufferObjects renderState)
+
+  mapM (\vbo -> withProgram p (animate t vbo)) ((snd . unzip . M.toList . bufferObjectsMap) renderState)
 
   -- withProgram ((shaderPrograms renderState) !! 0) (animateCube t)
   
@@ -96,11 +102,12 @@ title t = preservingMatrix $ do
             GL.translate $ vector3 (54.0) 0.0 (-68.0)
             GL.color $ color3 1 1 1
             GL.scale (0.22) 0.22 (0.22 :: GLfloat)
-            renderString Fixed8x16 "DAS.ZIMMER"
+            renderString Fixed8x16 "sharpshooter"
             GL.color $ color3 1 1 1
 
 animate t vbo = preservingMatrix $ do
                   GL.translate $ vector3 0 0 0
+                  GL.rotate (180.0 * sin (realToFrac t)) (vector3 1.0 0 1.0)
                   renderVbo vbo
 
 animateCube t = preservingMatrix $ do

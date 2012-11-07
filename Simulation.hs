@@ -21,13 +21,25 @@ import Math
 import Camera
 import Actor
 
-data World = World { time :: Float
-                   , cameras :: Cameras
-                   , actors :: Actors }
+data Input = Input { inputAxisX :: Vector Float
+                   , inputAxisY :: Vector Float
+                   , inputButtons :: [Bool]
+                   } deriving Show
 
+data World = World { worldTime :: Float
+                   , worldInput :: Input 
+                   , cameras :: Cameras
+                   , actors :: Actors 
+                   } deriving Show
+
+emptyWorld :: World
+emptyWorld = (World 0.0 i cs as)
+    where i = Input zeroV zeroV [False, False, False, False, False, False, False, False]
+          cs = [EmptyCamera]
+          as = []
 
 simulate' :: Float -> World -> World
-simulate' t world = world { Simulation.time = t, cameras = cs }
+simulate' t world = world { cameras = cs }
     where cs = updateCameras world (cameras world)
  
 
@@ -35,4 +47,7 @@ updateCameras :: World -> Cameras -> Cameras
 updateCameras world cameras = map processOneCamera cameras
   where
     processOneCamera c = evalState (simpleFraming c) (actors world)
+
+updateActors :: World -> Actors -> Actors
+updateActors world actors = actors
 
