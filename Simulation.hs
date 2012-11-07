@@ -16,18 +16,18 @@ import System.CPUTime
 import Foreign.Ptr
 import Foreign.Marshal.Array
 
-
 import Graphics
 import Math
 import Camera
 import Actor
 
-data World = World { cameras :: Cameras
+data World = World { time :: Float
+                   , cameras :: Cameras
                    , actors :: Actors }
 
 
-simulate' :: GLfloat -> World -> World
-simulate' t world = world { cameras = cs }
+simulate' :: Float -> World -> World
+simulate' t world = world { Simulation.time = t, cameras = cs }
     where cs = updateCameras world (cameras world)
  
 

@@ -37,7 +37,7 @@ toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
 toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 
 
-renderer' :: GLfloat -> IORef World -> IORef RenderState -> IO ()
+renderer' :: Float -> IORef World -> IORef RenderState -> IO ()
 renderer' t worldRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
@@ -55,17 +55,18 @@ renderer' t worldRef renderStateRef = do
 
   toGLMatrix (Math.translate 0 0 (-100)) >>= multMatrix
 
-  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin t)))
+  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin (realToFrac t))))
    in let m = toMatrixQ q
        in toGLMatrix m >>= multMatrix
   -- view matrix 
 
   ([jlx,jly,jrx,jry]) <- GL.get $ GLFW.joystickPos (GLFW.Joystick 0) 4
+  bs <- GL.get $ GLFW.joystickButtons (GLFW.Joystick 0)
 
   -- draw all VBOs in renderstate
   let p = shaderPrograms renderState !! 0
-  let lx = 60.0 * (realToFrac jlx) --cos (2.0 * t)
-  let ly = 50.0 * (realToFrac jly) --sin t
+  let lx = 60.0 * cos (2.0 * (realToFrac t))
+  let ly = 50.0 * sin (realToFrac t)
   let lz = 100.0 -- + (50.0 * sin (8.0 * t))
   mapM (\vbo -> withProgram p (do uniformLightPosition <- getUniformLocation p "lightPos"
                                   uniformCameraPosition <- getUniformLocation p "cameraPos"
