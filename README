@@ -1,2 +1,0 @@
-mapM_ writeHaskellProgram [futureProjects]
-
