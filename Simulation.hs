@@ -49,5 +49,16 @@ updateCameras world cameras = map processOneCamera cameras
     processOneCamera c = evalState (simpleFraming c) (actors world)
 
 updateActors :: World -> Actors -> Actors
-updateActors world actors = actors
+updateActors world actors = undefined
 
+
+updateMovement :: World -> Actors -> Actors
+updateMovement w as = undefined
+
+collectCollisions :: World -> Actors -> [(Actor,Actor)]
+collectCollisions = undefined
+
+resolveCollisions :: World -> [(Actor,Actor)] -> Actors
+resolveCollisions = undefined
+
+ 

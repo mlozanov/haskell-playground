@@ -11,10 +11,14 @@ data Actor = SimpleActor
            | Player { playerName :: String
                     , playerPosition :: Vector Float 
                     , playerOrientation :: Quaternion Float
+                    , playerVelocity :: Vector Float
+                    , playerAcceleration :: Vector Float
                     }
            | Enemy { enemyName :: String
                    , enemyPosition :: Vector Float 
                    , enemyOrientation :: Quaternion Float
+                   , enemyVelocity :: Vector Float
+                   , enemyAcceleration :: Vector Float
                    }
              deriving (Eq, Ord, Show)
 
