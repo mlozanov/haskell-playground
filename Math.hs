@@ -18,6 +18,9 @@ subVec = zipWith (-)
 mulVec :: Floating a => Vector a -> Vector a -> Vector a
 mulVec = zipWith (*)
 
+mulScalarVec :: Floating a => a -> Vector a -> Vector a
+mulScalarVec s = map (* s)
+
 negateVec :: Floating a => Vector a -> Vector a
 negateVec = map negate
 
@@ -47,6 +50,10 @@ lerp :: Floating a => a -> Vector a -> Vector a -> Vector a
 lerp x a b = addVec a' b'
     where a' = mulVec a $ replicate 4 (1-x)
           b' = mulVec b $ replicate 4 x
+
+euler :: Float -> Vector Float -> Vector Float -> Vector Float
+euler h p0 p = addVec p0 p'
+  where p' = mulScalarVec h p
 
 transposeM :: Floating a => Matrix a -> Matrix a
 transposeM = fromList . concat . transpose . unwords4 . toList
