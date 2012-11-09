@@ -38,6 +38,9 @@ emptyWorld = (World 0.0 i cs as)
           cs = [EmptyCamera]
           as = []
 
+addActorToWorld :: World -> Actor -> World
+addActorToWorld w a = w { actors = (actors w) ++ [a] }
+
 simulate' :: Float -> World -> World
 simulate' t world = world { cameras = cs }
     where cs = updateCameras world (cameras world)
@@ -51,9 +54,8 @@ updateCameras world cameras = map processOneCamera cameras
 updateActors :: World -> Actors -> Actors
 updateActors world actors = undefined
 
-
 updateMovement :: World -> Actors -> Actors
-updateMovement w as = undefined
+updateMovement w actors = map updateActorMovement actors
 
 collectCollisions :: World -> Actors -> [(Actor,Actor)]
 collectCollisions = undefined
@@ -61,4 +63,19 @@ collectCollisions = undefined
 resolveCollisions :: World -> [(Actor,Actor)] -> Actors
 resolveCollisions = undefined
 
- 
+updateLogic :: World -> Actors -> Actors
+updateLogic world actors = undefined
+
+updateActorMovement :: Actor -> Actor
+updateActorMovement player@(Player n p q v a) = player { playerPosition = p', playerVelocity = v', playerAcceleration = zeroV }
+  where v' = euler 0.016667 v a
+        p' = euler 0.016667 p v
+
+moveActor enemy@(Enemy n p q v a) = enemy { enemyPosition = p', enemyVelocity = v', enemyAcceleration = zeroV }
+  where v' = euler 0.016667 v a
+        p' = euler 0.016667 p v
+
+accelerateActor :: Vector Float -> Actor -> Actor
+accelerateActor newAcc player@(Player _ _ _ _ acc) = player { playerAcceleration = newAcc }
+accelerateActor newAcc enemy@(Enemy _ _ _ _ acc) = enemy { enemyAcceleration = newAcc }
+
