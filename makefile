@@ -12,7 +12,7 @@ CPP_OBJS =
 GHC_CC_OPT = -threaded -rtsopts -O3 -fllvm -fexcess-precision -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3 -L/usr/local/lib -L/usr/lib -lglfw --make -odir `uname -m` -hidir `uname -m`
 GHC_LD_OPT = 
 GHC_LD_PACKAGES =
-GHC_CC_PROF_OPT = -prof $(GHC_CC_OPT) 
+GHC_CC_PROF_OPT = -prof -auto-all $(GHC_CC_OPT) 
 GHC_CC_COVERAGE_OPT = -fhpc $(GHC_CC_OPT)
 
 GCC_CC_OPT =  -g -O3
