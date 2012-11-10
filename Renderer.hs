@@ -19,6 +19,8 @@ import Foreign.Marshal.Array
 import Data.IORef
 import qualified Data.Map as M
 
+import Backend
+
 import Graphics
 import Math
 import Camera
@@ -27,8 +29,6 @@ import Actor
 import Vbo
 import Fbo
 import Shader
-
-import Simulation
 
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , viewMatrix :: Ptr GLfloat
@@ -40,6 +40,8 @@ data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
 toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
 toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 
+matrixFloatToGLfloat :: Math.Matrix Float -> Math.Matrix GLfloat
+matrixFloatToGLfloat (M ms) = M (map realToFrac ms)  
 
 renderer' :: Float -> IORef World -> IORef RenderState -> IO ()
 renderer' t worldRef renderStateRef = do
@@ -59,34 +61,33 @@ renderer' t worldRef renderStateRef = do
 
   toGLMatrix (Math.translate 0 0 (-100)) >>= multMatrix
 
-  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin (realToFrac t))))
+  let q = normQ (fromAxisAngleQ 0 0 1 (degToRad (0.0 * sin (realToFrac t))))
    in let m = toMatrixQ q
        in toGLMatrix m >>= multMatrix
   -- view matrix 
 
-  ([jlx,jly,jrx,jry]) <- GL.get $ GLFW.joystickPos (GLFW.Joystick 0) 4
-  bs <- GL.get $ GLFW.joystickButtons (GLFW.Joystick 0)
-
   -- draw all VBOs in renderstate
-  let p = shaderPrograms renderState !! 1
+  let p = shaderPrograms renderState !! 0
   let lx = 60.0 * cos (2.0 * (realToFrac t))
   let ly = 50.0 * sin (realToFrac t)
   let lz = 100.0 -- + (50.0 * sin (8.0 * t))
-  --mapM (\vbo -> withProgram p (do uniformLightPosition <- getUniformLocation p "lightPos"
-  --                                uniformCameraPosition <- getUniformLocation p "cameraPos"
-  --                                uniformTermCoeff <- getUniformLocation p "termCoeff"
-  --                                uniformColorDiffuse <- getUniformLocation p "colorDiffuse"
-  --                                uniformColorSpecular <- getUniformLocation p "colorSpecular"
-  
-  --                                uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
-  --                                uniform uniformCameraPosition $= Vertex4 0 0 100 (0 :: GLfloat)
-  --                                uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.001 (0.0001 :: GLfloat)
-  --                                uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
-  --                                uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
-  --                                animate t vbo)) 
-  --         (bufferObjects renderState)
 
-  mapM (\vbo -> withProgram p (animate t vbo)) ((snd . unzip . M.toList . bufferObjectsMap) renderState)
+  withProgram p $ do
+    uniformLightPosition <- getUniformLocation p "lightPos"
+    uniformCameraPosition <- getUniformLocation p "cameraPos"
+    uniformTermCoeff <- getUniformLocation p "termCoeff"
+    uniformColorDiffuse <- getUniformLocation p "colorDiffuse"
+    uniformColorSpecular <- getUniformLocation p "colorSpecular"
+  
+    uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
+    uniform uniformCameraPosition $= Vertex4 0 0 100 (0 :: GLfloat)
+    uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.001 (0.0001 :: GLfloat)
+    uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
+    uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+
+    --print $ "=================================================="
+    mapM_ (renderActor renderState) (actors world)
+    --print $ "--------------------------------------------------"
 
   -- withProgram ((shaderPrograms renderState) !! 0) (animateCube t)
   
@@ -115,3 +116,14 @@ animateCube t = preservingMatrix $ do
                   --GL.rotate (180.0 * sin t) (vector3 1 0.2 0)
                   O.renderObject O.Solid (O.Torus 10.0 20.0 16 32)
 
+
+renderActor :: RenderState -> Actor -> IO ()
+
+renderActor renderState player@(Player n p q v a) = preservingMatrix $
+  do GL.translate $ fromVector p
+     renderVbo (bufferObjectsMap renderState M.! n)
+
+renderActor renderState enemy@(Enemy n p q v a) = preservingMatrix $
+  do GL.translate $ fromVector p
+     toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
+     renderVbo (bufferObjectsMap renderState M.! n)

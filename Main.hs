@@ -42,28 +42,33 @@ type SimulateAction = (Float -> World -> World)
 
 main :: IO ()
 main = do 
-  setup 1280 720
+  -- keep all line strokes as a list of points in an IORef
+  worldRef <- newIORef emptyWorld
+
+  setup 1280 720 worldRef
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
   GL.get GL.glVersion >>= print
   GL.get GL.shadingLanguageVersion >>= print
   
-  -- keep all line strokes as a list of points in an IORef
-  worldRef <- newIORef emptyWorld
-
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
-  sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"
+  --sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"
 
   --vbo <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
 
-  vboBall <- Vbo.fromList GL.Points ball (concat ballNormals)
+  vboBall <- Vbo.fromList GL.Points ballVertices ballNormals
+  vboPlayer <- Vbo.fromList GL.Points playerVertices playerNormals
+  vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 5.0) circleNormals
 
-  let objects = [("player", vboBall), ("enemy", vboBall)]
+  let objects = [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboBall)]
 
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram, sphericalProgram] (M.fromList objects))
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram] (M.fromList objects))
+
+  modifyIORef worldRef (\world -> 
+     (world { actors = [newPlayer, newEnemy, newEnemy1, newEnemy2, (Enemy "circle" zeroV (fromAxisAngleQ 1 0 0 (pi/8)) zeroV [0,0,0,0])] ++ (replicate 500 (Enemy "circle" zeroV (fromAxisAngleQ 1 0 0 (pi/8)) zeroV [0,0,0,0]))}))
 
   -- invoke the active drawing loop
   mainLoop worldRef renderStateRef renderer'
@@ -75,15 +80,21 @@ mainLoop world renderState render = loop 0.0 world renderState
   where 
  
     loop :: Float -> IORef World -> IORef RenderState -> IO ()
-    loop t w r = do
+    loop t worldRef renderStateRef = do
       t0 <- getCPUTime
 
-      modifyIORef w (simulate' t)
+      joystickCallback worldRef
 
-      render t w r
+      modifyIORef worldRef (simulate' t)
+
+      render t worldRef renderStateRef
+      
       GLFW.swapBuffers
 
-      performGC
+      --world <- readIORef worldRef
+      --print $ worldInput world
+
+      --performGC
 
       t1 <- getCPUTime
 
@@ -97,7 +108,7 @@ mainLoop world renderState render = loop 0.0 world renderState
           -- only continue when the window is not closed
           windowOpenStatus <- getParam Opened
           unless (not windowOpenStatus) $
-            loop (t + 0.01) w r -- loop with next action
+            loop (t + 0.01) worldRef renderStateRef -- loop with next action
 
 
 

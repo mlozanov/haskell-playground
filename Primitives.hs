@@ -24,17 +24,21 @@ room :: [GLfloat]
 room = concat $ map (\i -> (roomVertices !! (fromEnum i))  ) roomIndecies
 
 
-ballVertices :: [[GLfloat]]
---ballVertices = [ [x,y,z] | x <- [(-10.0),(-9.0) .. 10.0], y <- [(-10.0),(-9.0) .. 10.0], z <- [(-10.0),(-9.0) .. 10.0], x*x + y*y + z*z < 10.0*10.0 ]
-ballVertices = [ [t,u,v] | t <- [(-6.0)..6.0], u <- [(-6.0)..6.0], v <- [(-6.0)..6.0], 2*u*u + 0.5*u*v + 2*v*v + t < 8.0 ]
+ballVertices :: [GLfloat]
+ballVertices = concat [ [t,u,v] | t <- [(-6.0)..6.0], u <- [(-6.0)..6.0], v <- [(-6.0)..6.0], u*u + v*v + t*t < 6.0*6.0 ]
 
-ballNormals :: [[GLfloat]]
-ballNormals = replicate ( length ballVertices ) [0.0, 0.0, 1.0]
+ballNormals :: [GLfloat]
+ballNormals = concat $ replicate ( length ballVertices ) [0.0, 0.0, 1.0]
 
-ball :: [GLfloat]
-ball = concat ballVertices
+playerVertices :: [GLfloat]
+playerVertices = concat [ [t,u,v] | t <- [(-6.0)..6.0], u <- [(-6.0)..6.0], v <- [(-6.0)..6.0], 2*u*u + 0.5*u*v + 2*v*v + t < 8.0 ]
 
---tri :: [GLfloat]
---tri = []
+playerNormals :: [GLfloat]
+playerNormals = concat $ replicate ( length playerVertices ) [0.0, 0.0, 1.0]
 
 
+circleVertices :: GLfloat -> [GLfloat]
+circleVertices r = concat [ [ r * cos t - r * sin t, r * cos t + r * sin t, 0.0] | t <- [0, 2*pi/24.0 .. 2*pi] ]
+
+circleNormals :: [GLfloat]
+circleNormals = concat [ [ 0.0, 0.0, 1.0] | t <- [0, 2*pi/24.0 .. 2*pi] ]

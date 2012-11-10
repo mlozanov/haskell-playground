@@ -16,34 +16,20 @@ import System.CPUTime
 import Foreign.Ptr
 import Foreign.Marshal.Array
 
+import Backend
+
 import Graphics
 import Math
 import Camera
 import Actor
 
-data Input = Input { inputAxisX :: Vector Float
-                   , inputAxisY :: Vector Float
-                   , inputButtons :: [Bool]
-                   } deriving Show
-
-data World = World { worldTime :: Float
-                   , worldInput :: Input 
-                   , cameras :: Cameras
-                   , actors :: Actors 
-                   } deriving Show
-
-emptyWorld :: World
-emptyWorld = (World 0.0 i cs as)
-    where i = Input zeroV zeroV [False, False, False, False, False, False, False, False]
-          cs = [EmptyCamera]
-          as = []
-
 addActorToWorld :: World -> Actor -> World
 addActorToWorld w a = w { actors = (actors w) ++ [a] }
 
 simulate' :: Float -> World -> World
-simulate' t world = world { cameras = cs }
+simulate' t world = world { worldTime = t, cameras = cs, actors = as }
     where cs = updateCameras world (cameras world)
+          as = {-# SCC "updateMovement" #-} updateMovement world (actors world)
  
 
 updateCameras :: World -> Cameras -> Cameras
@@ -55,7 +41,7 @@ updateActors :: World -> Actors -> Actors
 updateActors world actors = undefined
 
 updateMovement :: World -> Actors -> Actors
-updateMovement w actors = map updateActorMovement actors
+updateMovement w actors = map (updateActorMovement (worldTime w)) actors
 
 collectCollisions :: World -> Actors -> [(Actor,Actor)]
 collectCollisions = undefined
@@ -66,14 +52,15 @@ resolveCollisions = undefined
 updateLogic :: World -> Actors -> Actors
 updateLogic world actors = undefined
 
-updateActorMovement :: Actor -> Actor
-updateActorMovement player@(Player n p q v a) = player { playerPosition = p', playerVelocity = v', playerAcceleration = zeroV }
+updateActorMovement :: Float -> Actor -> Actor
+updateActorMovement t player@(Player n p q v a) = player { playerPosition = p', playerVelocity = v', playerAcceleration = zeroV }
   where v' = euler 0.016667 v a
         p' = euler 0.016667 p v
 
-moveActor enemy@(Enemy n p q v a) = enemy { enemyPosition = p', enemyVelocity = v', enemyAcceleration = zeroV }
+updateActorMovement t enemy@(Enemy n p q v a) = enemy { enemyOrientation = q', enemyPosition = p', enemyVelocity = v', enemyAcceleration = zeroV }
   where v' = euler 0.016667 v a
         p' = euler 0.016667 p v
+        q' = (fromAxisAngleQ 1 0 0 (t*10))
 
 accelerateActor :: Vector Float -> Actor -> Actor
 accelerateActor newAcc player@(Player _ _ _ _ acc) = player { playerAcceleration = newAcc }
