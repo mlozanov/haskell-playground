@@ -138,7 +138,7 @@ mainLoop world renderState render simulateAction = loop 0.0 world renderState
     loop t worldRef renderStateRef = do
       t0 <- getCPUTime
 
-      joystickCallback worldRef
+      updateJoystickState worldRef
 
       modifyIORef worldRef (simulateAction t)
 
@@ -183,8 +183,8 @@ mouseBtnCallback worldRef button state = modifyIORef worldRef readMouseButtons
                 b2 | button == ButtonRight = state == Press
                    | otherwise = b2o
 
-joystickCallback :: IORef World -> IO ()
-joystickCallback worldRef = do 
+updateJoystickState :: IORef World -> IO ()
+updateJoystickState worldRef = do 
   axises <- GL.get $ GLFW.joystickPos (GLFW.Joystick 0) 4
   bs <- GL.get $ GLFW.joystickButtons (GLFW.Joystick 0)
 

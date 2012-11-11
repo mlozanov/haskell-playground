@@ -12,6 +12,7 @@ import Actor
 import Simulation
 import Renderer
 
+-- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef = do
   modifyIORef worldRef (\world -> 
@@ -20,6 +21,7 @@ setupAction worldRef = do
 renderAction :: RenderAction
 renderAction = renderer'
 
+-- simulation is pure function. should be executed in parallel
 simulateAction :: SimulateAction
 simulateAction = simulate'
 
