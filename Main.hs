@@ -15,7 +15,7 @@ import Renderer
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef = do
-  rndPos <- mapM (\_ -> rndPolar2dVec) [1..10]
+  rndPos <- mapM (\_ -> rndSphereVec) [1..10]
   let cs = map (\p -> (Enemy "enemy" (mulScalarVec 10.0 p) identityQ (mulScalarVec 10.0 p) zeroV))  rndPos
   modifyIORef worldRef (\world -> 
      (world { actors = [newPlayer, (Enemy "enemy" zeroV (fromAxisAngleQ 1 0 0 (pi/8)) zeroV zeroV)] ++ cs}))

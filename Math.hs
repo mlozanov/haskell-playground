@@ -38,13 +38,21 @@ zeroV = [0,0,0,0]
 rndVec :: IO (Vector Float)
 rndVec = mapM (\_ -> randomRIO (0.0,1.0)) [1..4]
 
-rndPolar2dVec :: IO (Vector Float)
-rndPolar2dVec = do 
+rndPolarVec :: IO (Vector Float)
+rndPolarVec = do 
   theta <- randomRIO (-pi, pi)
   let x = 1.0 * cos theta
       y = 1.0 * sin theta
    in return (x:y:0.0:0.0:[])
 
+rndSphereVec :: IO (Vector Float)
+rndSphereVec = do
+  azimut <- randomRIO (-pi, pi)
+  zenith <- randomRIO (-pi, pi)
+  let x = sin zenith * cos azimut
+      y = sin zenith * sin azimut
+      z = cos zenith
+   in return (x:y:z:1.0:[])
 
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
@@ -233,6 +241,6 @@ a'' = mulMM a (transposeM a)
     where a = toMatrixQ q''
 
 polarTest :: IO ()
-polarTest = do v <- rndPolar2dVec
+polarTest = do v <- rndPolarVec
                print v
                print $ lengthVec v
