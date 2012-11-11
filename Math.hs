@@ -2,6 +2,7 @@
 
 module Math where
 
+import System.Random (randomRIO)
 import Data.List
 import Graphics.Rendering.OpenGL (GLfloat, GLmatrix)
 
@@ -33,6 +34,17 @@ lengthVec a = sqrt . sum $ map square a
 
 zeroV :: Floating a => Vector a
 zeroV = [0,0,0,0]
+
+rndVec :: IO (Vector Float)
+rndVec = mapM (\_ -> randomRIO (0.0,1.0)) [1..4]
+
+rndPolar2dVec :: IO (Vector Float)
+rndPolar2dVec = do 
+  theta <- randomRIO (-pi, pi)
+  let x = 1.0 * cos theta
+      y = 1.0 * sin theta
+   in return (x:y:0.0:0.0:[])
+
 
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
@@ -203,7 +215,7 @@ linearInterpolate cs t = (1.0 - ((fromIntegral high) - t)) * (a-b) + b
         b = cs !! low
 
 --- debug
-
+--- unit tests
 t :: Floating a => Matrix a -> [[a]]
 t (M xs) = unwords4 xs
 
@@ -220,4 +232,7 @@ a' = mulMM a (transposeM a)
 a'' = mulMM a (transposeM a)
     where a = toMatrixQ q''
 
-
+polarTest :: IO ()
+polarTest = do v <- rndPolar2dVec
+               print v
+               print $ lengthVec v
