@@ -26,8 +26,8 @@ import Actor
 addActorToWorld :: World -> Actor -> World
 addActorToWorld w a = w { actors = (actors w) ++ [a] }
 
-simulate' :: Float -> World -> World
-simulate' t world = world { worldTime = t, cameras = cs, actors = as }
+simulate :: Float -> World -> World
+simulate t world = world { worldTime = t, cameras = cs, actors = as }
     where cs = updateCameras world (cameras world)
           as = {-# SCC "updateMovement" #-} updateMovement world (actors world)
  

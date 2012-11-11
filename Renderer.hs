@@ -37,8 +37,8 @@ toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 matrixFloatToGLfloat :: Math.Matrix Float -> Math.Matrix GLfloat
 matrixFloatToGLfloat (M ms) = M (map realToFrac ms)  
 
-renderer' :: Float -> IORef World -> IORef RenderState -> IO ()
-renderer' t worldRef renderStateRef = do
+renderer :: Float -> IORef World -> IORef RenderState -> IO ()
+renderer t worldRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   renderState <- readIORef renderStateRef
@@ -72,12 +72,14 @@ renderer' t worldRef renderStateRef = do
     uniformTermCoeff <- getUniformLocation p "termCoeff"
     uniformColorDiffuse <- getUniformLocation p "colorDiffuse"
     uniformColorSpecular <- getUniformLocation p "colorSpecular"
+    uniformRimCoeff <- getUniformLocation p "rimCoeff"
   
     uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
     uniform uniformCameraPosition $= Vertex4 0 0 100 (0 :: GLfloat)
     uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.001 (0.0001 :: GLfloat)
     uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
     uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+    uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
 
     --print $ "=================================================="
     mapM_ (renderActor renderState) (actors world)
