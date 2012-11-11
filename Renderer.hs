@@ -30,12 +30,6 @@ import Vbo
 import Fbo
 import Shader
 
-data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
-                               , viewMatrix :: Ptr GLfloat
-                               , shaderPrograms :: [ShaderProgram] 
-                               , bufferObjectsMap :: M.Map String Vbo
-                               }
-
 
 toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
 toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
@@ -127,3 +121,4 @@ renderActor renderState enemy@(Enemy n p q v a) = preservingMatrix $
   do GL.translate $ fromVector p
      toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
      renderVbo (bufferObjectsMap renderState M.! n)
+

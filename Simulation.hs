@@ -60,7 +60,7 @@ updateActorMovement t player@(Player n p q v a) = player { playerPosition = p', 
 updateActorMovement t enemy@(Enemy n p q v a) = enemy { enemyOrientation = q', enemyPosition = p', enemyVelocity = v', enemyAcceleration = zeroV }
   where v' = euler 0.016667 v a
         p' = euler 0.016667 p v
-        q' = (fromAxisAngleQ 1 0 0 (t*10))
+        q' = (fromAxisAngleQ 0 1 0 (t*10))
 
 accelerateActor :: Vector Float -> Actor -> Actor
 accelerateActor newAcc player@(Player _ _ _ _ acc) = player { playerAcceleration = newAcc }
