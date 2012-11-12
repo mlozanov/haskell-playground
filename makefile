@@ -9,7 +9,8 @@ CPP_OBJS =
 
 # -fexcess-precision -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
 
-GHC_CC_OPT = -threaded -rtsopts -O3 -fllvm -fexcess-precision -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3 -L/usr/local/lib -L/usr/lib -lglfw --make -odir `uname -m` -hidir `uname -m`
+GHC_CC_OPT = -threaded -rtsopts -fexcess-precision  -L/usr/local/lib -L/usr/lib -lglfw --make -odir `uname -m` -hidir `uname -m`
+GHC_CC_OPTIMIZE = -O3 -fllvm -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
 GHC_LD_OPT = 
 GHC_LD_PACKAGES =
 GHC_CC_PROF_OPT = -prof -auto-all $(GHC_CC_OPT) 
@@ -31,13 +32,13 @@ GCC_CPP_OPT =  -g -O3
 # 	ghc $(GHC_LD_OPT) $(GHC_LD_PACKAGES) $(HASKELL_OBJS) $(C_OBJS) $(CPP_OBJS) -o $(TARGET)
 
 build: 
-	ghc $(GHC_CC_OPT) $(HASKELL_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
+	ghc $(GHC_CC_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
 
 profile: 
-	ghc $(GHC_CC_PROF_OPT) $(HASKELL_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
+	ghc $(GHC_CC_PROF_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
 
 coverage:
-	ghc $(GHC_CC_COVERAGE_OPT) $(HASKELL_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
+	ghc $(GHC_CC_COVERAGE_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
 
 clean: 
 	@rm -rf `uname -m` $(TARGET)

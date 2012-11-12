@@ -2,13 +2,13 @@
 
 module Math where
 
-import System.Random (randomRIO)
+import System.Random
 import Data.List
 import Graphics.Rendering.OpenGL (GLfloat, GLmatrix)
 
 type Vector a = [a]
-data Matrix a = M [a] deriving Show
-data Quaternion a = Q a a a a deriving (Eq,Ord,Show)
+data Matrix a = M [a]
+data Quaternion a = Q a a a a
 
 addVec :: Floating a => Vector a -> Vector a -> Vector a
 addVec = zipWith (+)
@@ -38,11 +38,18 @@ zeroV = [0,0,0,0]
 rndVec :: IO (Vector Float)
 rndVec = mapM (\_ -> randomRIO (0.0,1.0)) [1..4]
 
+rndPolarV :: StdGen -> (Vector Float, StdGen)
+rndPolarV gen = (v, nextGen)
+  where (azimut, nextGen) = randomR (-pi,pi) gen 
+        x = cos azimut
+        y = sin azimut
+        v = (x:y:0.0:0.0:[])
+
 rndPolarVec :: IO (Vector Float)
 rndPolarVec = do 
-  theta <- randomRIO (-pi, pi)
-  let x = 1.0 * cos theta
-      y = 1.0 * sin theta
+  azimut <- randomRIO (-pi, pi)
+  let x = 1.0 * cos azimut
+      y = 1.0 * sin azimut
    in return (x:y:0.0:0.0:[])
 
 rndSphereVec :: IO (Vector Float)
@@ -53,6 +60,14 @@ rndSphereVec = do
       y = sin zenith * sin azimut
       z = cos zenith
    in return (x:y:z:1.0:[])
+
+rndCylinderVec :: IO (Vector Float)
+rndCylinderVec = do
+  azimut <- randomRIO (-pi, pi)
+  height <- randomRIO (-1.0, 1.0)
+  let x = 1.0 * cos azimut
+      y = 1.0 * sin azimut
+   in return (x:y:height:1.0:[])
 
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a

@@ -18,14 +18,12 @@ data Camera = EmptyCamera
                            , up :: Vector Float
                            , targetPosition :: Vector Float
                            , fov :: Float }
-              deriving (Show)
 
 data Command a = Nop
                | Pan (Quaternion a) (Quaternion a)
                | Dolly (Vector a) (Vector a)
                | Tilt (Quaternion a) (Quaternion a)
                | Zoom a a
-                 deriving (Eq,Ord,Show)
 
 type Cameras = [Camera]
 type Commands a = [Command a]

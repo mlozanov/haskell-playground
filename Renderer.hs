@@ -55,9 +55,9 @@ renderer t worldRef renderStateRef = do
 
   toGLMatrix (Math.translate 0 0 (-100)) >>= multMatrix
 
-  let q = normQ (fromAxisAngleQ 0 0 1 (degToRad (0.0 * sin (realToFrac t))))
-   in let m = toMatrixQ q
-       in toGLMatrix m >>= multMatrix
+--  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin (realToFrac t))))
+--   in let m = toMatrixQ q
+--       in toGLMatrix m >>= multMatrix
   -- view matrix 
 
   -- draw all VBOs in renderstate
