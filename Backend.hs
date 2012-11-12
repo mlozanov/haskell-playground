@@ -19,7 +19,7 @@ import Foreign.Ptr
 import Foreign.Marshal.Array
 
 import Data.IORef
-import qualified Data.Map as M
+import Data.Map as M hiding (map)
 
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
@@ -51,8 +51,8 @@ data World = World { worldTime :: Float
 
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , viewMatrix :: Ptr GLfloat
-                               , shaderPrograms :: [ShaderProgram] 
-                               , bufferObjectsMap :: M.Map String Vbo
+                               , shaderProgramsMap :: Map String ShaderProgram
+                               , bufferObjectsMap :: Map String Vbo
                                }
 
 
@@ -113,7 +113,7 @@ setup wx wy title setupAction renderAction inputAction simulateAction = do
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
-  --sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
+  sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
 
   --vboRoom <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
   vboBall <- Vbo.fromList GL.LineStrip ballVertices ballNormals
@@ -122,7 +122,9 @@ setup wx wy title setupAction renderAction inputAction simulateAction = do
 
   let objects = [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboBall)]
 
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray [defaultProgram] (M.fromList objects))
+  let shaders = [("default", defaultProgram), ("spherical", sphericalProgram)]
+
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray (M.fromList shaders) (M.fromList objects))
 
   GLFW.keyCallback $= keyboardCallback worldRef
   GLFW.mousePosCallback $= mousePositionCallback worldRef

@@ -28,11 +28,5 @@ newPlayer :: Actor
 newPlayer = Player "player" zeroV identityQ zeroV ([0.0, 0.0, 0.0, 0.0])
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" zeroV identityQ zeroV ([400.0, 100.0, 0.0, 0.0])
-
-newEnemy1 :: Actor
-newEnemy1 = Enemy "enemy" zeroV identityQ zeroV ([0.0, 200.0, 0.0, 0.0])
-
-newEnemy2 :: Actor
-newEnemy2 = Enemy "enemy" zeroV identityQ zeroV ([200.0, 400.0, 0.0, 0.0])
+newEnemy = Enemy "enemy" zeroV identityQ zeroV ([0.0, 0.0, 0.0, 0.0])
 

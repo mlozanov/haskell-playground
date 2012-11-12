@@ -53,7 +53,7 @@ updateLogic :: World -> Actors -> Actors
 updateLogic world actors = undefined
 
 updateActorMovement :: Float -> Actor -> Actor
-updateActorMovement t player@(Player n p q v a) = Player n p' q' v' a' --player { playerPosition = p', playerVelocity = v', playerAcceleration = zeroV }
+updateActorMovement t player@(Player n p q v a) = Player n p' q' v' a'
   where v' = addVec (euler 0.016667 v a) (mulScalarVec (-0.005) v)
         p' = euler 0.016667 p v
         a' = zeroV
@@ -65,9 +65,9 @@ updateActorMovement t enemy@(Enemy n p q v a) = Enemy n p' q' v' a'
         q' = (fromAxisAngleQ 0 1 0 (t*10))
         a' = zeroV
 
-accelerateActor :: Vector Float -> Actor -> Actor
-accelerateActor newAcc player@(Player _ _ _ _ a) = player { playerAcceleration = newAcc }
-accelerateActor newAcc enemy@(Enemy _ _ _ _ a) = enemy { enemyAcceleration = newAcc }
+setAccelerationActor :: Vector Float -> Actor -> Actor
+setAccelerationActor newAcc player@(Player _ _ _ _ a) = player { playerAcceleration = newAcc }
+setAccelerationActor newAcc enemy@(Enemy _ _ _ _ a) = enemy { enemyAcceleration = newAcc }
 
 setVelocityActor :: Vector Float -> Actor -> Actor
 setVelocityActor newVel player@(Player _ _ _ v _) = player { playerVelocity = newVel }

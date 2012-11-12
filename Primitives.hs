@@ -25,7 +25,7 @@ room = concat $ map (\i -> (roomVertices !! (fromEnum i))  ) roomIndecies
 
 
 ballVertices :: [GLfloat]
-ballVertices = concat [ [t,u,v] | t <- [(-6.0)..6.0], u <- [(-6.0)..6.0], v <- [(-6.0)..6.0], u*u + v*v + t*t < 2.0*2.0 ]
+ballVertices = concat [ [t,u,v] | t <- [(-6.0)..6.0], u <- [(-6.0)..6.0], v <- [(-6.0)..6.0], u*u + v*v + t*t < 5.0*5.0 ]
 
 ballNormals :: [GLfloat]
 ballNormals = concat $ replicate ( length ballVertices ) [0.0, 0.0, 1.0]

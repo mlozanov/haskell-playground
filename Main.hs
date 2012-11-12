@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Main where
 
 import Data.IORef
@@ -30,14 +28,15 @@ simulateAction :: SimulateAction
 simulateAction = simulate
 
 inputAction :: InputActionPure
-inputAction t world = world { actors = as, gen = nextGen }
+inputAction t world = world { actors = as, gen = nextGen1 }
   where input = worldInput world
         (lb,rb) = inputMouseButtons input
         (vec, nextGen) = rndPolarV (gen world)
+        (vec1, nextGen1) = rndPolarV nextGen
         as = map f (actors world)
 
         f :: Actor -> Actor
-        f player@(Player n p q v a) = accelerateActor (mulScalarVec 100.0 vec) player
+        f player@(Player n p q v a) = setAccelerationActor (mulScalarVec 100.0 vec) player
         f actor = actor
 
 main :: IO ()

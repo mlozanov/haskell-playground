@@ -17,7 +17,7 @@ import Foreign.Ptr
 import Foreign.Marshal.Array
 
 import Data.IORef
-import qualified Data.Map as M
+import Data.Map as M hiding (map)
 
 import Backend
 
@@ -61,7 +61,7 @@ renderer t worldRef renderStateRef = do
   -- view matrix 
 
   -- draw all VBOs in renderstate
-  let p = shaderPrograms renderState !! 0
+  let p = (shaderProgramsMap renderState) ! "default"
   let lx = 60.0 * cos (2.0 * (realToFrac t))
   let ly = 50.0 * sin (realToFrac t)
   let lz = 100.0 -- + (50.0 * sin (8.0 * t))
@@ -101,16 +101,6 @@ title t = preservingMatrix $ do
             GL.scale (0.22) 0.22 (0.22 :: GLfloat)
             renderString Fixed8x16 "sharpshooter"
             GL.color $ color3 1 1 1
-
-animate t vbo = preservingMatrix $ do
-                  GL.translate $ vector3 0 0 0
-                  GL.rotate (180.0 * sin (realToFrac t)) (vector3 1.0 0 1.0)
-                  renderVbo vbo
-
-animateCube t = preservingMatrix $ do
-                  GL.translate $ vector3 30 0 (0.0)
-                  --GL.rotate (180.0 * sin t) (vector3 1 0.2 0)
-                  O.renderObject O.Solid (O.Torus 10.0 20.0 16 32)
 
 
 renderActor :: RenderState -> Actor -> IO ()
