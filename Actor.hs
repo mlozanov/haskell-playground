@@ -22,6 +22,11 @@ data Actor = SimpleActor
                    , enemyAcceleration :: !(Vector Float)
                    }
 
+           | StaticActor { staticActorName :: String 
+                         , staticActorPosition :: Vector Float
+                         , staticActorOrientation :: Quaternion Float
+                         }
+
 type Actors = [Actor]
 
 newPlayer :: Actor

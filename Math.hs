@@ -8,7 +8,7 @@ import Graphics.Rendering.OpenGL (GLfloat, GLmatrix)
 
 type Vector a = [a]
 data Matrix a = M [a]
-data Quaternion a = Q a a a a
+data Quaternion a = Q a a a a deriving Show
 
 addVec :: Floating a => Vector a -> Vector a -> Vector a
 addVec = zipWith (+)
@@ -95,7 +95,7 @@ transposeM = fromList . concat . transpose . unwords4 . toList
 
 mulMV :: Floating a => Vector a -> Matrix a ->  Vector a
 mulMV v (M ms) = map (dotVec v) $ f ms
-    where f = transpose . unwords4
+    where f = unwords4
 
 mulMM :: Floating a => Matrix a -> Matrix a -> Matrix a
 mulMM (M as) (M bs) = M (concat $ map (\row -> map (dotVec row) a') b')

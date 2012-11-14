@@ -53,7 +53,7 @@ renderer t worldRef renderStateRef = do
   GL.matrixMode $= GL.Modelview 0
   toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
 
-  toGLMatrix (Math.translate 0 0 (-100)) >>= multMatrix
+  toGLMatrix (Math.translate 0 0 (-200)) >>= multMatrix
 
 --  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin (realToFrac t))))
 --   in let m = toMatrixQ q
@@ -75,7 +75,7 @@ renderer t worldRef renderStateRef = do
     uniformRimCoeff <- getUniformLocation p "rimCoeff"
   
     uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
-    uniform uniformCameraPosition $= Vertex4 0 0 100 (0 :: GLfloat)
+    uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
     uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.001 (0.0001 :: GLfloat)
     uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
     uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
@@ -85,8 +85,6 @@ renderer t worldRef renderStateRef = do
     mapM_ (renderActor renderState) (actors world)
     --print $ "--------------------------------------------------"
 
-  -- withProgram ((shaderPrograms renderState) !! 0) (animateCube t)
-  
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
 
@@ -105,12 +103,18 @@ title t = preservingMatrix $ do
 
 renderActor :: RenderState -> Actor -> IO ()
 
-renderActor renderState player@(Player n p q v a) = preservingMatrix $
-  do GL.translate $ fromVector p
-     renderVbo (bufferObjectsMap renderState M.! n)
-
-renderActor renderState enemy@(Enemy n p q v a) = preservingMatrix $
+renderActor renderState (Player n p q v a) = preservingMatrix $
   do GL.translate $ fromVector p
      toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
      renderVbo (bufferObjectsMap renderState M.! n)
+
+renderActor renderState (Enemy n p q v a) = preservingMatrix $
+  do GL.translate $ fromVector p
+     toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
+     renderVbo (bufferObjectsMap renderState ! n)
+
+renderActor renderState (StaticActor n p q) = preservingMatrix $
+  do GL.translate $ fromVector p
+     toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
+     renderVbo (bufferObjectsMap renderState ! n)
 

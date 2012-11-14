@@ -4,7 +4,7 @@ module Backend (
   RenderState(..),
   SetupAction,
   RenderAction,
-  InputAction,
+  IOActions,
   InputActionPure,
   SimulateAction
   )
@@ -60,7 +60,7 @@ type SetupAction = (IORef World -> IO ())
 type RenderAction = (Float -> IORef World -> IORef RenderState -> IO ())
 
 type SimulateAction = (Float -> World -> World)
-type InputAction = (Float -> IORef World -> IO ())
+type IOActions = [(Float -> IORef World -> IO ())]
 type InputActionPure = (Float -> World -> World)
 
 emptyWorld :: World
@@ -69,8 +69,8 @@ emptyWorld = (World 0.0 i cs as (mkStdGen 1023))
           cs = [EmptyCamera]
           as = []
 
-setup :: Int -> Int -> String -> SetupAction -> RenderAction -> InputActionPure -> SimulateAction -> IO ()
-setup wx wy title setupAction renderAction inputAction simulateAction = do 
+setup :: Int -> Int -> String -> SetupAction -> [RenderAction] -> InputActionPure -> SimulateAction -> IOActions -> IO ()
+setup wx wy title setupAction renderActions inputAction simulateAction ioActions = do 
   GLFW.initialize
   -- open window
   GLFW.openWindow (GL.Size (fromIntegral wx) (fromIntegral wy)) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
@@ -81,7 +81,7 @@ setup wx wy title setupAction renderAction inputAction simulateAction = do
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
   GL.lineWidth  $= 1.5
-  GL.pointSize  $= 1.5
+  GL.pointSize  $= 2.5
   -- set the color to clear background
   GL.clearColor $= Color4 0.18 0.18 0.18 1.0
 
@@ -115,12 +115,12 @@ setup wx wy title setupAction renderAction inputAction simulateAction = do
   defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
   sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
 
-  --vboRoom <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
+  vboRoom <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
   vboBall <- Vbo.fromList GL.LineStrip ballVertices ballNormals
   vboPlayer <- Vbo.fromList GL.Points playerVertices playerNormals
   vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 5.0) circleNormals
 
-  let objects = [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboBall)]
+  let objects = [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboBall), ("room", vboRoom)]
 
   let shaders = [("default", defaultProgram), ("spherical", sphericalProgram)]
 
@@ -131,29 +131,29 @@ setup wx wy title setupAction renderAction inputAction simulateAction = do
   GLFW.mouseButtonCallback $= mouseBtnCallback worldRef
 
   -- invoke the active drawing loop
-  mainLoop worldRef renderStateRef renderAction inputAction simulateAction
+  mainLoop worldRef renderStateRef renderActions inputAction simulateAction ioActions
 
   GLFW.closeWindow
   GLFW.terminate
 
 
-mainLoop :: IORef World -> IORef RenderState -> RenderAction -> InputActionPure -> SimulateAction -> IO ()
-mainLoop world renderState render inputAction simulateAction = loop 0.0 world renderState
+mainLoop :: IORef World -> IORef RenderState -> [RenderAction] -> InputActionPure -> SimulateAction -> IOActions -> IO ()
+mainLoop world renderState renderActions inputAction simulateAction ioActions = loop 0.0 world renderState
   where 
  
     loop :: Float -> IORef World -> IORef RenderState -> IO ()
     loop t worldRef renderStateRef = do
       t0 <- getCPUTime
 
-      updateJoystickState worldRef
+      --updateJoystickState worldRef
 
-      --inputAction t worldRef
+      mapM_ (\action -> action t worldRef) ioActions
+
       modifyIORef worldRef ((inputAction t) . (simulateAction t))
 
-      render t worldRef renderStateRef
+      mapM_ (\action -> action t worldRef renderStateRef) renderActions
 
-      --world <- readIORef worldRef
-      --print (worldInput world)
+      --debugInput worldRef
 
       GLFW.swapBuffers
 
@@ -161,7 +161,7 @@ mainLoop world renderState render inputAction simulateAction = loop 0.0 world re
 
       t1 <- getCPUTime
 
-      let dt = ((fromIntegral (t1 - t0)) / (10^12)) :: Float
+      let dt = 0.0166667 -- ((fromIntegral (t1 - t0)) / (10^12)) :: Float
 
       -- check whether ESC is pressed for termination
       p <- GLFW.getKey GLFW.ESC
@@ -177,7 +177,25 @@ mainLoop world renderState render inputAction simulateAction = loop 0.0 world re
 
 
 keyboardCallback :: IORef World -> KeyCallback
-keyboardCallback worldRef key state = return () --print key >> print state >> return ()
+keyboardCallback worldRef key state = modifyIORef worldRef readKeys  -- >> print key >> print state
+  where readKeys world = world { worldInput = input { inputAxisL = axisL } }
+          where input = worldInput world
+                lx = case key of
+                       GLFW.CharKey 'D' -> 1.0
+                       GLFW.CharKey 'A' -> (-1.0)
+                       otherwise -> 0.0
+                ly = case key of
+                       GLFW.CharKey 'W' -> 1.0
+                       GLFW.CharKey 'S' -> (-1.0)
+                       otherwise -> 0.0
+                axisL = if state == Press 
+                        then [lx,ly,0.0,0.0]
+                        else [0.0,0.0,0.0,0.0]
+
+                --lx = if key == GLFW.CharKey 'A' then 1.0 else 0.0
+                --ly = if key == GLFW.CharKey 'D' then 1.0 else 0.0
+                --rx = if key == GLFW.CharKey 'W' then 1.0 else 0.0
+                --ry = if key == GLFW.CharKey 'S' then 1.0 else 0.0
 
 mousePositionCallback :: IORef World -> MousePosCallback
 mousePositionCallback worldRef (Position x y) = modifyIORef worldRef readMousePosition
@@ -212,3 +230,9 @@ worldInputButtons world = inputButtons (worldInput world)
 
 worldInputMouseButtons :: World -> (Bool,Bool)
 worldInputMouseButtons world = inputMouseButtons (worldInput world)
+
+debugInput :: IORef World -> IO ()
+debugInput worldRef = do world <- readIORef worldRef
+                         print (worldInput world)
+
+
