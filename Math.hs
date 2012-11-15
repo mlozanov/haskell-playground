@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 
 module Math where
 
@@ -7,7 +7,7 @@ import Data.List
 import Graphics.Rendering.OpenGL (GLfloat, GLmatrix)
 
 type Vector a = [a]
-data Matrix a = M [a]
+data Matrix a = M [a] deriving Show
 data Quaternion a = Q a a a a deriving Show
 
 addVec :: Floating a => Vector a -> Vector a -> Vector a
@@ -35,6 +35,9 @@ lengthVec a = sqrt . sum $ map square a
 zeroV :: Floating a => Vector a
 zeroV = [0,0,0,0]
 
+identityV :: Floating a => Vector a
+identityV = [0,0,0,1]
+
 rndVec :: IO (Vector Float)
 rndVec = mapM (\_ -> randomRIO (0.0,1.0)) [1..4]
 
@@ -43,14 +46,14 @@ rndPolarV gen = (v, nextGen)
   where (azimut, nextGen) = randomR (-pi,pi) gen 
         x = cos azimut
         y = sin azimut
-        v = (x:y:0.0:0.0:[])
+        v = [x,y,0.0,0.0] --(x:y:0.0:0.0:[])
 
 rndPolarVec :: IO (Vector Float)
 rndPolarVec = do 
   azimut <- randomRIO (-pi, pi)
   let x = 1.0 * cos azimut
       y = 1.0 * sin azimut
-   in return (x:y:0.0:0.0:[])
+   in return [x,y,0.0,0.0] --(x:y:0.0:0.0:[])
 
 rndSphereVec :: IO (Vector Float)
 rndSphereVec = do
@@ -59,7 +62,7 @@ rndSphereVec = do
   let x = sin zenith * cos azimut
       y = sin zenith * sin azimut
       z = cos zenith
-   in return (x:y:z:1.0:[])
+   in return [x,y,z,1.0] --(x:y:z:1.0:[])
 
 rndCylinderVec :: IO (Vector Float)
 rndCylinderVec = do
@@ -67,7 +70,7 @@ rndCylinderVec = do
   height <- randomRIO (-1.0, 1.0)
   let x = 1.0 * cos azimut
       y = 1.0 * sin azimut
-   in return (x:y:height:1.0:[])
+   in return [x,y,height,1.0] --(x:y:height:1.0:[])
 
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
@@ -87,8 +90,7 @@ lerp x a b = addVec a' b'
           b' = mulVec b $ replicate 4 x
 
 euler :: Floating a => a -> Vector a -> Vector a -> Vector a
-euler h p0 p = addVec p0 p'
-  where p' = mulScalarVec h p
+euler !h !p0 !p = addVec p0 (mulScalarVec h p)
 
 transposeM :: Floating a => Matrix a -> Matrix a
 transposeM = fromList . concat . transpose . unwords4 . toList

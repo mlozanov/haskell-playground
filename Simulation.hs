@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Simulation where
 
 import Control.Monad.State
@@ -27,20 +29,15 @@ addActorToWorld :: World -> Actor -> World
 addActorToWorld w a = w { actors = (actors w) ++ [a] }
 
 simulate :: Float -> World -> World
-simulate t world = world { worldTime = t, cameras = cs, actors = as }
-    where cs = {-# SCC "updateCameras" #-} updateCameras world (cameras world)
-          as = {-# SCC "updateMovement" #-} updateMovement world (actors world)
+simulate t world = world { worldTime = t, actors = actors' }
+    where actors' = map (updateActorMovement t) (actors world)
  
 updateCameras :: World -> Cameras -> Cameras
 updateCameras world cameras = map processOneCamera cameras
-  where
-    processOneCamera c = evalState (simpleFraming c) (actors world)
+  where processOneCamera c = evalState (simpleFraming c) (actors world)
 
 updateActors :: World -> Actors -> Actors
 updateActors world actors = undefined
-
-updateMovement :: World -> Actors -> Actors
-updateMovement w actors = map (updateActorMovement (worldTime w)) actors
 
 collectCollisions :: World -> Actors -> [(Actor,Actor)]
 collectCollisions = undefined
@@ -52,16 +49,20 @@ updateLogic :: World -> Actors -> Actors
 updateLogic world actors = undefined
 
 updateActorMovement :: Float -> Actor -> Actor
-updateActorMovement t player@(Player n p q v a) = Player n p' q v' a'
-  where v' = addVec (euler 0.016667 v a) (mulScalarVec (-0.01) v)
+updateActorMovement t (Player n !p !q !v !a) = Player n p' q v' a'
+  where a' = zeroV
+        drag = mulScalarVec (-0.01) v
         p' = euler 0.016667 p v
-        a' = zeroV
+        nv = euler 0.016667 v a
+        v' = addVec nv drag
  
-updateActorMovement t enemy@(Enemy n p q v a) = Enemy n p' q' v' a'
-  where v' = addVec (euler 0.016667 v a) (mulScalarVec (-0.004) v)
+updateActorMovement t (Enemy n !p !q !v !a) = Enemy n p' q' v' a'
+  where a' = zeroV
+        drag = mulScalarVec (-0.004) v
+        nv = euler 0.016667 v a
         p' = euler 0.016667 p v
-        q' = (fromAxisAngleQ 0 1 0 (t*10))
-        a' = zeroV
+        v' = addVec nv drag
+        q' = fromAxisAngleQ 0 1 0 (t*10)
 
 updateActorMovement t static@(StaticActor _ _ _) = static        
 

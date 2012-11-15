@@ -16,7 +16,7 @@ data Actor = SimpleActor
                     }
 
            | Enemy { enemyName :: !String
-                   , enemyPosition :: !(Vector Float )
+                   , enemyPosition :: !(Vector Float)
                    , enemyOrientation :: !(Quaternion Float)
                    , enemyVelocity :: !(Vector Float)
                    , enemyAcceleration :: !(Vector Float)
@@ -26,12 +26,13 @@ data Actor = SimpleActor
                          , staticActorPosition :: Vector Float
                          , staticActorOrientation :: Quaternion Float
                          }
+            deriving Show
 
 type Actors = [Actor]
 
 newPlayer :: Actor
-newPlayer = Player "player" zeroV identityQ zeroV ([0.0, 0.0, 0.0, 0.0])
+newPlayer = Player "player" zeroV identityQ zeroV zeroV
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" zeroV identityQ zeroV ([0.0, 0.0, 0.0, 0.0])
+newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV
 

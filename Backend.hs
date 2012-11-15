@@ -41,12 +41,12 @@ import Fbo
 import Shader
 import Primitives
 
-data World = World { worldTime :: Float
-                   , worldInput :: Input 
-                   , cameras :: Cameras
-                   , actors :: Actors 
-                   , gen :: StdGen
-                   } 
+data World = World { worldTime :: !Float
+                   , worldInput :: !Input 
+                   , cameras :: !Cameras
+                   , actors :: !Actors 
+                   , gen :: !StdGen
+                   } deriving Show
 
 
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
@@ -136,7 +136,6 @@ setup wx wy title setupAction renderActions inputAction simulateAction ioActions
   GLFW.closeWindow
   GLFW.terminate
 
-
 mainLoop :: IORef World -> IORef RenderState -> [RenderAction] -> InputActionPure -> SimulateAction -> IOActions -> IO ()
 mainLoop world renderState renderActions inputAction simulateAction ioActions = loop 0.0 world renderState
   where 
@@ -149,7 +148,12 @@ mainLoop world renderState renderActions inputAction simulateAction ioActions = 
 
       mapM_ (\action -> action t worldRef) ioActions
 
-      modifyIORef worldRef ((inputAction t) . (simulateAction t))
+      --modifyIORef worldRef ((inputAction t) . (simulateAction t))
+
+      world <- readIORef worldRef
+      --let w = inputAction t world
+      let w = ((inputAction t) . (simulateAction t)) world
+      writeIORef worldRef w
 
       mapM_ (\action -> action t worldRef renderStateRef) renderActions
 
@@ -157,7 +161,7 @@ mainLoop world renderState renderActions inputAction simulateAction ioActions = 
 
       GLFW.swapBuffers
 
-      performGC
+      --performGC
 
       t1 <- getCPUTime
 

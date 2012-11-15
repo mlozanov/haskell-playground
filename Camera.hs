@@ -18,6 +18,7 @@ data Camera = EmptyCamera
                            , up :: Vector Float
                            , targetPosition :: Vector Float
                            , fov :: Float }
+            deriving Show
 
 data Command a = Nop
                | Pan (Quaternion a) (Quaternion a)
