@@ -94,9 +94,9 @@ renderer t worldRef renderStateRef = do
   return ()
 
 title t = preservingMatrix $ do 
-            GL.translate $ vector3 (54.0) 0.0 (-68.0)
+            GL.translate $ vector3 (64.0) 0.0 (-68.0)
             GL.color $ color3 1 1 1
-            GL.scale (0.22) 0.22 (0.22 :: GLfloat)
+            GL.scale (0.38) 0.38 (0.38 :: GLfloat)
             renderString Fixed8x16 "sharpshooter"
             GL.color $ color3 1 1 1
 

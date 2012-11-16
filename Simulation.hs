@@ -28,7 +28,7 @@ import Actor
 addActorToWorld :: World -> Actor -> World
 addActorToWorld w a = w { actors = (actors w) ++ [a] }
 
-simulate :: Float -> World -> World
+simulate :: Float -> World -> World 
 simulate t world = world { worldTime = t, actors = actors' }
     where actors' = map (updateActorMovement t) (actors world)
  
@@ -62,7 +62,7 @@ updateActorMovement t (Enemy n !p !q !v !a) = Enemy n p' q' v' a'
         nv = euler 0.016667 v a
         p' = euler 0.016667 p v
         v' = addVec nv drag
-        q' = fromAxisAngleQ 0 1 0 (t*10)
+        q' = fromAxisAngleQ 0.0 0.707 0.707 (t*2)
 
 updateActorMovement t static@(StaticActor _ _ _) = static        
 
