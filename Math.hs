@@ -11,7 +11,8 @@ data Matrix a = M [a] deriving Show
 data Quaternion a = Q a a a a deriving Show
 
 addVec :: Floating a => Vector a -> Vector a -> Vector a
-addVec = zipWith (+)
+addVec [x,y,z,w] [x2,y2,z2,w2] = [x+x2,y+y2,z+z2,w+w2]
+addVec p q = zipWith (+) p q
 
 subVec :: Floating a => Vector a -> Vector a -> Vector a
 subVec = zipWith (-)

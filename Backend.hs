@@ -80,8 +80,8 @@ setup wx wy title setupAction renderActions inputAction simulateAction ioActions
   GL.lineSmooth $= GL.Enabled
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
-  GL.lineWidth  $= 1.5
-  GL.pointSize  $= 2.5
+  GL.lineWidth  $= 1.0
+  GL.pointSize  $= 1.0
   -- set the color to clear background
   GL.clearColor $= Color4 0.18 0.18 0.18 1.0
 
@@ -116,7 +116,7 @@ setup wx wy title setupAction renderActions inputAction simulateAction ioActions
   sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
 
   vboRoom <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
-  vboBall <- Vbo.fromList GL.LineStrip ballVertices ballNormals
+  vboBall <- Vbo.fromList GL.Points ballVertices ballNormals
   vboPlayer <- Vbo.fromList GL.Points playerVertices playerNormals
   vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 5.0) circleNormals
 
@@ -148,12 +148,7 @@ mainLoop world renderState renderActions inputAction simulateAction ioActions = 
 
       mapM_ (\action -> action t worldRef) ioActions
 
-      --modifyIORef worldRef ((inputAction t) . (simulateAction t))
-
-      world <- readIORef worldRef
-      --let w = inputAction t world
-      let w = ((inputAction t) . (simulateAction t)) world
-      writeIORef worldRef w
+      modifyIORef worldRef ((inputAction t) . (simulateAction t))
 
       mapM_ (\action -> action t worldRef renderStateRef) renderActions
 
