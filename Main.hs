@@ -14,25 +14,24 @@ import Renderer
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef = do
-  rndPos <- mapM (\_ -> rndSphereVec) [1..3]
+  rndPos <- mapM (\_ -> rndSphereVec) [1..16]
   let cs = map (\p -> (Enemy "enemy" (mulScalarVec 20.0 p) identityQ (mulScalarVec 10.0 p) zeroV))  rndPos
   modifyIORef worldRef (\world -> 
      (world { actors = [newPlayer] ++ cs}))
 
 inputAction :: InputActionPure
-inputAction t world = world { actors = as, gen = nextGen1 }
+inputAction t world = world { actors = as, gen = nextGen }
   where input = worldInput world
         (lb,rb) = inputMouseButtons input
         (x:y:rest) = inputAxisL input
         (vec, nextGen) = rndPolarV (gen world)
-        (vec1, nextGen1) = rndPolarV nextGen
         as = map f (actors world)
 
         f :: Actor -> Actor
         f player@(Player n p q v a) = Player n p q' v' a
           where ql = fromAxisAngleQ 0 0 1 ((-x)/30.0)
                 q' = mulQ q ql
-                v' = mulScalarVec 50.0 (mulMV [y,0.0,0.0,0.0] (toMatrixQ q))
+                v' = mulScalarVec 50.0 (mulMV (addVec vec [y,0.0,0.0]) (toMatrixQ q))
         f actor = actor
 
 renderActions :: [RenderAction]

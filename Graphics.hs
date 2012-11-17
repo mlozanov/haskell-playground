@@ -10,7 +10,7 @@ vector3 :: GLfloat -> GLfloat -> GLfloat -> GL.Vector3 GLfloat
 vector3 = GL.Vector3
 
 fromVector :: Vector Float -> GL.Vector3 GLfloat
-fromVector [x,y,z,w] = vector3 (toGLfloat x) (toGLfloat y) (toGLfloat (z+w))
+fromVector [x,y,z] = vector3 (toGLfloat x) (toGLfloat y) (toGLfloat z)
  
 color3 :: GLfloat -> GLfloat -> GLfloat -> GL.Color3 GLfloat
 color3 = GL.Color3

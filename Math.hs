@@ -15,13 +15,16 @@ addVec [x,y,z,w] [x2,y2,z2,w2] = [x+x2,y+y2,z+z2,w+w2]
 addVec p q = zipWith (+) p q
 
 subVec :: Floating a => Vector a -> Vector a -> Vector a
-subVec = zipWith (-)
+subVec [x,y,z,w] [x2,y2,z2,w2] = [x-x2,y-y2,z-z2,w-w2]
+subVec p q = zipWith (-) p q
 
 mulVec :: Floating a => Vector a -> Vector a -> Vector a
-mulVec = zipWith (*)
+mulVec [x,y,z,w] [x2,y2,z2,w2] = [x*x2,y*y2,z*z2,w*w2]
+mulVec p q = zipWith (*) p q
 
 mulScalarVec :: Floating a => a -> Vector a -> Vector a
-mulScalarVec s = map (* s)
+mulScalarVec s [x,y,z,w] = [s*x,s*y,s*z,s*w]
+mulScalarVec s v = map (* s) v
 
 negateVec :: Floating a => Vector a -> Vector a
 negateVec = map negate
@@ -34,27 +37,28 @@ lengthVec a = sqrt . sum $ map square a
     where square x = x*x
 
 zeroV :: Floating a => Vector a
-zeroV = [0,0,0,0]
+zeroV = [0,0,0]
 
 identityV :: Floating a => Vector a
-identityV = [0,0,0,1]
+identityV = [0,0,0]
 
 rndVec :: IO (Vector Float)
-rndVec = mapM (\_ -> randomRIO (0.0,1.0)) [1..4]
+rndVec = mapM (\_ -> randomRIO (0.0,1.0)) [1..3]
 
 rndPolarV :: StdGen -> (Vector Float, StdGen)
 rndPolarV gen = (v, nextGen)
   where (azimut, nextGen) = randomR (-pi,pi) gen 
         x = cos azimut
         y = sin azimut
-        v = [x,y,0.0,0.0] --(x:y:0.0:0.0:[])
+        v = [x,y,0.0]
 
 rndPolarVec :: IO (Vector Float)
 rndPolarVec = do 
   azimut <- randomRIO (-pi, pi)
   let x = 1.0 * cos azimut
       y = 1.0 * sin azimut
-   in return [x,y,0.0,0.0] --(x:y:0.0:0.0:[])
+      z = 0.0
+   in return [x,y,z]
 
 rndSphereVec :: IO (Vector Float)
 rndSphereVec = do
@@ -63,7 +67,7 @@ rndSphereVec = do
   let x = sin zenith * cos azimut
       y = sin zenith * sin azimut
       z = cos zenith
-   in return [x,y,z,1.0] --(x:y:z:1.0:[])
+   in return [x,y,z]
 
 rndCylinderVec :: IO (Vector Float)
 rndCylinderVec = do
@@ -71,7 +75,7 @@ rndCylinderVec = do
   height <- randomRIO (-1.0, 1.0)
   let x = 1.0 * cos azimut
       y = 1.0 * sin azimut
-   in return [x,y,height,1.0] --(x:y:height:1.0:[])
+   in return [x,y,height]
 
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
@@ -87,8 +91,8 @@ radToDeg a = a * 180.0 / pi
 
 lerp :: Floating a => a -> Vector a -> Vector a -> Vector a
 lerp x a b = addVec a' b'
-    where a' = mulVec a $ replicate 4 (1-x)
-          b' = mulVec b $ replicate 4 x
+    where a' = mulVec a $ replicate (length a) (1-x)
+          b' = mulVec b $ replicate (length b) x
 
 euler :: Floating a => a -> Vector a -> Vector a -> Vector a
 euler !h !p0 !p = addVec p0 (mulScalarVec h p)
