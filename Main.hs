@@ -40,11 +40,12 @@ inputAction t world = world { actors = actors' ++ bullets, gen = nextGen }
                     True -> [Bullet "circle" pp initialVelocity zeroV]
                     False -> []
           where (Player pn pp pq pv pa) = findPlayer (actors world)
-                initialVelocity = mulScalarVec 10 pv
+                initialVelocity = mulScalarVec (300 + (lengthVec pv)) direction
+                direction = rightV pq -- right is our forward in 2d
 
         movement :: Actor -> Actor
         movement (Player n p q v a) = Player n p q' v a'
-          where ql = fromAxisAngleQ 0 0 1 ((-x)/30.0)
+          where ql = fromAxisAngleQ 0 0 1 ((-x)/20.0)
                 q' = mulQ q ql
                 a' = mulScalarVec 150.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
 
