@@ -244,6 +244,28 @@ linearInterpolate cs t = (1.0 - ((fromIntegral high) - t)) * (a-b) + b
         a = cs !! high
         b = cs !! low
 
+xVec :: Floating a => Vector a
+xVec = [1,0,0]
+
+yVec :: Floating a => Vector a
+yVec = [0,1,0]
+
+zVec :: Floating a => Vector a
+zVec = [0,0,1]
+
+forwardV :: Floating a => Quaternion a -> Vector a
+forwardV q = rotateVQ q zVec
+
+rightV :: Floating a => Quaternion a -> Vector a
+rightV q = rotateVQ q xVec
+
+upV :: Floating a => Quaternion a -> Vector a
+upV q = rotateVQ q yVec
+
+rotateVQ :: Floating a => Quaternion a -> Vector a -> Vector a
+rotateVQ q [vx,vy,vz] = [x,y,z]
+   where Q w x y z = mulQ (mulQ q (Q 0 vx vy vz)) (conjQ q) 
+
 --- debug
 --- unit tests
 t :: Floating a => Matrix a -> [[a]]
@@ -262,7 +284,3 @@ a' = mulMM a (transposeM a)
 a'' = mulMM a (transposeM a)
     where a = toMatrixQ q''
 
-polarTest :: IO ()
-polarTest = do v <- rndPolarVec
-               print v
-               print $ lengthVec v
