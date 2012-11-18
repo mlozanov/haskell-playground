@@ -100,21 +100,15 @@ title t = preservingMatrix $ do
             renderString Fixed8x16 "sharpshooter"
             GL.color $ color3 1 1 1
 
-
-renderActor :: RenderState -> Actor -> IO ()
-
-renderActor renderState (Player n p q v a) = preservingMatrix $
+transformAndRenderVbo :: RenderState -> String -> Vector Float -> Quaternion Float -> IO ()
+transformAndRenderVbo renderState n p q = preservingMatrix $
   do GL.translate $ fromVector p
      toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
      renderVbo (bufferObjectsMap renderState M.! n)
 
-renderActor renderState (Enemy n p q v a) = preservingMatrix $
-  do GL.translate $ fromVector p
-     toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
-     renderVbo (bufferObjectsMap renderState ! n)
-
-renderActor renderState (StaticActor n p q) = preservingMatrix $
-  do GL.translate $ fromVector p
-     toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
-     renderVbo (bufferObjectsMap renderState ! n)
+renderActor :: RenderState -> Actor -> IO ()
+renderActor renderState (Player n p q v a) = transformAndRenderVbo renderState n p q
+renderActor renderState (Enemy n p q v a) = transformAndRenderVbo renderState n p q
+renderActor renderState (StaticActor n p q) = transformAndRenderVbo renderState n p q
+renderActor renderState (Bullet n p v a) = transformAndRenderVbo renderState n p identityQ
 

@@ -156,7 +156,7 @@ mainLoop world renderState renderActions inputAction simulateAction ioActions = 
 
       GLFW.swapBuffers
 
-      --performGC
+      performGC
 
       t1 <- getCPUTime
 

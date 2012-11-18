@@ -38,7 +38,7 @@ playerNormals = concat $ replicate ( length playerVertices ) [0.0, 0.0, 1.0]
 
 
 circleVertices :: GLfloat -> [GLfloat]
-circleVertices r = concat [ [ (1)*r * sin t, r * cos t, 0.0] | t <- [0, 2*pi/24.0 .. 2*pi] ]
+circleVertices r = concat [ [ r * sin t, r * cos t, 0.0] | t <- [0, 2*pi/24.0 .. 2*pi] ]
 
 circleNormals :: [GLfloat]
 circleNormals = concat [ [ 0.0, 0.0, 1.0] | t <- [0, 2*pi/24.0 .. 2*pi] ]

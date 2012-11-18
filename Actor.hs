@@ -3,6 +3,8 @@ module Actor where
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLUT.Objects as O
 
+import Data.Map
+
 import Math
 import Graphics
 
@@ -26,6 +28,17 @@ data Actor = SimpleActor
                          , staticActorPosition :: Vector Float
                          , staticActorOrientation :: Quaternion Float
                          }
+
+           | Bullet { bulletName :: !String
+                    , bulletPosition :: !(Vector Float)
+                    , bulletVelocity :: !(Vector Float)
+                    , bulletAcceleration :: !(Vector Float)
+                    }
+
+           | Rocket { rocketName :: !String
+                    , rocketPosition :: !(Vector Float)
+                    }
+
             deriving Show
 
 type Actors = [Actor]
