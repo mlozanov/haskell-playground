@@ -244,23 +244,23 @@ linearInterpolate cs t = (1.0 - ((fromIntegral high) - t)) * (a-b) + b
         a = cs !! high
         b = cs !! low
 
-xVec :: Floating a => Vector a
-xVec = [1,0,0]
+vecX :: Floating a => Vector a
+vecX = [1,0,0]
 
-yVec :: Floating a => Vector a
-yVec = [0,1,0]
+vecY :: Floating a => Vector a
+vecY = [0,1,0]
 
-zVec :: Floating a => Vector a
-zVec = [0,0,1]
+vecZ :: Floating a => Vector a
+vecZ = [0,0,1]
 
 forwardV :: Floating a => Quaternion a -> Vector a
-forwardV q = rotateVQ q zVec
+forwardV q = rotateVQ q vecZ
 
 rightV :: Floating a => Quaternion a -> Vector a
-rightV q = rotateVQ q xVec
+rightV q = rotateVQ q vecX
 
 upV :: Floating a => Quaternion a -> Vector a
-upV q = rotateVQ q yVec
+upV q = rotateVQ q vecY
 
 rotateVQ :: Floating a => Quaternion a -> Vector a -> Vector a
 rotateVQ q [vx,vy,vz] = [x,y,z]
