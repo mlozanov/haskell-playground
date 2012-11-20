@@ -10,6 +10,12 @@ type Vector a = [a]
 data Matrix a = M [a] deriving Show
 data Quaternion a = Q a a a a deriving Show
 
+data Shape a = Rectagle a a a a 
+             | Circle (Vector a) a
+             | Sphere (Vector a) a
+             | Box (Vector a) (Vector a) -- center, extent
+             deriving (Eq, Ord, Show)
+
 addVec :: Floating a => Vector a -> Vector a -> Vector a
 addVec [x,y,z,w] [x2,y2,z2,w2] = [x+x2,y+y2,z+z2,w+w2]
 addVec p q = zipWith (+) p q

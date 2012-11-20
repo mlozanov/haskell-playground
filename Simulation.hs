@@ -25,12 +25,8 @@ import Math
 import Camera
 import Actor
 
-addActorToWorld :: World -> Actor -> World
-addActorToWorld w a = w { actors = (actors w) ++ [a] }
- 
 updateCameras :: World -> Cameras -> Cameras
-updateCameras world cameras = map processOneCamera cameras
-  where processOneCamera c = evalState (simpleFraming c) (actors world)
+updateCameras world cameras = undefined
 
 collectCollisions :: World -> Actors -> [(Actor,Actor)]
 collectCollisions = undefined
@@ -44,7 +40,7 @@ updateLogic world actors = undefined
 updateActorMovement :: Float -> Actor -> Actor
 updateActorMovement t (Player n !p !q !v !a) = Player n p' q v' a'
   where a' = zeroV
-        drag = mulScalarVec (-0.005) v
+        drag = mulScalarVec (-0.007) v
         p' = euler 0.016667 p v
         nv = euler 0.016667 v a
         v' = addVec nv drag
@@ -57,12 +53,13 @@ updateActorMovement t (Enemy n !p !q !v !a) = Enemy n p' q' v' a'
         v' = addVec nv drag
         q' = fromAxisAngleQ 0.0 0.707 0.707 (t*2)
 
-updateActorMovement t (Bullet n p v a) = Bullet n p' v' a'
+updateActorMovement t (Bullet n age p v a) = Bullet n age' p' v' a'
   where a' = zeroV
         drag = mulScalarVec (-0.004) v
         nv = euler 0.016667 v a
         p' = euler 0.016667 p v
         v' = addVec nv drag
+        age' = age - 0.016667
 
 updateActorMovement t static@(StaticActor _ _ _) = static        
 

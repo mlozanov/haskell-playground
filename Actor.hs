@@ -30,6 +30,7 @@ data Actor = SimpleActor
                          }
 
            | Bullet { bulletName :: !String
+                    , bulletAge :: !Float
                     , bulletPosition :: !(Vector Float)
                     , bulletVelocity :: !(Vector Float)
                     , bulletAcceleration :: !(Vector Float)

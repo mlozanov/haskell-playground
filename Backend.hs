@@ -5,7 +5,6 @@ module Backend (
   SetupAction,
   RenderAction,
   IOActions,
-  InputActionPure,
   SimulateAction
   )
   where
@@ -44,10 +43,8 @@ import Primitives
 data World = World { worldTime :: !Float
                    , worldInput :: !Input 
                    , cameras :: !Cameras
-                   , actors :: !Actors 
                    , gen :: !StdGen
                    } deriving Show
-
 
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , viewMatrix :: Ptr GLfloat
@@ -56,21 +53,19 @@ data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                }
 
 
-type SetupAction = (IORef World -> IO ())
-type RenderAction = (Float -> IORef World -> IORef RenderState -> IO ())
+type SetupAction = (IORef World -> IORef Actors -> IO ())
+type RenderAction = (IORef World -> IORef Actors -> IORef RenderState -> IO ())
 
-type SimulateAction = (Float -> World -> World)
-type IOActions = [(Float -> IORef World -> IO ())]
-type InputActionPure = (Float -> World -> World)
+type SimulateAction = Actors -> World -> (Actors, World) --(Float -> World -> World)
+type IOActions = [(IORef World -> IO ())]
 
 emptyWorld :: World
-emptyWorld = (World 0.0 i cs as (mkStdGen 1023))
+emptyWorld = (World 0.0 i cs (mkStdGen 1023))
     where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] (0,0) (False,False)
           cs = [EmptyCamera]
-          as = []
 
-setup :: Int -> Int -> String -> SetupAction -> [RenderAction] -> InputActionPure -> SimulateAction -> IOActions -> IO ()
-setup wx wy title setupAction renderActions inputAction simulateAction ioActions = do 
+setup :: Int -> Int -> String -> SetupAction -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
+setup wx wy title setupAction renderActions simulateAction ioActions = do 
   GLFW.initialize
   -- open window
   GLFW.openWindow (GL.Size (fromIntegral wx) (fromIntegral wy)) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
@@ -103,7 +98,9 @@ setup wx wy title setupAction renderActions inputAction simulateAction ioActions
 
   worldRef <- newIORef emptyWorld
 
-  setupAction worldRef
+  actorsRef <- newIORef ([] :: Actors)
+
+  setupAction worldRef actorsRef
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -131,27 +128,32 @@ setup wx wy title setupAction renderActions inputAction simulateAction ioActions
   GLFW.mouseButtonCallback $= mouseBtnCallback worldRef
 
   -- invoke the active drawing loop
-  mainLoop worldRef renderStateRef renderActions inputAction simulateAction ioActions
+  mainLoop worldRef actorsRef renderStateRef renderActions simulateAction ioActions
 
   GLFW.closeWindow
   GLFW.terminate
 
-mainLoop :: IORef World -> IORef RenderState -> [RenderAction] -> InputActionPure -> SimulateAction -> IOActions -> IO ()
-mainLoop world renderState renderActions inputAction simulateAction ioActions = loop 0.0 world renderState
+mainLoop :: IORef World -> IORef Actors -> IORef RenderState -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
+mainLoop world actors renderState renderActions simulateAction ioActions = loop 0.0 world actors renderState
   where 
  
-    loop :: Float -> IORef World -> IORef RenderState -> IO ()
-    loop t worldRef renderStateRef = do
+    loop :: Float -> IORef World -> IORef Actors -> IORef RenderState -> IO ()
+    loop t worldRef actorsRef renderStateRef = do
       t0 <- getCPUTime
 
       --updateJoystickState worldRef
 
-      mapM_ (\action -> action t worldRef) ioActions
+      mapM_ (\action -> action worldRef) ioActions
 
-      modifyIORef worldRef ((inputAction t) . (simulateAction t))
+      world <- readIORef worldRef
+      actors <- readIORef actorsRef
+      let (actors', world') = simulateAction actors world
+      writeIORef worldRef world'
+      writeIORef actorsRef actors'
 
-      mapM_ (\action -> action t worldRef renderStateRef) renderActions
+      mapM_ (\action -> action worldRef actorsRef renderStateRef) renderActions
 
+      --debugWorld worldRef
       --debugInput worldRef
 
       GLFW.swapBuffers
@@ -172,7 +174,7 @@ mainLoop world renderState renderActions inputAction simulateAction ioActions = 
           -- only continue when the window is not closed
           windowOpenStatus <- getParam Opened
           unless (not windowOpenStatus) $
-            loop (t + dt) worldRef renderStateRef -- loop with next action
+            loop (t + dt) worldRef actorsRef renderStateRef -- loop with next action
 
 
 keyboardCallback :: IORef World -> KeyCallback
@@ -187,9 +189,7 @@ keyboardCallback worldRef key state = modifyIORef worldRef readKeys  -- >> print
                        GLFW.CharKey 'W' -> 1.0
                        GLFW.CharKey 'S' -> (-1.0)
                        otherwise -> 0.0
-                axisL = if state == Press 
-                        then [lx,ly,0.0,0.0]
-                        else [0.0,0.0,0.0,0.0]
+                axisL = [lx,ly,0.0]
 
                 --lx = if key == GLFW.CharKey 'A' then 1.0 else 0.0
                 --ly = if key == GLFW.CharKey 'D' then 1.0 else 0.0
@@ -234,4 +234,7 @@ debugInput :: IORef World -> IO ()
 debugInput worldRef = do world <- readIORef worldRef
                          print (worldInput world)
 
+
+debugWorld :: IORef World -> IO ()
+debugWorld worldRef = readIORef worldRef >>= print
 

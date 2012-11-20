@@ -37,12 +37,13 @@ toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 matrixFloatToGLfloat :: Math.Matrix Float -> Math.Matrix GLfloat
 matrixFloatToGLfloat (M ms) = M (map realToFrac ms)  
 
-renderer :: Float -> IORef World -> IORef RenderState -> IO ()
-renderer t worldRef renderStateRef = do
+renderer :: IORef World -> IORef Actors -> IORef RenderState -> IO ()
+renderer worldRef actorsRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   renderState <- readIORef renderStateRef
   world <- readIORef worldRef 
+  actors <- readIORef actorsRef
 
   -- projection matrix
   GL.matrixMode $= GL.Projection
@@ -62,8 +63,8 @@ renderer t worldRef renderStateRef = do
 
   -- draw all VBOs in renderstate
   let p = (shaderProgramsMap renderState) ! "default"
-  let lx = 60.0 * cos (2.0 * (realToFrac t))
-  let ly = 50.0 * sin (realToFrac t)
+  let lx = 60.0 * cos (2.0 * (realToFrac (worldTime world)))
+  let ly = 50.0 * sin (realToFrac (worldTime world))
   let lz = 100.0 -- + (50.0 * sin (8.0 * t))
 
   withProgram p $ do
@@ -82,14 +83,14 @@ renderer t worldRef renderStateRef = do
     uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
 
     --print $ "=================================================="
-    mapM_ (renderActor renderState) (actors world)
+    mapM_ (renderActor renderState) actors
     --print $ "--------------------------------------------------"
 
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
 
   -- draw the title
-  title t
+  title (worldTime world)
 
   return ()
 
@@ -110,5 +111,5 @@ renderActor :: RenderState -> Actor -> IO ()
 renderActor renderState (Player n p q v a) = transformAndRenderVbo renderState n p q
 renderActor renderState (Enemy n p q v a) = transformAndRenderVbo renderState n p q
 renderActor renderState (StaticActor n p q) = transformAndRenderVbo renderState n p q
-renderActor renderState (Bullet n p v a) = transformAndRenderVbo renderState n p identityQ
+renderActor renderState (Bullet n age p v a) = transformAndRenderVbo renderState n p identityQ
 
