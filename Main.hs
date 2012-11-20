@@ -30,43 +30,9 @@ setupAction worldRef actorsRef = do
   let cs = map (\p -> (Enemy "enemy" (mulScalarVec 20.0 p) identityQ (mulScalarVec 10.0 p) zeroV))  rndPos
   modifyIORef actorsRef (\actors -> actors ++ [newPlayer] ++ cs)
 
-{-
-inputAction :: InputActionPure
-inputAction t world = world { actors = actors' ++ bullets, gen = nextGen }
-  where input = worldInput world
-        (lb,rb) = inputMouseButtons input
-        (x:y:rest) = inputAxisL input
-        (vec,nextGen) = rndPolarV (gen world)
-
-        actors' = map movement (actors world)
-
-        bullets :: Actors
-        bullets = if lb
-                  then [Bullet "circle" 1.0 pp initialVelocity zeroV]
-                  else []
-          where (Player pn pp pq pv pa) = findPlayer (actors world)
-                initialVelocity = mulScalarVec (300 + (lengthVec pv)) direction
-                direction = rightV pq -- right is our forward in 2d
-
-        movement :: Actor -> Actor
-        movement (Player n p q v a) = Player n p q' v a'
-          where ql = fromAxisAngleQ 0 0 1 ((-x)/20.0)
-                q' = mulQ q ql
-                a' = mulScalarVec 150.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
-
-        movement (Enemy n p q v a) = Enemy n p q v' a
-          where v' = mulScalarVec 50.0 (mulMV vec (toMatrixQ q))
-
-        movement actor = actor
--}
 
 renderActions :: [RenderAction]
 renderActions = [renderer]
-
--- simulation is pure function. should be executed in parallel
-simulateAction :: SimulateAction
-simulateAction = simulate
-
 
 simulate :: Actors -> World -> (Actors, World)
 simulate actors world = runState state world
@@ -123,4 +89,4 @@ ioActions :: IOActions
 ioActions = []
 
 main :: IO ()
-main = setup 1280 720 "sharpshooter" setupAction renderActions simulateAction ioActions
+main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
