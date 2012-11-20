@@ -26,7 +26,7 @@ findPlayer actors = player
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef actorsRef = do
-  rndPos <- mapM (\_ -> rndSphereVec) [1..16]
+  rndPos <- mapM (\_ -> rndSphereVec) [1..2]
   let cs = map (\p -> (Enemy "enemy" (mulScalarVec 20.0 p) identityQ (mulScalarVec 10.0 p) zeroV))  rndPos
   modifyIORef actorsRef (\actors -> actors ++ [newPlayer] ++ cs)
 
@@ -36,44 +36,40 @@ renderActions = [renderer]
 
 simulate :: Actors -> World -> (Actors, World)
 simulate actors world = runState state world
-  where state = prepare actors >>= input >>= bullets >>= collisions >>= movement
+  where state = prepare actors >>= playerInput >>= filterBullets >>= produceBullets >>= collisions >>= movement
+
+        (Player pn pp pq pv pa) = findPlayer actors
 
         prepare :: Actors -> State World Actors
         prepare actors = return actors
 
-        input :: Actors -> State World Actors
-        input actors = do
-          world <- get
+        produceBullets :: Actors -> State World Actors
+        produceBullets actors = do
+          w <- get
+          return $ actors ++ (bullets (worldInput w))
 
-          put $ world { gen = nextGen }
+        bullets :: Input -> Actors
+        bullets input = if lb
+                        then [Bullet "circle" 2.0 pp initialVelocity zeroV]
+                        else []
+          where initialVelocity = mulScalarVec (300 + (lengthVec pv)) direction
+                direction = rightV pq -- right is our forward in 2d
+                (lb,rb) = inputMouseButtons input
 
-          return $ (map actorControl actors) ++ bullets
+        playerInput :: Actors -> State World Actors
+        playerInput actors = do
+          w <- get
 
-            where (Player pn pp pq pv pa) = findPlayer actors
-                  (lb,rb) = inputMouseButtons (worldInput world)
-                  (x:y:rest) = inputAxisL (worldInput world)
-                  (vec,nextGen) = rndPolarV (gen world)
+          let (x:y:rest) = inputAxisL (worldInput w)
+              (Player n p q v a):as = actors
+              player = Player n p q' v a'
+              ql = fromAxisAngleQ 0 0 1 ((-x)/20.0)
+              q' = mulQ q ql
+              a' = mulScalarVec 150.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
+           in return (player:as)
 
-                  bullets :: Actors
-                  bullets = if lb
-                            then [Bullet "circle" 1.0 pp initialVelocity zeroV]
-                            else []
-                    where initialVelocity = mulScalarVec (300 + (lengthVec pv)) direction
-                          direction = rightV pq -- right is our forward in 2d
-
-                  actorControl :: Actor -> Actor
-                  actorControl (Player n p q v a) = Player n p q' v a'
-                    where ql = fromAxisAngleQ 0 0 1 ((-x)/20.0)
-                          q' = mulQ q ql
-                          a' = mulScalarVec 150.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
-
-                  actorControl (Enemy n p q v a) = Enemy n p q v' a
-                    where v' = mulScalarVec 50.0 (mulMV vec (toMatrixQ q))
-
-                  actorControl actor = actor
-
-        bullets :: Actors -> State World Actors
-        bullets actors = return $ filter f actors
+        filterBullets :: Actors -> State World Actors
+        filterBullets actors = return $ filter f actors
           where f (Bullet n age p v a) | age > 0 = True
                                        | otherwise = False
                 f actor = True

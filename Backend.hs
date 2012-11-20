@@ -189,7 +189,9 @@ keyboardCallback worldRef key state = modifyIORef worldRef readKeys  -- >> print
                        GLFW.CharKey 'W' -> 1.0
                        GLFW.CharKey 'S' -> (-1.0)
                        otherwise -> 0.0
-                axisL = [lx,ly,0.0]
+                axisL = if state == Press
+                        then [lx,ly,0.0]
+                        else [0,0,0]
 
                 --lx = if key == GLFW.CharKey 'A' then 1.0 else 0.0
                 --ly = if key == GLFW.CharKey 'D' then 1.0 else 0.0
