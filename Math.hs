@@ -10,7 +10,7 @@ type Vector a = [a]
 data Matrix a = M [a] deriving Show
 data Quaternion a = Q a a a a deriving Show
 
-data Shape a = Rectagle a a a a 
+data Shape a = Rectangle a a a a 
              | Circle (Vector a) a
              | Sphere (Vector a) a
              | Box (Vector a) (Vector a) -- center, extent
@@ -49,7 +49,7 @@ identityV :: Floating a => Vector a
 identityV = [0,0,0]
 
 rndVec :: IO (Vector Float)
-rndVec = mapM (\_ -> randomRIO (0.0,1.0)) [1..3]
+rndVec = mapM (\_ -> randomRIO (-1.0,1.0)) [1..3]
 
 rndPolarV :: StdGen -> (Vector Float, StdGen)
 rndPolarV gen = (v, nextGen)
