@@ -95,7 +95,7 @@ simulate actors world = runState state world
               player = Player n p q' v a'
               ql = fromAxisAngleQ 0 0 1 ((-x)/20.0)
               q' = mulQ q ql
-              a' = mulScalarVec 150.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
+              a' = mulScalarVec 350.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
            in return (player:as)
 
         filterBullets :: Actors -> State World Actors

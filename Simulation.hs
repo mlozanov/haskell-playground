@@ -40,7 +40,7 @@ updateLogic world actors = undefined
 updateActorMovement :: Float -> Actor -> Actor
 updateActorMovement t (Player n !p !q !v !a) = Player n p' q v' a'
   where a' = zeroV
-        drag = mulScalarVec (-0.007) v
+        drag = mulScalarVec (-0.05) v
         p' = euler 0.016667 p v
         nv = euler 0.016667 v a
         v' = addVec nv drag
