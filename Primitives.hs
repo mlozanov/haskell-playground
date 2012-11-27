@@ -1,7 +1,6 @@
-module Primitives
-    where
+module Primitives where
 
-import Graphics.Rendering.OpenGL as GL
+import Graphics.Rendering.OpenGL as GL (GLfloat, GLuint)
 
 roomVertices :: [[GLfloat]]
 roomVertices = [ [x,y,z] | x <- [(-1.85),1.85], y <- [(-1.0),1.0], z <- [(-1.85),1] ]
@@ -42,3 +41,10 @@ circleVertices r = concat [ [ r * sin t, r * cos t, 0.0] | t <- [0, 2*pi/24.0 ..
 
 circleNormals :: [GLfloat]
 circleNormals = concat [ [ 0.0, 0.0, 1.0] | t <- [0, 2*pi/24.0 .. 2*pi] ]
+
+ngonVertices :: GLfloat -> GLfloat -> [GLfloat]
+ngonVertices r n = concat [ [ r * sin t, r * cos t, 0.0] | t <- [0, 2*pi/n .. 2*pi] ]
+
+ngonNormals :: GLfloat -> [GLfloat]
+ngonNormals n = concat [ [ 0.0, 0.0, 1.0] | t <- [0, 2*pi/n .. 2*pi] ]
+

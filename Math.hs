@@ -51,6 +51,13 @@ identityV = [0,0,0]
 rndVec :: IO (Vector Float)
 rndVec = mapM (\_ -> randomRIO (-1.0,1.0)) [1..3]
 
+rndVec2d :: IO (Vector Float)
+rndVec2d = do
+  rx <- randomRIO (-1.0,1.0)
+  ry <- randomRIO (-1.0,1.0)
+
+  return [rx,ry,0.0]
+
 rndPolarV :: StdGen -> (Vector Float, StdGen)
 rndPolarV gen = (v, nextGen)
   where (azimut, nextGen) = randomR (-pi,pi) gen 

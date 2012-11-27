@@ -32,7 +32,7 @@ readAndCompileShader filePath = do
   reportErrors
   ok <- get (compileStatus shader)
   infoLog <- get (shaderInfoLog shader)
-  mapM_ putStrLn ["Shader info log '" ++ filePath ++ ":", infoLog, "" ]
+  mapM_ putStrLn ["Shader >" ++ filePath ++ ":", infoLog ]
   unless ok $ do 
     deleteObjectNames [shader]
     ioError (userError "compilation failed")
@@ -46,7 +46,7 @@ linkShaders vs fs = do
   reportErrors
   ok <- get (linkStatus prog)
   infoLog <- get (programInfoLog prog)
-  mapM_ putStrLn ["Program info log: ", infoLog, ""]
+  mapM_ putStrLn ["Program >", infoLog]
   unless ok $ do deleteObjectNames [prog]
                  ioError (userError "linking failed")  
   return prog

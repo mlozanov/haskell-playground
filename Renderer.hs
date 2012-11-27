@@ -37,8 +37,8 @@ toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 matrixFloatToGLfloat :: Math.Matrix Float -> Math.Matrix GLfloat
 matrixFloatToGLfloat (M ms) = M (map realToFrac ms)  
 
-renderer :: IORef World -> IORef Actors -> IORef RenderState -> IO ()
-renderer worldRef actorsRef renderStateRef = do
+render :: IORef World -> IORef Actors -> IORef RenderState -> IO ()
+render worldRef actorsRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   renderState <- readIORef renderStateRef

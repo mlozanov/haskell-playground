@@ -53,7 +53,7 @@ data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                }
 
 
-type SetupAction = (IORef World -> IORef Actors -> IO ())
+type SetupAction = (IORef World -> IORef Actors -> IORef RenderState -> IO ())
 type RenderAction = (IORef World -> IORef Actors -> IORef RenderState -> IO ())
 
 type SimulateAction = Actors -> World -> (Actors, World) --(Float -> World -> World)
@@ -63,6 +63,7 @@ emptyWorld :: World
 emptyWorld = (World 0.0 i cs (mkStdGen 1023))
     where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] (0,0) (False,False)
           cs = [EmptyCamera]
+
 
 setup :: Int -> Int -> String -> SetupAction -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
 setup wx wy title setupAction renderActions simulateAction ioActions = do 
@@ -96,12 +97,6 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
           p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
           multMatrix p
 
-  worldRef <- newIORef emptyWorld
-
-  actorsRef <- newIORef ([] :: Actors)
-
-  setupAction worldRef actorsRef
-
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
   GL.get GL.glVersion >>= print
@@ -109,19 +104,18 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
-  defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
-  sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
 
-  vboRoom <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
-  vboBall <- Vbo.fromList GL.Points ballVertices ballNormals
-  vboPlayer <- Vbo.fromList GL.Points playerVertices playerNormals
-  vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 5.0) circleNormals
+  let objects = M.fromList [] --createGeometryObjects
 
-  let objects = [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboBall), ("room", vboRoom)]
+  let shaders = M.fromList [] --createShaderPrograms
 
-  let shaders = [("default", defaultProgram), ("spherical", sphericalProgram)]
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray shaders objects)
 
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray (M.fromList shaders) (M.fromList objects))
+  worldRef <- newIORef emptyWorld
+
+  actorsRef <- newIORef ([] :: Actors)
+
+  setupAction worldRef actorsRef renderStateRef
 
   GLFW.keyCallback $= keyboardCallback worldRef
   GLFW.mousePosCallback $= mousePositionCallback worldRef

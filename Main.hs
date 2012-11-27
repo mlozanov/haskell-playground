@@ -2,9 +2,16 @@ module Main where
 
 import Control.Monad.State.Strict
 
+import qualified Graphics.Rendering.OpenGL as GL
+
 import Data.IORef
+import Data.Map as M hiding (map,filter)
 
 import Backend
+
+import Primitives
+import Shader
+import Vbo
 
 import Input
 import Math
@@ -12,27 +19,50 @@ import Actor
 
 import Simulation
 import Renderer
+import Collision
 
 type WorldState = State World World
 
 findPlayer :: Actors -> Actor
-findPlayer actors = player
-  where player = head $ filter f actors
-
-        f :: Actor -> Bool
-        f (Player n p q v a) = True
-        f _ = False
+findPlayer (player:actors) = player
 
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
-setupAction worldRef actorsRef = do
-  rndPos <- mapM (\_ -> rndSphereVec) [1..2]
-  let cs = map (\p -> (Enemy "enemy" (mulScalarVec 20.0 p) identityQ (mulScalarVec 10.0 p) zeroV))  rndPos
+setupAction worldRef actorsRef renderStateRef = do
+  rndPos <- mapM (\_ -> rndVec2d) [1..64]
+  let cs = map (\p -> (Enemy "enemy" (mulScalarVec 100.0 p) identityQ (mulScalarVec 10.0 p) zeroV))  rndPos
   modifyIORef actorsRef (\actors -> actors ++ [newPlayer] ++ cs)
+
+  renderState <- readIORef renderStateRef
+
+  shaders <- createShaderPrograms
+  objects <- createGeometryObjects
+
+  writeIORef renderStateRef (renderState { shaderProgramsMap = shaders, bufferObjectsMap = objects } )
+
+createGeometryObjects :: IO (Map String Vbo)
+createGeometryObjects = do
+  vboRoom <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
+  vboBall <- Vbo.fromList GL.Points ballVertices ballNormals
+  vboPlayer <- Vbo.fromList GL.Points playerVertices playerNormals
+  vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 5.0) circleNormals
+
+  vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 20.0 5.0) (ngonNormals 5.0)
+
+  vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 5.0 3.0) (ngonNormals 3.0)  
+
+  return $ M.fromList [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle)]
+
+createShaderPrograms :: IO (Map String ShaderProgram)
+createShaderPrograms = do
+  defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
+  sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
+
+  return $ M.fromList [("default", defaultProgram), ("spherical", sphericalProgram)]
 
 
 renderActions :: [RenderAction]
-renderActions = [renderer]
+renderActions = [render]
 
 simulate :: Actors -> World -> (Actors, World)
 simulate actors world = runState state world
@@ -50,7 +80,7 @@ simulate actors world = runState state world
 
         bullets :: Input -> Actors
         bullets input = if lb
-                        then [Bullet "circle" 2.0 pp initialVelocity zeroV]
+                        then [Bullet "triangle" 2.0 pp initialVelocity zeroV]
                         else []
           where initialVelocity = mulScalarVec (300 + (lengthVec pv)) direction
                 direction = rightV pq -- right is our forward in 2d
@@ -75,7 +105,10 @@ simulate actors world = runState state world
                 f actor = True
 
         collisions :: Actors -> State World Actors
-        collisions actors = return actors
+        collisions actors = do
+          return actors'
+          where pairs = [ (a1, a2) | a1@(Bullet n age p v a) <- actors, a2 <- actors ]
+                actors' = actors
 
         movement :: Actors -> State World Actors
         movement actors = return $ map (updateActorMovement 0.016667) actors
