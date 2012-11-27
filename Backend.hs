@@ -142,7 +142,7 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
       world <- readIORef worldRef
       actors <- readIORef actorsRef
       let (actors', world') = simulateAction actors world
-      writeIORef worldRef world'
+      writeIORef worldRef (world' { worldTime = t })
       writeIORef actorsRef actors'
 
       mapM_ (\action -> action worldRef actorsRef renderStateRef) renderActions

@@ -40,6 +40,12 @@ data Actor = SimpleActor
                     , rocketPosition :: !(Vector Float)
                     }
 
+           | Explosion { explosionName :: !String 
+                       , explosionPosition :: !(Vector Float)
+                       , explosionAge :: !Float
+                       , explosionPower :: !Float
+                       }
+
             deriving Show
 
 type Actors = [Actor]
@@ -50,3 +56,5 @@ newPlayer = Player "player" zeroV identityQ zeroV zeroV
 newEnemy :: Actor
 newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV
 
+newExplosion :: Vector Float -> Actor
+newExplosion p = Explosion "explosion" p 1.5 8.0

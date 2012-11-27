@@ -29,7 +29,7 @@ findPlayer (player:actors) = player
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
-  rndPos <- mapM (\_ -> rndVec2d) [1..64]
+  rndPos <- mapM (\_ -> rndPolarVec) [1..16]
   let cs = map (\p -> (Enemy "enemy" (mulScalarVec 100.0 p) identityQ (mulScalarVec 10.0 p) zeroV))  rndPos
   modifyIORef actorsRef (\actors -> actors ++ [newPlayer] ++ cs)
 
@@ -111,7 +111,9 @@ simulate actors world = runState state world
                 actors' = actors
 
         movement :: Actors -> State World Actors
-        movement actors = return $ map (updateActorMovement 0.016667) actors
+        movement actors = do
+          w <- get
+          return $ map (updateActorMovement (worldTime w)) actors
 
 
 ioActions :: IOActions

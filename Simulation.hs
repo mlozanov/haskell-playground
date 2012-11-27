@@ -51,7 +51,7 @@ updateActorMovement t (Enemy n !p !q !v !a) = Enemy n p' q' v' a'
         nv = euler 0.016667 v a
         p' = euler 0.016667 p v
         v' = addVec nv drag
-        q' = fromAxisAngleQ 0.0 0.707 0.707 (t*2)
+        q' = fromAxisAngleQ 0.0 0.0 1.0 (t*2)
 
 updateActorMovement t (Bullet n age p v a) = Bullet n age' p' v' a'
   where a' = zeroV
@@ -61,7 +61,9 @@ updateActorMovement t (Bullet n age p v a) = Bullet n age' p' v' a'
         v' = addVec nv drag
         age' = age - 0.016667
 
-updateActorMovement t static@(StaticActor _ _ _) = static        
+updateActorMovement t static@(StaticActor _ _ _) = static
+
+updateActorMovement t actor = actor
 
 setAccelerationActor :: Vector Float -> Actor -> Actor
 setAccelerationActor newAcc player@(Player _ _ _ _ a) = player { playerAcceleration = newAcc }
