@@ -172,25 +172,27 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
 
 
 keyboardCallback :: IORef World -> KeyCallback
-keyboardCallback worldRef key state = modifyIORef worldRef readKeys  -- >> print key >> print state
+keyboardCallback worldRef key Press = modifyIORef worldRef readKeys  -- >> print key >> print state
   where readKeys world = world { worldInput = input { inputAxisL = axisL } }
           where input = worldInput world
-                lx = case key of
-                       GLFW.CharKey 'D' -> 1.0
-                       GLFW.CharKey 'A' -> (-1.0)
-                       otherwise -> 0.0
-                ly = case key of
-                       GLFW.CharKey 'W' -> 1.0
-                       GLFW.CharKey 'S' -> (-1.0)
-                       otherwise -> 0.0
-                axisL = if state == Press
-                        then [lx,ly,0.0]
-                        else [0,0,0]
+                (x:y:zs) = inputAxisL input
+                axisL = case key of
+                          GLFW.CharKey 'D' -> (1.0:y:zs)
+                          GLFW.CharKey 'A' -> ((-1.0):y:zs)
+                          GLFW.CharKey 'W' -> (x:1.0:zs)
+                          GLFW.CharKey 'S' -> (x:(-1.0):zs)
+                          otherwise -> [x,y,0.0,0.0]
 
-                --lx = if key == GLFW.CharKey 'A' then 1.0 else 0.0
-                --ly = if key == GLFW.CharKey 'D' then 1.0 else 0.0
-                --rx = if key == GLFW.CharKey 'W' then 1.0 else 0.0
-                --ry = if key == GLFW.CharKey 'S' then 1.0 else 0.0
+keyboardCallback worldRef key Release = modifyIORef worldRef readKeys  -- >> print key >> print state
+  where readKeys world = world { worldInput = input { inputAxisL = axisL } }
+          where input = worldInput world
+                (x:y:zs) = inputAxisL input
+                axisL = case key of
+                          GLFW.CharKey 'D' -> (0.0:y:zs)
+                          GLFW.CharKey 'A' -> (0.0:y:zs)
+                          GLFW.CharKey 'W' -> (x:0.0:zs)
+                          GLFW.CharKey 'S' -> (x:0.0:zs)
+                          otherwise -> [x,y,0.0,0.0]
 
 mousePositionCallback :: IORef World -> MousePosCallback
 mousePositionCallback worldRef (Position x y) = modifyIORef worldRef readMousePosition
