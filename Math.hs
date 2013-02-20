@@ -42,6 +42,10 @@ lengthVec :: Floating a => Vector a -> a
 lengthVec a = sqrt . sum $ map square a
     where square x = x*x
 
+squareLengthVec :: Floating a => Vector a -> a
+squareLengthVec a = sum $ map sq a
+  where sq x = x*x
+
 zeroV :: Floating a => Vector a
 zeroV = [0,0,0]
 
@@ -159,6 +163,9 @@ normQ (Q w x y z) | mag < 0.0001 = Q w x y z
           x' = x / mag 
           y' = y / mag
           z' = z / mag
+
+scaleQ :: Floating a => a -> Quaternion a -> Quaternion a
+scaleQ v (Q w x y z) = Q (v*w) (v*x) (v*y) (v*z)
 
 identityQ :: Floating a => Quaternion a
 identityQ = Q 1 0 0 0
@@ -278,6 +285,11 @@ upV q = rotateVQ q vecY
 rotateVQ :: Floating a => Quaternion a -> Vector a -> Vector a
 rotateVQ q [vx,vy,vz] = [x,y,z]
    where Q w x y z = mulQ (mulQ q (Q 0 vx vy vz)) (conjQ q) 
+
+--physics
+dqdt :: Floating a => Vector a -> Quaternion a -> Quaternion a
+dqdt (x:y:z:rest) q = scaleQ 0.5 (mulQ qv q)
+  where qv = (Q 0.0 x y z)
 
 --- debug
 --- unit tests
