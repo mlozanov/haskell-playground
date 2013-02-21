@@ -56,5 +56,8 @@ newPlayer = Player "player" zeroV identityQ zeroV zeroV
 newEnemy :: Actor
 newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV
 
+newBullet :: Actor
+newBullet = Bullet "bullet" 1.0 zeroV zeroV zeroV
+
 newExplosion :: Vector Float -> Actor
 newExplosion p = Explosion "explosion" p 1.5 8.0
