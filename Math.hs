@@ -16,6 +16,16 @@ data Shape a = Rectangle a a a a
              | Box (Vector a) (Vector a) -- center, extent
              deriving (Eq, Ord, Show)
 
+{-# INLINE addVec #-} 
+{-# INLINE subVec #-}
+{-# INLINE mulVec #-}
+{-# INLINE negateVec #-}
+{-# INLINE dotVec #-}
+{-# INLINE lengthVec #-}
+{-# INLINE mulScalarVec #-}
+{-# INLINE zeroV #-} 
+{-# INLINE identityV #-}
+
 addVec :: Floating a => Vector a -> Vector a -> Vector a
 addVec [x,y,z,w] [x2,y2,z2,w2] = [x+x2,y+y2,z+z2,w+w2]
 addVec p q = zipWith (+) p q
@@ -94,6 +104,13 @@ rndCylinderVec = do
       y = 1.0 * sin azimut
    in return [x,y,height]
 
+
+circleVec :: Float ->  IO (Vector Float)
+circleVec i = return [x,y,z]
+  where x = cos i
+        y = sin i
+        z = 0.0
+
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
 z :: Floating a => Vector a -> a
@@ -103,6 +120,10 @@ y [_,y,_,_] = y
 z [_,_,z,_] = z
 w [_,_,_,w] = w
 
+{-# INLINE degToRad #-}
+{-# INLINE radToDeg #-}
+{-# INLINE lerp #-}
+
 degToRad a = a * pi / 180.0
 radToDeg a = a * 180.0 / pi
 
@@ -110,6 +131,9 @@ lerp :: Floating a => a -> Vector a -> Vector a -> Vector a
 lerp x a b = addVec a' b'
     where a' = mulVec a $ replicate (length a) (1-x)
           b' = mulVec b $ replicate (length b) x
+
+slerp :: Floating a => a -> Quaternion a -> Quaternion a -> Quaternion a
+slerp x q0 q1 = undefined
 
 euler :: Floating a => a -> Vector a -> Vector a -> Vector a
 euler !h !p0 !p = addVec p0 (mulScalarVec h p)
@@ -136,6 +160,18 @@ inverseM (M [m0,m1,m2,m3
 unwords4 [] = []
 unwords4 ys = r:(unwords4 rs)
     where (r,rs) = splitAt 4 ys
+
+{-# INLINE addQ #-}
+{-# INLINE subQ #-}
+{-# INLINE mulQ #-}
+{-# INLINE conjQ #-}
+{-# INLINE magQ #-}
+{-# INLINE normQ #-}
+{-# INLINE scaleQ #-}
+{-# INLINE identityQ #-}
+{-# INLINE toMatrixQ #-}
+{-# INLINE fromMatrixQ #-} 
+{-# INLINE fromAxisAngleQ #-}
 
 addQ :: Floating a => Quaternion a -> Quaternion a -> Quaternion a
 addQ (Q q a b c) (Q w x y z) = Q (q+w) (a+x) (b+y) (c+z)
