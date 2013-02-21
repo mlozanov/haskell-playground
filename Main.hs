@@ -29,9 +29,11 @@ findPlayer (player:actors) = player
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
-  rndPos <- mapM (\_ -> rndPolarVec) [1..16]
-  let cs = map (\p -> (Enemy "enemy" (mulScalarVec 100.0 p) identityQ (mulScalarVec 10.0 p) zeroV))  rndPos
-  modifyIORef actorsRef (\actors -> actors ++ [newPlayer] ++ cs)
+  --rndPos <- mapM (\_ -> rndPolarVec) [1..16]
+  rndPos <- mapM circleVec [-pi, -(pi - (pi/16)) .. pi]
+  let cs = map (\p -> (Enemy "enemy" (mulScalarVec 120.0 p) identityQ (mulScalarVec 15.0 p) zeroV))  rndPos
+  let room = StaticActor "room" zeroV identityQ
+  modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -42,12 +44,12 @@ setupAction worldRef actorsRef renderStateRef = do
 
 createGeometryObjects :: IO (Map String Vbo)
 createGeometryObjects = do
-  vboRoom <- Vbo.fromList GL.Triangles (map (* 40) room) (concat roomNormals)
+  vboRoom <- Vbo.fromList GL.Triangles (map (* 140) room) (concat roomNormals)
   vboBall <- Vbo.fromList GL.Points ballVertices ballNormals
   vboPlayer <- Vbo.fromList GL.Points playerVertices playerNormals
-  vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 5.0) circleNormals
+  vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 2.0) circleNormals
 
-  vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 20.0 5.0) (ngonNormals 5.0)
+  vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 16.0 5.0) (ngonNormals 5.0)
 
   vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 5.0 3.0) (ngonNormals 3.0)  
 
@@ -60,31 +62,30 @@ createShaderPrograms = do
 
   return $ M.fromList [("default", defaultProgram), ("spherical", sphericalProgram)]
 
-
 renderActions :: [RenderAction]
 renderActions = [render]
 
 simulate :: Actors -> World -> (Actors, World)
-simulate actors world = runState state world
-  where state = prepare actors >>= playerInput >>= filterBullets >>= produceBullets >>= collisions >>= movement
+simulate as w = runState state w
+  where state = prepare as >>= playerInput >>= filterBullets >>= produceBullets >>= movement 
 
-        (Player pn pp pq pv pa) = findPlayer actors
+        (Player pn pp pq pv pa) = findPlayer as
 
         prepare :: Actors -> State World Actors
         prepare actors = return actors
 
         produceBullets :: Actors -> State World Actors
         produceBullets actors = do
-          w <- get
-          return $ actors ++ (bullets (worldInput w))
-
-        bullets :: Input -> Actors
-        bullets input = if lb
-                        then [Bullet "triangle" 2.0 pp initialVelocity zeroV]
-                        else []
-          where initialVelocity = mulScalarVec (300 + (lengthVec pv)) direction
-                direction = rightV pq -- right is our forward in 2d
-                (lb,rb) = inputMouseButtons input
+          world <- get
+          put $ world { bullets = (bullets world) ++ newBullets (worldInput world) }
+          return actors
+            where newBullets :: Input -> Actors
+                  newBullets input = if lb
+                                     then [Bullet "circle" 2.0 pp initialVelocity zeroV]
+                                     else []
+                    where initialVelocity = mulScalarVec (300 + (lengthVec pv)) direction
+                          direction = rightV pq -- right is our forward in 2d
+                          (lb,rb) = inputMouseButtons input
 
         playerInput :: Actors -> State World Actors
         playerInput actors = do
@@ -93,28 +94,30 @@ simulate actors world = runState state world
           let (x:y:rest) = inputAxisL (worldInput w)
               (Player n p q v a):as = actors
               player = Player n p q' v a'
-              ql = fromAxisAngleQ 0 0 1 ((-x)/20.0)
+              ql = fromAxisAngleQ 0 0 1 ((-x)/12.0)
               q' = mulQ q ql
-              a' = mulScalarVec 350.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
+              a' = mulScalarVec 2200.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
            in return (player:as)
 
         filterBullets :: Actors -> State World Actors
-        filterBullets actors = return $ filter f actors
-          where f (Bullet n age p v a) | age > 0 = True
-                                       | otherwise = False
-                f actor = True
+        filterBullets actors = do
+          world <- get
+          put $ world { bullets = filter f (bullets world) }
+          return actors
+            where f (Bullet n age p v a) | age > 0 = True
+                                         | otherwise = False
 
         collisions :: Actors -> State World Actors
         collisions actors = do
           return actors'
-          where pairs = [ (a1, a2) | a1@(Bullet n age p v a) <- actors, a2 <- actors ]
-                actors' = actors
+            where pairs = [ (a1, a2) | a1@(Bullet n age p v a) <- actors, a2 <- actors ]
+                  actors' = actors
 
         movement :: Actors -> State World Actors
         movement actors = do
-          w <- get
-          return $ map (updateActorMovement (worldTime w)) actors
-
+          world <- get
+          put $ world { bullets = map (updateMovement (worldTime world)) (bullets world) }
+          return $ map (updateMovement (worldTime world)) actors
 
 ioActions :: IOActions
 ioActions = []

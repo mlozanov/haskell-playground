@@ -37,33 +37,34 @@ resolveCollisions = undefined
 updateLogic :: World -> Actors -> Actors
 updateLogic world actors = undefined
 
-updateActorMovement :: Float -> Actor -> Actor
-updateActorMovement t (Player n !p !q !v !a) = Player n p' q v' a'
-  where a' = zeroV
-        drag = mulScalarVec (-0.05) v
-        p' = euler 0.016667 p v
-        nv = euler 0.016667 v a
-        v' = addVec nv drag
- 
-updateActorMovement t (Enemy n !p !q !v !a) = Enemy n p' q' v' a'
-  where a' = zeroV
-        drag = mulScalarVec (-0.004) v
-        nv = euler 0.016667 v a
-        p' = euler 0.016667 p v
-        v' = addVec nv drag
-        q' = fromAxisAngleQ 0.0 0.0 1.0 (t*2)
+instance Physical Actor where
+    updateMovement t (Player n !p !q !v !a) = Player n p' q v' a'
+      where a' = zeroV
+            drag = mulScalarVec (-0.3) v
+            p' = euler 0.016667 p v
+            nv = euler 0.016667 v a
+            v' = addVec nv drag
+            q' = normQ $ addQ q (scaleQ 0.016667 (dqdt [0.0, 0.0, 10.0] q))
+            
+    updateMovement t (Enemy n !p !q !v !a) = Enemy n p' q' v' a'
+      where a' = zeroV
+            drag = mulScalarVec (-0.004) v
+            nv = euler 0.016667 v a
+            p' = euler 0.016667 p v
+            v' = addVec nv drag
+            q' = fromAxisAngleQ 0.0 0.0 1.0 (t*2)
 
-updateActorMovement t (Bullet n age p v a) = Bullet n age' p' v' a'
-  where a' = zeroV
-        drag = mulScalarVec (-0.004) v
-        nv = euler 0.016667 v a
-        p' = euler 0.016667 p v
-        v' = addVec nv drag
-        age' = age - 0.016667
+    updateMovement t (Bullet n age p v a) = Bullet n age' p' v' a'
+      where a' = zeroV
+            drag = mulScalarVec (-0.004) v
+            nv = euler 0.016667 v a
+            p' = euler 0.016667 p v
+            v' = addVec nv drag
+            age' = age - 0.016667
 
-updateActorMovement t static@(StaticActor _ _ _) = static
+    updateMovement t static@(StaticActor _ _ _) = static
 
-updateActorMovement t actor = actor
+    updateMovement t actor = actor
 
 setAccelerationActor :: Vector Float -> Actor -> Actor
 setAccelerationActor newAcc player@(Player _ _ _ _ a) = player { playerAcceleration = newAcc }
@@ -73,4 +74,11 @@ setVelocityActor :: Vector Float -> Actor -> Actor
 setVelocityActor newVel player@(Player _ _ _ v _) = player { playerVelocity = newVel }
 setVelocityActor newVel enemy@(Enemy _ _ _ v _) = enemy { enemyVelocity = newVel }
 
-
+--instance Updatable Actor where
+--    update t (Player n !p !q !v !a) = Player n p' q v' a'
+--        where a' = zeroV
+--              drag = mulScalarVec (-0.05) v
+--              p' = euler 0.016667 p v
+--              nv = euler 0.016667 v a
+--              v' = addVec nv drag
+--              q' = normQ $ addQ q (scaleQ 0.016667 (dqdt [0.0, 0.0, 10.0] q))

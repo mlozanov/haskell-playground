@@ -8,6 +8,9 @@ import Data.Map
 import Math
 import Graphics
 
+class Physical a where
+    updateMovement :: Float -> a -> a
+
 data Actor = SimpleActor
 
            | Player { playerName :: !String
@@ -46,7 +49,7 @@ data Actor = SimpleActor
                        , explosionPower :: !Float
                        }
 
-            deriving Show
+            deriving (Show)
 
 type Actors = [Actor]
 
@@ -61,3 +64,5 @@ newBullet = Bullet "bullet" 1.0 zeroV zeroV zeroV
 
 newExplosion :: Vector Float -> Actor
 newExplosion p = Explosion "explosion" p 1.5 8.0
+
+

@@ -43,6 +43,7 @@ import Primitives
 data World = World { worldTime :: !Float
                    , worldInput :: !Input 
                    , cameras :: !Cameras
+                   , bullets :: !Actors
                    , gen :: !StdGen
                    } deriving Show
 
@@ -60,9 +61,10 @@ type SimulateAction = Actors -> World -> (Actors, World) --(Float -> World -> Wo
 type IOActions = [(IORef World -> IO ())]
 
 emptyWorld :: World
-emptyWorld = (World 0.0 i cs (mkStdGen 1023))
+emptyWorld = (World 0.0 i cs bs (mkStdGen 1023))
     where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] (0,0) (False,False)
           cs = [EmptyCamera]
+          bs = [] :: Actors
 
 
 setup :: Int -> Int -> String -> SetupAction -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
@@ -152,11 +154,12 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
 
       GLFW.swapBuffers
 
-      performGC
+      --performGC
 
       t1 <- getCPUTime
 
-      let dt = 0.0166667 -- ((fromIntegral (t1 - t0)) / (10^12)) :: Float
+      --let dt = 0.0166667 
+      let dt = ((fromIntegral (t1 - t0)) / (10^12)) :: Float
 
       -- check whether ESC is pressed for termination
       p <- GLFW.getKey GLFW.ESC

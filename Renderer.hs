@@ -84,6 +84,8 @@ render worldRef actorsRef renderStateRef = do
 
     --print $ "=================================================="
     mapM_ (renderActor renderState) actors
+
+    mapM_ (renderActor renderState) (bullets world)
     --print $ "--------------------------------------------------"
 
   GL.lighting $= GL.Disabled
