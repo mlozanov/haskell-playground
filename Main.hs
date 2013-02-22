@@ -49,7 +49,7 @@ createGeometryObjects = do
   vboPlayer <- Vbo.fromList GL.Points playerVertices playerNormals
   vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 2.0) circleNormals
 
-  vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 16.0 5.0) (ngonNormals 5.0)
+  vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 14.0 5.0) (ngonNormals 5.0)
 
   vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 5.0 3.0) (ngonNormals 3.0)  
 
@@ -67,7 +67,7 @@ renderActions = [render]
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = prepare as >>= playerInput >>= filterBullets >>= produceBullets >>= movement 
+  where state = prepare as >>= playerInput >>= filterBullets >>= produceBullets >>= movementBullets >>= movement 
 
         (Player pn pp pq pv pa) = findPlayer as
 
@@ -116,8 +116,15 @@ simulate as w = runState state w
         movement :: Actors -> State World Actors
         movement actors = do
           world <- get
-          put $ world { bullets = map (updateMovement (worldTime world)) (bullets world) }
           return $ map (updateMovement (worldTime world)) actors
+
+        movementBullets :: Actors -> State World Actors
+        movementBullets actors = do
+          world <- get
+          put $ world { bullets = map (updateMovement (worldTime world)) (bullets world) }
+          return actors
+
+
 
 ioActions :: IOActions
 ioActions = []
