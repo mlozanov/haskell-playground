@@ -81,13 +81,17 @@ simulate as w = runState state w
           return actors
             where newBullets :: Input -> Actors
                   newBullets input = if lb
-                                     then [Bullet "circle" 0.5 pp initialVelocity zeroV bc]
+                                     then [Bullet "circle" 0.5 pp initialVelocity zeroV explosive]
                                      else []
                     where initialVelocity = mulScalarVec (200 + (lengthVec pv)) direction
                           direction = rightV pq -- right is our forward in 2d
                           (lb,rb) = inputMouseButtons input
-                          bc b = map (\d -> Bullet "triangle" 1.0 (bulletPosition b) (mulScalarVec 200 d) zeroV passthru) directions
-                          directions = map circleVec [-pi, -(pi - (pi/8)) .. pi]
+
+                          explosive b = explosion (bulletPosition b)
+
+        explosion :: Vector Float -> Actors
+        explosion p = map (\d -> Bullet "circle" 4.0 p (mulScalarVec 80 d) zeroV passthru) directions
+          where directions = map circleVec [-pi, -(pi - (pi/4)) .. pi]
 
         playerInput :: Actors -> State World Actors
         playerInput actors = do
