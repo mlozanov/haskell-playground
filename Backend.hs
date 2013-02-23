@@ -221,17 +221,5 @@ updateJoystickState worldRef = do
                 axisR = [jrx,jry,0,0]
                 bs = map (\s -> s == Press) buttonStates
 
-worldInputButtons :: World -> [Bool]
-worldInputButtons world = inputButtons (worldInput world)
 
-worldInputMouseButtons :: World -> (Bool,Bool)
-worldInputMouseButtons world = inputMouseButtons (worldInput world)
-
-debugInput :: IORef World -> IO ()
-debugInput worldRef = do world <- readIORef worldRef
-                         print (worldInput world)
-
-
-debugWorld :: IORef World -> IO ()
-debugWorld worldRef = readIORef worldRef >>= print
 
