@@ -37,6 +37,7 @@ data Actor = SimpleActor
                     , bulletPosition :: !(Vector Float)
                     , bulletVelocity :: !(Vector Float)
                     , bulletAcceleration :: !(Vector Float)
+                    , bulletCallback :: (Actor -> Actors)
                     }
 
            | Rocket { rocketName :: !String
@@ -49,8 +50,6 @@ data Actor = SimpleActor
                        , explosionPower :: !Float
                        }
 
-            deriving (Show)
-
 type Actors = [Actor]
 
 newPlayer :: Actor
@@ -60,9 +59,14 @@ newEnemy :: Actor
 newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV
 
 newBullet :: Actor
-newBullet = Bullet "bullet" 1.0 zeroV zeroV zeroV
+newBullet = Bullet "bullet" 1.0 zeroV zeroV zeroV passthru
 
 newExplosion :: Vector Float -> Actor
 newExplosion p = Explosion "explosion" p 1.5 8.0
 
+passthru :: Actor -> Actors
+passthru a = [a]
 
+instance Show Actor where
+  show (Bullet n age p v a f) = show "Bullet:" ++ show n
+  show a = show a

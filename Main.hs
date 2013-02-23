@@ -30,7 +30,7 @@ findPlayer (player:actors) = player
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
   --rndPos <- mapM (\_ -> rndPolarVec) [1..16]
-  rndPos <- mapM circleVec [-pi, -(pi - (pi/16)) .. pi]
+  let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
   let cs = map (\p -> (Enemy "enemy" (mulScalarVec 120.0 p) identityQ (mulScalarVec 15.0 p) zeroV))  rndPos
   let room = StaticActor "room" zeroV identityQ
   modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ actors)
@@ -67,7 +67,7 @@ renderActions = [render]
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = prepare as >>= playerInput >>= filterBullets >>= produceBullets >>= movementBullets >>= movement 
+  where state = prepare as >>= playerInput >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= movementBullets >>= movement 
 
         (Player pn pp pq pv pa) = findPlayer as
 
@@ -81,11 +81,13 @@ simulate as w = runState state w
           return actors
             where newBullets :: Input -> Actors
                   newBullets input = if lb
-                                     then [Bullet "circle" 2.0 pp initialVelocity zeroV]
+                                     then [Bullet "circle" 0.5 pp initialVelocity zeroV bc]
                                      else []
-                    where initialVelocity = mulScalarVec (300 + (lengthVec pv)) direction
+                    where initialVelocity = mulScalarVec (200 + (lengthVec pv)) direction
                           direction = rightV pq -- right is our forward in 2d
                           (lb,rb) = inputMouseButtons input
+                          bc b = map (\d -> Bullet "triangle" 1.0 (bulletPosition b) (mulScalarVec 200 d) zeroV passthru) directions
+                          directions = map circleVec [-pi, -(pi - (pi/8)) .. pi]
 
         playerInput :: Actors -> State World Actors
         playerInput actors = do
@@ -99,18 +101,29 @@ simulate as w = runState state w
               a' = mulScalarVec 2200.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
            in return (player:as)
 
+
+        executeBulletCallback :: Actors -> State World Actors
+        executeBulletCallback actors = do
+          world <- get
+
+          let bs = concat $ map (\b -> if not (bulletAge b > 0) then (bc b) b else [b]) (bullets world)
+              bc b = bulletCallback b
+           in put $ world { bullets = bs }
+
+          return actors
+
         filterBullets :: Actors -> State World Actors
         filterBullets actors = do
           world <- get
           put $ world { bullets = filter f (bullets world) }
           return actors
-            where f (Bullet n age p v a) | age > 0 = True
-                                         | otherwise = False
+            where f (Bullet n age p v a callback) | age > 0 = True
+                                                  | otherwise = False
 
         collisions :: Actors -> State World Actors
         collisions actors = do
           return actors'
-            where pairs = [ (a1, a2) | a1@(Bullet n age p v a) <- actors, a2 <- actors ]
+            where pairs = [ (a1, a2) | a1@(Bullet n age p v a callback) <- actors, a2 <- actors ]
                   actors' = actors
 
         movement :: Actors -> State World Actors

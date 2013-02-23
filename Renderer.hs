@@ -113,7 +113,7 @@ renderActor :: RenderState -> Actor -> IO ()
 renderActor renderState (Player n p q v a) = transformAndRenderVbo renderState n p q
 renderActor renderState (Enemy n p q v a) = transformAndRenderVbo renderState n p q
 renderActor renderState (StaticActor n p q) = transformAndRenderVbo renderState n p q
-renderActor renderState (Bullet n age p v a) = transformAndRenderVbo renderState n p identityQ
+renderActor renderState (Bullet n age p v a callback) = transformAndRenderVbo renderState n p identityQ
 renderActor renderState (Rocket n p) = transformAndRenderVbo renderState n p identityQ
 renderActor renderState (Explosion n p age power) = transformAndRenderVbo renderState n p identityQ
 
