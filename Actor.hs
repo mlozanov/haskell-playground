@@ -68,5 +68,5 @@ passthru :: Actor -> Actors
 passthru a = [a]
 
 instance Show Actor where
-  show (Bullet n age p v a f) = show "Bullet:" ++ show n
-  show a = show a
+  show (Bullet n age p v a f) = "bullet:" ++ show age
+  show a = show "actor"
