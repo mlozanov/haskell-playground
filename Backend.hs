@@ -56,7 +56,7 @@ type IOActions = [(IORef World -> IO ())]
 
 emptyWorld :: World
 emptyWorld = (World 0.0 i 0.0166667 cs bs (mkStdGen 1023))
-    where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] (0,0) (False,False)
+    where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] (0,0) (False,False) zeroV zeroV [False, False]
           cs = [EmptyCamera]
           bs = [] :: Actors
 
@@ -131,7 +131,7 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
     loop t worldRef actorsRef renderStateRef = do
       t0 <- getCPUTime
 
-      --updateJoystickState worldRef
+      updateJoystickState worldRef
 
       mapM_ (\action -> action worldRef) ioActions
 
@@ -215,7 +215,7 @@ updateJoystickState worldRef = do
 
   modifyIORef worldRef (readJoystick axises bs)
 
-  where readJoystick ([jlx,jly,jrx,jry]) buttonStates world = world { worldInput = input { inputAxisL = axisL, inputAxisR = axisR, inputButtons = bs } }
+  where readJoystick ([jlx,jly,jrx,jry]) buttonStates world = world { worldInput = input { inputJoystickAxisL = axisL, inputJoystickAxisR = axisR, inputJoystickButtons = bs } }
           where input = worldInput world
                 axisL = [jlx,jly,0,0]
                 axisR = [jrx,jry,0,0]
