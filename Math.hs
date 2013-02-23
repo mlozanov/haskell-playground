@@ -105,8 +105,8 @@ rndCylinderVec = do
    in return [x,y,height]
 
 
-circleVec :: Float ->  IO (Vector Float)
-circleVec i = return [x,y,z]
+circleVec :: Float ->  Vector Float
+circleVec i = [x,y,z]
   where x = cos i
         y = sin i
         z = 0.0
@@ -323,9 +323,10 @@ rotateVQ q [vx,vy,vz] = [x,y,z]
    where Q w x y z = mulQ (mulQ q (Q 0 vx vy vz)) (conjQ q) 
 
 --physics
-dqdt :: Floating a => Vector a -> Quaternion a -> Quaternion a
-dqdt (x:y:z:rest) q = scaleQ 0.5 (mulQ qv q)
+dqdt :: (Floating a, Ord a) => Vector a -> Quaternion a -> Quaternion a
+dqdt (x:y:z:rest) q = q'
   where qv = (Q 0.0 x y z)
+        q' = scaleQ 0.5 (mulQ qv q)
 
 --- debug
 --- unit tests
