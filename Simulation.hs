@@ -46,7 +46,7 @@ instance Physical Actor where
             v' = addVec nv drag
             q' = normQ $ addQ q (scaleQ 0.016667 (dqdt [0.0, 0.0, 10.0] q))
             
-    updateMovement t (Enemy n !p !q !v !a) = Enemy n p' q' v' a'
+    updateMovement t (Enemy n !p !q !v !a sr sp) = Enemy n p' q' v' a' sr sp
       where a' = zeroV
             drag = mulScalarVec (-0.004) v
             nv = euler 0.016667 v a
@@ -68,17 +68,9 @@ instance Physical Actor where
 
 setAccelerationActor :: Vector Float -> Actor -> Actor
 setAccelerationActor newAcc player@(Player _ _ _ _ a) = player { playerAcceleration = newAcc }
-setAccelerationActor newAcc enemy@(Enemy _ _ _ _ a) = enemy { enemyAcceleration = newAcc }
+setAccelerationActor newAcc enemy@(Enemy _ _ _ _ a _ _) = enemy { enemyAcceleration = newAcc }
 
 setVelocityActor :: Vector Float -> Actor -> Actor
 setVelocityActor newVel player@(Player _ _ _ v _) = player { playerVelocity = newVel }
-setVelocityActor newVel enemy@(Enemy _ _ _ v _) = enemy { enemyVelocity = newVel }
+setVelocityActor newVel enemy@(Enemy _ _ _ v _ _ _) = enemy { enemyVelocity = newVel }
 
---instance Updatable Actor where
---    update t (Player n !p !q !v !a) = Player n p' q v' a'
---        where a' = zeroV
---              drag = mulScalarVec (-0.05) v
---              p' = euler 0.016667 p v
---              nv = euler 0.016667 v a
---              v' = addVec nv drag
---              q' = normQ $ addQ q (scaleQ 0.016667 (dqdt [0.0, 0.0, 10.0] q))

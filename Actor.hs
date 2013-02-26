@@ -9,7 +9,16 @@ import Math
 import Graphics
 
 class Physical a where
-    updateMovement :: Float -> a -> a
+  updateMovement :: Float -> a -> a
+
+class Tickable a where
+  tick :: Float -> a -> a
+
+data ShootingPattern = Single
+                     | Double
+                     | Cross
+                     | Fontain
+
 
 data Actor = SimpleActor
 
@@ -25,6 +34,9 @@ data Actor = SimpleActor
                    , enemyOrientation :: !(Quaternion Float)
                    , enemyVelocity :: !(Vector Float)
                    , enemyAcceleration :: !(Vector Float)
+
+                   , enemyShootingRate :: !Float
+                   , enemyShootingPattern :: !ShootingPattern
                    }
 
            | StaticActor { staticActorName :: String 
@@ -56,7 +68,10 @@ newPlayer :: Actor
 newPlayer = Player "player" zeroV identityQ zeroV zeroV
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV
+newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 1.0 Single
+
+defaultEnemy :: Vector Float -> Actor
+defaultEnemy p = Enemy "enemy" (mulScalarVec 120.0 p) identityQ (mulScalarVec 15.0 p) zeroV 1.0 Single
 
 newBullet :: Actor
 newBullet = Bullet "bullet" 1.0 zeroV zeroV zeroV passthru

@@ -29,9 +29,9 @@ findPlayer (player:actors) = player
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
-  --rndPos <- mapM (\_ -> rndPolarVec) [1..16]
-  let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
-  let cs = map (\p -> (Enemy "enemy" (mulScalarVec 120.0 p) identityQ (mulScalarVec 15.0 p) zeroV))  rndPos
+  rndPos <- mapM (\_ -> rndPolarVec) [1..16]
+  --let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
+  let cs = map defaultEnemy rndPos
   let room = StaticActor "room" zeroV identityQ
   modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ actors)
 
@@ -67,7 +67,7 @@ renderActions = [render]
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = prepare as >>= playerInput >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= movementBullets >>= movement 
+  where state = prepare as >>= playerInput >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processActors >>= collisions >>= movementBullets >>= movement 
 
         (Player pn pp pq pv pa) = findPlayer as
 
@@ -95,14 +95,14 @@ simulate as w = runState state w
 
         playerInput :: Actors -> State World Actors
         playerInput actors = do
-          w <- get
+          world <- get
 
-          let (x:y:rest) = inputAxisL (worldInput w)
+          let (x:y:rest) = inputAxisL (worldInput world)
               (Player n p q v a):as = actors
               player = Player n p q' v a'
-              ql = fromAxisAngleQ 0 0 1 ((-x)/12.0)
+              ql = fromAxisAngleQ 0 0 1 0 -- ((-x)/12.0)
               q' = mulQ q ql
-              a' = mulScalarVec 2200.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
+              a' = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ q))
            in return (player:as)
 
 
@@ -126,9 +126,15 @@ simulate as w = runState state w
 
         collisions :: Actors -> State World Actors
         collisions actors = do
-          return actors'
-            where pairs = [ (a1, a2) | a1@(Bullet n age p v a callback) <- actors, a2 <- actors ]
-                  actors' = actors
+          world <- get
+
+          return $ concat $ map ((\bs a -> if (length $ filter (f a) bs) > 0 then [] else [a]) (bullets world)) actors
+
+            where f a@(Enemy {}) b = not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0))
+                  f _ _ = False
+
+        processActors :: Actors -> State World Actors
+        processActors actors = return actors
 
         movement :: Actors -> State World Actors
         movement actors = do

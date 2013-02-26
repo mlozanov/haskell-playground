@@ -85,6 +85,9 @@ render worldRef actorsRef renderStateRef = do
     --print $ "=================================================="
     mapM_ (renderActor renderState) actors
 
+    uniform uniformColorDiffuse $= Vertex4 1 0 0 (1 :: GLfloat)
+    uniform uniformColorSpecular $= Vertex4 1 0 0 (1 :: GLfloat)
+    uniform uniformRimCoeff $= Vertex4 1 0 0 (1.276 :: GLfloat)
     mapM_ (renderActor renderState) (bullets world)
     --print $ "--------------------------------------------------"
 
@@ -111,7 +114,7 @@ transformAndRenderVbo renderState n p q = preservingMatrix $
 
 renderActor :: RenderState -> Actor -> IO ()
 renderActor renderState (Player n p q v a) = transformAndRenderVbo renderState n p q
-renderActor renderState (Enemy n p q v a) = transformAndRenderVbo renderState n p q
+renderActor renderState (Enemy n p q v a _ _) = transformAndRenderVbo renderState n p q
 renderActor renderState (StaticActor n p q) = transformAndRenderVbo renderState n p q
 renderActor renderState (Bullet n age p v a callback) = transformAndRenderVbo renderState n p identityQ
 renderActor renderState (Rocket n p) = transformAndRenderVbo renderState n p identityQ
