@@ -55,7 +55,7 @@ type SimulateAction = Actors -> World -> (Actors, World) --(Float -> World -> Wo
 type IOActions = [(IORef World -> IO ())]
 
 emptyWorld :: World
-emptyWorld = (World 0.0 i 0.0166667 cs bs (mkStdGen 1023))
+emptyWorld = (World 0 i 0.0166667 cs bs (mkStdGen 1023))
     where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] (0,0) (False,False) zeroV zeroV [False, False]
           cs = [EmptyCamera]
           bs = [] :: Actors
@@ -124,10 +124,10 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   GLFW.terminate
 
 mainLoop :: IORef World -> IORef Actors -> IORef RenderState -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
-mainLoop world actors renderState renderActions simulateAction ioActions = loop 0.0 world actors renderState
+mainLoop world actors renderState renderActions simulateAction ioActions = loop 0 world actors renderState
   where 
  
-    loop :: Float -> IORef World -> IORef Actors -> IORef RenderState -> IO ()
+    loop :: Int -> IORef World -> IORef Actors -> IORef RenderState -> IO ()
     loop t worldRef actorsRef renderStateRef = do
       t0 <- getCPUTime
 
@@ -156,6 +156,8 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
       let dt = ((fromIntegral (t1 - t0)) / (10^12)) :: Float
 
       -- writeIORef worldRef (world' { worldDt = dt })
+      --let storeDt dt' w = w { worldDt = dt' } 
+      -- in modifyIORef worldRef (storeDt dt)
 
       -- check whether ESC is pressed for termination
       p <- GLFW.getKey GLFW.ESC
@@ -167,7 +169,7 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
           -- only continue when the window is not closed
           windowOpenStatus <- getParam Opened
           unless (not windowOpenStatus) $
-            loop (t + dt) worldRef actorsRef renderStateRef -- loop with next action
+            loop (t + 1) worldRef actorsRef renderStateRef -- loop with next action
 
 
 keyboardCallback :: IORef World -> KeyCallback

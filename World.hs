@@ -7,7 +7,7 @@ import Input
 import Camera
 import Actor
 
-data World = World { worldTime :: !Float
+data World = World { worldTime :: !Int
                    , worldInput :: !Input 
                    , worldDt :: !Float
                    , cameras :: !Cameras

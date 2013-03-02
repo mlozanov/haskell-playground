@@ -21,6 +21,8 @@ import Simulation
 import Renderer
 import Collision
 
+import Timesheet
+
 import TestFFI
 
 type WorldState = State World World
@@ -31,8 +33,8 @@ main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioAction
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
-  rndPos <- mapM (\_ -> rndPolarVec) [1..16]
-  --let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
+  --rndPos <- mapM (\_ -> rndPolarVec) [1..16]
+  let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
   let cs = map defaultEnemy rndPos
   --let room = StaticActor "room" zeroV identityQ
   modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ actors)
@@ -70,9 +72,12 @@ renderActions = [render]
 ioActions :: IOActions
 ioActions = []
 
+stageOneTimesheet :: Timesheet Int
+stageOneTimesheet = [TimesheetRow (0, map defaultEnemy (map circleVec [-pi, -(pi - (pi/16)) .. pi]))]
+
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = prepare as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets  >>= movement 
+  where state = processTimesheet stageOneTimesheet as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets  >>= movement 
 
         player@(Player pn pp pq pv pa psr pst) = getPlayer as
 
@@ -106,15 +111,13 @@ simulate as w = runState state w
           where directions = map circleVec [-pi, -(pi - (pi/4)) .. pi]
 
         playerInput :: Actors -> State World Actors
-        playerInput (player@(Player n p q v a sr st):as) = do
-          w <- get
+        playerInput (pl:as) = do
+          world <- get
 
-          let (x:y:rest) = inputAxisL (worldInput w)
-              --ql = fromAxisAngleQ 0 0 1 ((-x)/12.0)
-              --q' = mulQ q ql
-              a' = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ q))
-              player' = player { playerAcceleration = a' }
-           in return (player':as)
+          let (x:y:rest) = inputAxisL (worldInput world)
+              a = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ (playerOrientation pl)))
+              pl' = pl { playerAcceleration = a }
+           in return (pl':as)
 
 
         executeBulletCallback :: Actors -> State World Actors
@@ -166,13 +169,16 @@ simulate as w = runState state w
 
                   enemyShoot :: World -> Actor -> Actors
                   enemyShoot w e@Enemy{} = shootOneBullet condtion e
-                    where condtion = enemyShootingTimer e < (-0.016667)
+                    where condtion = enemyShootingTimer e < -0.0001
                   enemyShoot w _ = []
+
+        processTimesheet :: Timesheet Int -> Actors -> State World Actors
+        processTimesheet timesheet actors = return actors
 
         movement :: Actors -> State World Actors
         movement actors = do
           world <- get
-          put $ world { bullets = map (updateMovement (worldTime world)) (bullets world) }
+          put $ world { bullets = map (updateMovement (worldDt world)) (bullets world) }
           return actors
-          return $ map (updateMovement (worldTime world)) actors
+          return $ map (updateMovement (worldDt world)) actors
 
