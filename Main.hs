@@ -26,7 +26,7 @@ import TestFFI
 type WorldState = State World World
 
 main :: IO ()
-main = testFFI 100 >> setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
+main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
 
 -- TODO move player outside of actor's list for better performance
 findPlayer :: Actors -> Actor
@@ -115,10 +115,10 @@ simulate as w = runState state w
 
           let (x:y:rest) = inputAxisL (worldInput w)
               (Player n p q v a sr st):as = actors
-              player = Player n p q' v a' sr st
               ql = fromAxisAngleQ 0 0 1 ((-x)/12.0)
               q' = mulQ q ql
               a' = mulScalarVec 2200.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
+              player = Player n p q' v a' sr st
            in return (player:as)
 
 
@@ -161,8 +161,8 @@ simulate as w = runState state w
                   timer w e@Enemy{} = e { enemyShootingTimer = (enemyShootingTimer e - (worldDt w)) }
                   timer w a = a
 
-                  reset p@Player{} = if playerShootingTimer p < (-0.01667) then p { playerShootingTimer = playerShootingRate p }
-                                                                           else p
+                  reset p@Player{} | playerShootingTimer p < (-0.01667) = p { playerShootingTimer = playerShootingRate p }
+                                   | otherwise = p
                   reset a = a
 
         movement :: Actors -> State World Actors
