@@ -21,8 +21,14 @@ import Simulation
 import Renderer
 import Collision
 
+import TestFFI
+
 type WorldState = State World World
 
+main :: IO ()
+main = testFFI 100 >> setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
+
+-- TODO move player outside of actor's list for better performance
 findPlayer :: Actors -> Actor
 findPlayer (player:actors) = player
 
@@ -67,9 +73,6 @@ renderActions = [render]
 
 ioActions :: IOActions
 ioActions = []
-
-main :: IO ()
-main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w

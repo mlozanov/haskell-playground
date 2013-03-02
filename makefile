@@ -5,19 +5,19 @@ TARGET = main
 HASKELL_OBJS =  Main.hs 
 
 C_OBJS = 
-CPP_OBJS =
+CPP_OBJS = test.cpp
 
 # -fexcess-precision -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
 
-GHC_CC_OPT = -threaded -rtsopts -fexcess-precision  -L/usr/local/lib -L/usr/lib -lglfw --make -odir `uname -m` -hidir `uname -m`
+GHC_CC_OPT = -threaded -rtsopts -fexcess-precision  -L/usr/local/lib -L/usr/lib -lglfw -lstdc++ --make -odir `uname -m` -hidir `uname -m`
 GHC_CC_OPTIMIZE = -O3 -fllvm -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
 GHC_LD_OPT = 
 GHC_LD_PACKAGES =
 GHC_CC_PROF_OPT = -prof -auto-all $(GHC_CC_OPT) 
 GHC_CC_COVERAGE_OPT = -fhpc $(GHC_CC_OPT)
 
-GCC_CC_OPT =  -g -O3
-GCC_CPP_OPT =  -g -O3
+CLANG_CC_OPT =  -g -O3 -o `uname -m`
+CLANG_CPP_OPT =  -g -O3
 
 #%.o: %.hs
 #	ghc $(GHC_CC_OPT) -c $< -o $@
@@ -32,7 +32,7 @@ GCC_CPP_OPT =  -g -O3
 # 	ghc $(GHC_LD_OPT) $(GHC_LD_PACKAGES) $(HASKELL_OBJS) $(C_OBJS) $(CPP_OBJS) -o $(TARGET)
 
 build: 
-	ghc $(GHC_CC_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
+	ghc $(GHC_CC_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(C_OBJS) $(CPP_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
 
 profile: 
 	ghc $(GHC_CC_PROF_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
