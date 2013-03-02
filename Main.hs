@@ -28,10 +28,6 @@ type WorldState = State World World
 main :: IO ()
 main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
 
--- TODO move player outside of actor's list for better performance
-findPlayer :: Actors -> Actor
-findPlayer (player:actors) = player
-
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
@@ -76,9 +72,9 @@ ioActions = []
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = prepare as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets  >>= movementBullets >>= movement 
+  where state = prepare as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets  >>= movement 
 
-        player@(Player pn pp pq pv pa psr pst) = findPlayer as
+        player@(Player pn pp pq pv pa psr pst) = getPlayer as
 
         prepare :: Actors -> State World Actors
         prepare actors = return actors
@@ -98,8 +94,8 @@ simulate as w = runState state w
           where initialVelocity = mulScalarVec (200 + (lengthVec $ playerVelocity p)) direction
                 direction = rightV $ playerOrientation p
 
-        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "circle" 1.5 (enemyPosition e) initialVelocity zeroV passthru], b ]
-          where initialVelocity = mulScalarVec (200 + (lengthVec $ enemyVelocity e)) direction
+        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "circle" 5.5 (enemyPosition e) initialVelocity zeroV passthru], b ]
+          where initialVelocity = mulScalarVec (50 + (lengthVec $ enemyVelocity e)) direction
                 direction = rightV $ enemyOrientation e -- right is our forward in 2d
 
         explosive :: Actor -> Actors
@@ -110,16 +106,15 @@ simulate as w = runState state w
           where directions = map circleVec [-pi, -(pi - (pi/4)) .. pi]
 
         playerInput :: Actors -> State World Actors
-        playerInput actors = do
+        playerInput (player@(Player n p q v a sr st):as) = do
           w <- get
 
           let (x:y:rest) = inputAxisL (worldInput w)
-              (Player n p q v a sr st):as = actors
-              ql = fromAxisAngleQ 0 0 1 ((-x)/12.0)
-              q' = mulQ q ql
-              a' = mulScalarVec 2200.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
-              player = Player n p q' v a' sr st
-           in return (player:as)
+              --ql = fromAxisAngleQ 0 0 1 ((-x)/12.0)
+              --q' = mulQ q ql
+              a' = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ q))
+              player' = player { playerAcceleration = a' }
+           in return (player':as)
 
 
         executeBulletCallback :: Actors -> State World Actors
@@ -153,20 +148,19 @@ simulate as w = runState state w
         processActors actors = do
           world <- get
 
-          let as = map (timer world) actors
-          let as' = map reset as
+          let as = map (timer world . reset) actors
 
           put $ world { bullets = (bullets world) ++ (concat $ map (enemyShoot world) actors) }
 
-          return as'
+          return as
 
             where timer w p@Player{} = p { playerShootingTimer = (playerShootingTimer p - (worldDt w)) }
                   timer w e@Enemy{} = e { enemyShootingTimer = (enemyShootingTimer e - (worldDt w)) }
                   timer w a = a
 
-                  reset p@Player{} | playerShootingTimer p < (-0.01667) = p { playerShootingTimer = playerShootingRate p }
+                  reset p@Player{} | playerShootingTimer p < -0.0001 = p { playerShootingTimer = playerShootingRate p }
                                    | otherwise = p
-                  reset e@Enemy{}  | enemyShootingTimer e < (-0.01667) = e { enemyShootingTimer = enemyShootingRate e }
+                  reset e@Enemy{}  | enemyShootingTimer e < -0.0001 = e { enemyShootingTimer = enemyShootingRate e }
                                    | otherwise = e
                   reset a = a
 
@@ -178,10 +172,7 @@ simulate as w = runState state w
         movement :: Actors -> State World Actors
         movement actors = do
           world <- get
-          return $ map (updateMovement (worldTime world)) actors
-
-        movementBullets :: Actors -> State World Actors
-        movementBullets actors = do
-          world <- get
           put $ world { bullets = map (updateMovement (worldTime world)) (bullets world) }
           return actors
+          return $ map (updateMovement (worldTime world)) actors
+

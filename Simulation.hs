@@ -56,7 +56,7 @@ instance Physical Actor where
 
     updateMovement t (Bullet n age p v a callback) = Bullet n age' p' v' a' callback
       where a' = zeroV
-            drag = mulScalarVec (-0.004) v
+            drag = mulScalarVec (-0.001) v
             nv = euler 0.016667 v a
             p' = euler 0.016667 p v
             v' = addVec nv drag

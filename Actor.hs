@@ -73,7 +73,7 @@ newPlayer :: Actor
 newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.1 0.0
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 0.5 Single 0.0
+newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 1.0 Single 0.0
 
 defaultEnemy :: Vector Float -> Actor
 defaultEnemy p = newEnemy { enemyPosition = mulScalarVec 120.0 p
@@ -87,6 +87,9 @@ newExplosion p = Explosion "explosion" p 1.5 8.0
 
 passthru :: Actor -> Actors
 passthru a = [a]
+
+getPlayer :: Actors -> Actor
+getPlayer (player:actors) = player
 
 instance Show Actor where
   show p@Player{} = "player:" ++ show (playerShootingTimer p) ++ "\n"
