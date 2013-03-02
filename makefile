@@ -2,7 +2,7 @@
 .PHONY: build
 
 TARGET = main
-HASKELL_OBJS =  Main.hs 
+HASKELL_OBJS = Main.hs 
 
 C_OBJS = 
 CPP_OBJS = test.cpp
@@ -16,7 +16,7 @@ GHC_LD_PACKAGES =
 GHC_CC_PROF_OPT = -prof -auto-all $(GHC_CC_OPT) 
 GHC_CC_COVERAGE_OPT = -fhpc $(GHC_CC_OPT)
 
-CLANG_CC_OPT =  -g -O3 -o `uname -m`
+CLANG_CC_OPT =  -g -O3 -o `uname -m`/%.o
 CLANG_CPP_OPT =  -g -O3
 
 #%.o: %.hs

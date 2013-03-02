@@ -76,7 +76,7 @@ ioActions = []
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = prepare as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= collisions >>= movementBullets >>= movement 
+  where state = prepare as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets  >>= movementBullets >>= movement 
 
         player@(Player pn pp pq pv pa psr pst) = findPlayer as
 
@@ -86,10 +86,10 @@ simulate as w = runState state w
         produceBullets :: Actors -> State World Actors
         produceBullets actors = do
           world <- get
-          put $ world { bullets = (bullets world) ++ newBullets (worldInput world) }
+          put $ world { bullets = (bullets world) ++ shootOneBulletByPlayer (worldInput world) }
           return actors
-            where newBullets :: Input -> Actors
-                  newBullets input = shootOneBullet condition player
+            where shootOneBulletByPlayer :: Input -> Actors
+                  shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
                           condition = lb && (playerShootingTimer player <= 0.001)
 
@@ -98,7 +98,7 @@ simulate as w = runState state w
           where initialVelocity = mulScalarVec (200 + (lengthVec $ playerVelocity p)) direction
                 direction = rightV $ playerOrientation p
 
-        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "circle" 0.5 pp initialVelocity zeroV passthru], b ]
+        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "circle" 1.5 (enemyPosition e) initialVelocity zeroV passthru], b ]
           where initialVelocity = mulScalarVec (200 + (lengthVec $ enemyVelocity e)) direction
                 direction = rightV $ enemyOrientation e -- right is our forward in 2d
 
@@ -155,7 +155,10 @@ simulate as w = runState state w
 
           let as = map (timer world) actors
           let as' = map reset as
-          return as' 
+
+          put $ world { bullets = (bullets world) ++ (concat $ map (enemyShoot world) actors) }
+
+          return as'
 
             where timer w p@Player{} = p { playerShootingTimer = (playerShootingTimer p - (worldDt w)) }
                   timer w e@Enemy{} = e { enemyShootingTimer = (enemyShootingTimer e - (worldDt w)) }
@@ -163,7 +166,14 @@ simulate as w = runState state w
 
                   reset p@Player{} | playerShootingTimer p < (-0.01667) = p { playerShootingTimer = playerShootingRate p }
                                    | otherwise = p
+                  reset e@Enemy{}  | enemyShootingTimer e < (-0.01667) = e { enemyShootingTimer = enemyShootingRate e }
+                                   | otherwise = e
                   reset a = a
+
+                  enemyShoot :: World -> Actor -> Actors
+                  enemyShoot w e@Enemy{} = shootOneBullet condtion e
+                    where condtion = enemyShootingTimer e < (-0.016667)
+                  enemyShoot w _ = []
 
         movement :: Actors -> State World Actors
         movement actors = do
