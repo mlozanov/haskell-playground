@@ -65,6 +65,12 @@ createShaderPrograms = do
 renderActions :: [RenderAction]
 renderActions = [render]
 
+ioActions :: IOActions
+ioActions = []
+
+main :: IO ()
+main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
+
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
   where state = prepare as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= collisions >>= movementBullets >>= movement 
@@ -166,11 +172,3 @@ simulate as w = runState state w
           world <- get
           put $ world { bullets = map (updateMovement (worldTime world)) (bullets world) }
           return actors
-
-
-
-ioActions :: IOActions
-ioActions = []
-
-main :: IO ()
-main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
