@@ -30,6 +30,8 @@ import Vbo
 import Fbo
 import Shader
 
+{-# INLINE toGLMatrix #-}
+{-# INLINE matrixFloatToGLfloat #-}
 
 toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
 toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
