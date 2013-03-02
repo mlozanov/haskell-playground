@@ -5,7 +5,7 @@ import Control.Monad.State.Strict
 import qualified Graphics.Rendering.OpenGL as GL
 
 import Data.IORef
-import Data.Map as M hiding (map,filter)
+import Data.Map as M hiding (map,filter,null)
 
 import Backend
 
@@ -32,8 +32,8 @@ setupAction worldRef actorsRef renderStateRef = do
   rndPos <- mapM (\_ -> rndPolarVec) [1..16]
   --let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
   let cs = map defaultEnemy rndPos
-  let room = StaticActor "room" zeroV identityQ
-  modifyIORef actorsRef (\actors -> [newPlayer, room] ++ cs ++ actors)
+  --let room = StaticActor "room" zeroV identityQ
+  modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -128,7 +128,7 @@ simulate as w = runState state w
         collisions actors = do
           world <- get
 
-          return $ concat $ map ((\bs a -> if (length $ filter (f a) bs) > 0 then [] else [a]) (bullets world)) actors
+          return $ concat $ map ((\bs a -> if (not . null $ filter (f a) bs) then [] else [a]) (bullets world)) actors
 
             where f a@(Enemy {}) b = not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0))
                   f _ _ = False
