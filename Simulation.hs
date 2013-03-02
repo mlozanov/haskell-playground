@@ -38,7 +38,7 @@ updateLogic :: World -> Actors -> Actors
 updateLogic world actors = undefined
 
 instance Physical Actor where
-    updateMovement t (Player n !p !q !v !a) = Player n p' q v' a'
+    updateMovement t (Player n !p !q !v !a sr st) = Player n p' q v' a' sr st
       where a' = zeroV
             drag = mulScalarVec (-0.3) v
             p' = euler 0.016667 p v
@@ -46,7 +46,7 @@ instance Physical Actor where
             v' = addVec nv drag
             q' = normQ $ addQ q (scaleQ 0.016667 (dqdt [0.0, 0.0, 10.0] q))
             
-    updateMovement t (Enemy n !p !q !v !a sr sp) = Enemy n p' q' v' a' sr sp
+    updateMovement t (Enemy n !p !q !v !a sr sp st) = Enemy n p' q' v' a' sr sp st
       where a' = zeroV
             drag = mulScalarVec (-0.004) v
             nv = euler 0.016667 v a
@@ -67,10 +67,10 @@ instance Physical Actor where
     updateMovement t actor = actor
 
 setAccelerationActor :: Vector Float -> Actor -> Actor
-setAccelerationActor newAcc player@(Player _ _ _ _ a) = player { playerAcceleration = newAcc }
-setAccelerationActor newAcc enemy@(Enemy _ _ _ _ a _ _) = enemy { enemyAcceleration = newAcc }
+setAccelerationActor newAcc player@Player{} = player { playerAcceleration = newAcc }
+setAccelerationActor newAcc enemy@Enemy{} = enemy { enemyAcceleration = newAcc }
 
 setVelocityActor :: Vector Float -> Actor -> Actor
-setVelocityActor newVel player@(Player _ _ _ v _) = player { playerVelocity = newVel }
-setVelocityActor newVel enemy@(Enemy _ _ _ v _ _ _) = enemy { enemyVelocity = newVel }
+setVelocityActor newVel player@Player{} = player { playerVelocity = newVel }
+setVelocityActor newVel enemy@Enemy{} = enemy { enemyVelocity = newVel }
 

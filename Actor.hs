@@ -22,21 +22,26 @@ data ShootingPattern = Single
 
 data Actor = SimpleActor
 
-           | Player { playerName :: !String
-                    , playerPosition :: !(Vector Float)
-                    , playerOrientation :: !(Quaternion Float)
-                    , playerVelocity :: !(Vector Float)
-                    , playerAcceleration :: !(Vector Float)
+           | Player { playerName :: String
+                    , playerPosition :: (Vector Float)
+                    , playerOrientation :: (Quaternion Float)
+                    , playerVelocity :: (Vector Float)
+                    , playerAcceleration :: (Vector Float)
+
+                    , playerShootingRate :: Float
+                    , playerShootingTimer :: Float
                     }
 
-           | Enemy { enemyName :: !String
-                   , enemyPosition :: !(Vector Float)
-                   , enemyOrientation :: !(Quaternion Float)
-                   , enemyVelocity :: !(Vector Float)
-                   , enemyAcceleration :: !(Vector Float)
+           | Enemy { enemyName :: String
+                   , enemyPosition :: (Vector Float)
+                   , enemyOrientation :: (Quaternion Float)
+                   , enemyVelocity :: (Vector Float)
+                   , enemyAcceleration :: (Vector Float)
 
-                   , enemyShootingRate :: !Float
-                   , enemyShootingPattern :: !ShootingPattern
+                   , enemyShootingRate :: Float
+                   , enemyShootingPattern :: ShootingPattern
+
+                   , enemyShootingTimer :: Float
                    }
 
            | StaticActor { staticActorName :: String 
@@ -44,34 +49,35 @@ data Actor = SimpleActor
                          , staticActorOrientation :: Quaternion Float
                          }
 
-           | Bullet { bulletName :: !String
-                    , bulletAge :: !Float
-                    , bulletPosition :: !(Vector Float)
-                    , bulletVelocity :: !(Vector Float)
-                    , bulletAcceleration :: !(Vector Float)
+           | Bullet { bulletName :: String
+                    , bulletAge :: Float
+                    , bulletPosition :: (Vector Float)
+                    , bulletVelocity :: (Vector Float)
+                    , bulletAcceleration :: (Vector Float)
                     , bulletCallback :: (Actor -> Actors)
                     }
 
-           | Rocket { rocketName :: !String
-                    , rocketPosition :: !(Vector Float)
+           | Rocket { rocketName :: String
+                    , rocketPosition :: (Vector Float)
                     }
 
-           | Explosion { explosionName :: !String 
-                       , explosionPosition :: !(Vector Float)
-                       , explosionAge :: !Float
-                       , explosionPower :: !Float
+           | Explosion { explosionName :: String 
+                       , explosionPosition :: (Vector Float)
+                       , explosionAge :: Float
+                       , explosionPower :: Float
                        }
 
 type Actors = [Actor]
 
 newPlayer :: Actor
-newPlayer = Player "player" zeroV identityQ zeroV zeroV
+newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.1 0.0
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 1.0 Single
+newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 1.0 Single 0.0
 
 defaultEnemy :: Vector Float -> Actor
-defaultEnemy p = Enemy "enemy" (mulScalarVec 120.0 p) identityQ (mulScalarVec 15.0 p) zeroV 1.0 Single
+defaultEnemy p = newEnemy { enemyPosition = mulScalarVec 120.0 p
+                          , enemyVelocity = mulScalarVec 15.0 p } 
 
 newBullet :: Actor
 newBullet = Bullet "bullet" 1.0 zeroV zeroV zeroV passthru
@@ -83,5 +89,8 @@ passthru :: Actor -> Actors
 passthru a = [a]
 
 instance Show Actor where
-  show (Bullet n age p v a f) = "bullet:" ++ show age
-  show a = show "actor"
+  show p@Player{} = "player:" ++ show (playerShootingTimer p) ++ "\n"
+  show b@Bullet{} = "bullet:" ++ show (bulletAge b) ++ "\n"
+  show e@Enemy{} = "enemy: shooting timer: " ++ show (enemyShootingTimer e) ++ "\n"
+  show sa@StaticActor{} = "static actor:" ++ (staticActorName sa) ++ "\n"
+  show a = show "actor" ++ "\n"

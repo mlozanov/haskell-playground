@@ -33,7 +33,7 @@ setupAction worldRef actorsRef renderStateRef = do
   --let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
   let cs = map defaultEnemy rndPos
   let room = StaticActor "room" zeroV identityQ
-  modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ actors)
+  modifyIORef actorsRef (\actors -> [newPlayer, room] ++ cs ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -67,9 +67,9 @@ renderActions = [render]
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = prepare as >>= playerInput >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processActors >>= collisions >>= movementBullets >>= movement 
+  where state = prepare as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= collisions >>= movementBullets >>= movement 
 
-        (Player pn pp pq pv pa) = findPlayer as
+        player@(Player pn pp pq pv pa psr pst) = findPlayer as
 
         prepare :: Actors -> State World Actors
         prepare actors = return actors
@@ -80,7 +80,7 @@ simulate as w = runState state w
           put $ world { bullets = (bullets world) ++ newBullets (worldInput world) }
           return actors
             where newBullets :: Input -> Actors
-                  newBullets input = if lb
+                  newBullets input = if lb && (playerShootingTimer player <= 0.001)
                                      then [Bullet "circle" 0.5 pp initialVelocity zeroV explosive]
                                      else []
                     where initialVelocity = mulScalarVec (200 + (lengthVec pv)) direction
@@ -90,19 +90,19 @@ simulate as w = runState state w
                           explosive b = explosion (bulletPosition b)
 
         explosion :: Vector Float -> Actors
-        explosion p = map (\d -> Bullet "circle" 4.0 p (mulScalarVec 80 d) zeroV passthru) directions
+        explosion p = map (\d -> Bullet "triangle" 4.0 p (mulScalarVec 80 d) zeroV passthru) directions
           where directions = map circleVec [-pi, -(pi - (pi/4)) .. pi]
 
         playerInput :: Actors -> State World Actors
         playerInput actors = do
-          world <- get
+          w <- get
 
-          let (x:y:rest) = inputAxisL (worldInput world)
-              (Player n p q v a):as = actors
-              player = Player n p q' v a'
-              ql = fromAxisAngleQ 0 0 1 0 -- ((-x)/12.0)
+          let (x:y:rest) = inputAxisL (worldInput w)
+              (Player n p q v a sr st):as = actors
+              player = Player n p q' v a' sr st
+              ql = fromAxisAngleQ 0 0 1 ((-x)/12.0)
               q' = mulQ q ql
-              a' = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ q))
+              a' = mulScalarVec 2200.0 (mulMV [y,0.0,0.0] (toMatrixQ q))
            in return (player:as)
 
 
@@ -134,7 +134,20 @@ simulate as w = runState state w
                   f _ _ = False
 
         processActors :: Actors -> State World Actors
-        processActors actors = return actors
+        processActors actors = do
+          world <- get
+
+          let as = map (timer world) actors
+          let as' = map reset as
+          return as' 
+
+            where timer w p@Player{} = p { playerShootingTimer = (playerShootingTimer p - (worldDt w)) }
+                  timer w e@Enemy{} = e { enemyShootingTimer = (enemyShootingTimer e - (worldDt w)) }
+                  timer w a = a
+
+                  reset p@Player{} = if playerShootingTimer p < (-0.01667) then p { playerShootingTimer = playerShootingRate p }
+                                                                           else p
+                  reset a = a
 
         movement :: Actors -> State World Actors
         movement actors = do
