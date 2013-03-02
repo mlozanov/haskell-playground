@@ -80,14 +80,21 @@ simulate as w = runState state w
           put $ world { bullets = (bullets world) ++ newBullets (worldInput world) }
           return actors
             where newBullets :: Input -> Actors
-                  newBullets input = if lb && (playerShootingTimer player <= 0.001)
-                                     then [Bullet "circle" 0.5 pp initialVelocity zeroV explosive]
-                                     else []
-                    where initialVelocity = mulScalarVec (200 + (lengthVec pv)) direction
-                          direction = rightV pq -- right is our forward in 2d
-                          (lb,rb) = inputMouseButtons input
+                  newBullets input = shootOneBullet condition player
+                    where (lb,rb) = inputMouseButtons input
+                          condition = lb && (playerShootingTimer player <= 0.001)
 
-                          explosive b = explosion (bulletPosition b)
+        shootOneBullet :: Bool -> Actor -> Actors
+        shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" 1.5 pp initialVelocity zeroV passthru], b ]
+          where initialVelocity = mulScalarVec (200 + (lengthVec $ playerVelocity p)) direction
+                direction = rightV $ playerOrientation p
+
+        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "circle" 0.5 pp initialVelocity zeroV passthru], b ]
+          where initialVelocity = mulScalarVec (200 + (lengthVec $ enemyVelocity e)) direction
+                direction = rightV $ enemyOrientation e -- right is our forward in 2d
+
+        explosive :: Actor -> Actors
+        explosive b = explosion (bulletPosition b)
 
         explosion :: Vector Float -> Actors
         explosion p = map (\d -> Bullet "triangle" 4.0 p (mulScalarVec 80 d) zeroV passthru) directions
