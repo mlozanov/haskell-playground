@@ -115,7 +115,7 @@ renderActor :: RenderState -> Actor -> IO ()
 renderActor renderState p@Player{} = transformAndRenderVbo renderState (playerName p) (playerPosition p) (playerOrientation p)
 renderActor renderState e@Enemy{} = transformAndRenderVbo renderState (enemyName e) (enemyPosition e) (enemyOrientation e)
 renderActor renderState (StaticActor n p q) = transformAndRenderVbo renderState n p q
-renderActor renderState (Bullet n age p v a callback) = transformAndRenderVbo renderState n p identityQ
+renderActor renderState (Bullet n tag age p v a callback) = transformAndRenderVbo renderState n p identityQ
 renderActor renderState (Rocket n p) = transformAndRenderVbo renderState n p identityQ
 renderActor renderState (Explosion n p age power) = transformAndRenderVbo renderState n p identityQ
 

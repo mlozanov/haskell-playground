@@ -19,6 +19,9 @@ data ShootingPattern = Single
                      | Cross
                      | Fontain
 
+data BulletTag = Ally
+               | Opponent
+               deriving (Eq, Ord)
 
 data Actor = SimpleActor
 
@@ -50,6 +53,7 @@ data Actor = SimpleActor
                          }
 
            | Bullet { bulletName :: String
+                    , bulletTag :: BulletTag
                     , bulletAge :: Float
                     , bulletPosition :: (Vector Float)
                     , bulletVelocity :: (Vector Float)
@@ -73,14 +77,14 @@ newPlayer :: Actor
 newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.1 0.0
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 1.0 Single 0.0
+newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 0.5 Single 0.0
 
 defaultEnemy :: Vector Float -> Actor
 defaultEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 p)
                           , enemyVelocity = mulScalarVec 30.0 p } 
 
 newBullet :: Actor
-newBullet = Bullet "bullet" 1.0 zeroV zeroV zeroV passthru
+newBullet = Bullet "bullet" Opponent 1.0 zeroV zeroV zeroV passthru
 
 newExplosion :: Vector Float -> Actor
 newExplosion p = Explosion "explosion" p 1.5 8.0

@@ -54,7 +54,7 @@ instance Physical Actor where
             v' = addVec nv drag
             q' = normQ $ addQ q (scaleQ dt (dqdt [0.0, 0.0, 1.0] q))
 
-    updateMovement dt (Bullet n age p v a callback) = Bullet n age' p' v' a' callback
+    updateMovement dt (Bullet n tag age p v a callback) = Bullet n tag age' p' v' a' callback
       where a' = zeroV
             drag = mulScalarVec (-0.001) v
             nv = euler dt v a

@@ -75,7 +75,7 @@ ioActions = []
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = processTimesheet stageOneTimesheet as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets  >>= movement 
+  where state = processTimesheet stageOneTimesheet as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= collisions >>= movement 
 
         player@(Player pn pp pq pv pa psr pst) = getPlayer as
 
@@ -93,11 +93,11 @@ simulate as w = runState state w
                           condition = lb && (playerShootingTimer player <= 0.001)
 
         shootOneBullet :: Bool -> Actor -> Actors
-        shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" 1.5 pp initialVelocity zeroV passthru], b ]
+        shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 1.5 pp initialVelocity zeroV passthru], b ]
           where initialVelocity = mulScalarVec (200 + (lengthVec $ playerVelocity p)) direction
                 direction = rightV $ playerOrientation p
 
-        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "circle" 5.5 (enemyPosition e) initialVelocity zeroV passthru], b ]
+        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "circle" Opponent 5.5 (enemyPosition e) initialVelocity zeroV passthru], b ]
           where initialVelocity = mulScalarVec (50 + (lengthVec $ enemyVelocity e)) direction
                 direction = rightV $ enemyOrientation e -- right is our forward in 2d
 
@@ -105,7 +105,7 @@ simulate as w = runState state w
         explosive b = explosion (bulletPosition b)
 
         explosion :: Vector Float -> Actors
-        explosion p = map (\d -> Bullet "triangle" 4.0 p (mulScalarVec 80 d) zeroV passthru) directions
+        explosion p = map (\d -> Bullet "triangle" Opponent 4.0 p (mulScalarVec 80 d) zeroV passthru) directions
           where directions = map circleVec [-pi, -(pi - (pi/4)) .. pi]
 
         playerInput :: Actors -> State World Actors
@@ -133,8 +133,8 @@ simulate as w = runState state w
           world <- get
           put $ world { bullets = filter f (bullets world) }
           return actors
-            where f (Bullet n age p v a callback) | age > 0 = True
-                                                  | otherwise = False
+            where f bullet@Bullet{} | bulletAge bullet > 0 = True
+                                    | otherwise = False
 
         collisions :: Actors -> State World Actors
         collisions actors = do
@@ -142,7 +142,7 @@ simulate as w = runState state w
 
           return $ concat $ map ((\bs a -> if (not . null $ filter (f a) bs) then [] else [a]) (bullets world)) actors
 
-            where f a@(Enemy {}) b = not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0))
+            where f a@(Enemy {}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
                   f _ _ = False
 
         processActors :: Actors -> State World Actors
