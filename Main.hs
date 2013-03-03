@@ -34,9 +34,10 @@ main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioAction
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
   --rndPos <- mapM (\_ -> rndPolarVec) [1..16]
-  let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
-  let cs = map defaultEnemy rndPos
+  --let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
+  --let cs = map defaultEnemy rndPos
   --let room = StaticActor "room" zeroV identityQ
+  let cs = []
   modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ actors)
 
   renderState <- readIORef renderStateRef
@@ -71,9 +72,6 @@ renderActions = [render]
 
 ioActions :: IOActions
 ioActions = []
-
-stageOneTimesheet :: Timesheet Int
-stageOneTimesheet = [TimesheetRow (0, map defaultEnemy (map circleVec [-pi, -(pi - (pi/16)) .. pi]))]
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
@@ -173,7 +171,12 @@ simulate as w = runState state w
                   enemyShoot w _ = []
 
         processTimesheet :: Timesheet Int -> Actors -> State World Actors
-        processTimesheet timesheet actors = return actors
+        processTimesheet timesheet actors = do 
+          world <- get
+          return $ actors ++ (newActors world)
+            where newActors w = extractActors $ M.lookup (worldTime w) timesheet
+                  extractActors (Just v) = v
+                  extractActors Nothing = []
 
         movement :: Actors -> State World Actors
         movement actors = do
