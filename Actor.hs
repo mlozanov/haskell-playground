@@ -76,8 +76,8 @@ newEnemy :: Actor
 newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 1.0 Single 0.0
 
 defaultEnemy :: Vector Float -> Actor
-defaultEnemy p = newEnemy { enemyPosition = mulScalarVec 120.0 p
-                          , enemyVelocity = mulScalarVec 15.0 p } 
+defaultEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 p)
+                          , enemyVelocity = mulScalarVec 30.0 p } 
 
 newBullet :: Actor
 newBullet = Bullet "bullet" 1.0 zeroV zeroV zeroV passthru
