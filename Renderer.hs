@@ -56,7 +56,7 @@ render worldRef actorsRef renderStateRef = do
   GL.matrixMode $= GL.Modelview 0
   toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
 
-  toGLMatrix (Math.translate 0 0 (-300)) >>= multMatrix
+  toGLMatrix (Math.translate 0 0 (-400)) >>= multMatrix
 
 --  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin (realToFrac t))))
 --   in let m = toMatrixQ q
