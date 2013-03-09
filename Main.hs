@@ -23,9 +23,11 @@ import Collision
 
 import Timesheet
 
-import TestFFI
+-- import TestFFI
 
 type WorldState = State World World
+
+newtype Simulation = Simulation (StateT World IO ())
 
 main :: IO ()
 main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
@@ -38,7 +40,9 @@ setupAction worldRef actorsRef renderStateRef = do
   --let cs = map defaultEnemy rndPos
   --let room = StaticActor "room" zeroV identityQ
   let cs = []
-  modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ actors)
+  backgroundActorPositions <- mapM (\_ -> rndVec) [1..256]
+  let bs = map (\p -> StaticActor "triangle" (scaleVec 200.0 p) identityQ Tag1) backgroundActorPositions
+  modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ bs ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -60,7 +64,7 @@ createGeometryObjects = do
 
   return $ M.fromList [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle)]
 
-createShaderPrograms :: IO (Map String ShaderProgram)
+createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
   defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
   sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
@@ -75,7 +79,7 @@ ioActions = []
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = processTimesheet stageOneTimesheet as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= collisions >>= movement 
+  where state = processTimesheet stageOneTimesheet as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processCollisions >>= movement 
 
         player@(Player pn pp pq pv pa psr pst) = getPlayer as
 
@@ -90,14 +94,14 @@ simulate as w = runState state w
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
-                          condition = lb && (playerShootingTimer player <= 0.001)
+                          condition = (lb {-|| (btnCross input)-}) && (playerShootingTimer player <= 0.001)
 
         shootOneBullet :: Bool -> Actor -> Actors
-        shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 1.5 pp initialVelocity zeroV passthru], b ]
+        shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 10.0 pp initialVelocity zeroV passthru], b ]
           where initialVelocity = mulScalarVec (200 + (lengthVec $ playerVelocity p)) direction
                 direction = rightV $ playerOrientation p
 
-        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "circle" Opponent 5.5 (enemyPosition e) initialVelocity zeroV passthru], b ]
+        shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "triangle" Opponent 10.0 (enemyPosition e) initialVelocity zeroV passthru], b ]
           where initialVelocity = mulScalarVec (50 + (lengthVec $ enemyVelocity e)) direction
                 direction = rightV $ enemyOrientation e -- right is our forward in 2d
 
@@ -136,13 +140,14 @@ simulate as w = runState state w
             where f bullet@Bullet{} | bulletAge bullet > 0 = True
                                     | otherwise = False
 
-        collisions :: Actors -> State World Actors
-        collisions actors = do
+        processCollisions :: Actors -> State World Actors
+        processCollisions actors = do
           world <- get
 
           return $ concat $ map ((\bs a -> if (not . null $ filter (f a) bs) then [] else [a]) (bullets world)) actors
 
-            where f a@(Enemy {}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
+            where -- f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 12.0), (Circle (bulletPosition b) 2.0)))
+                  f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
                   f _ _ = False
 
         processActors :: Actors -> State World Actors
@@ -150,12 +155,15 @@ simulate as w = runState state w
           world <- get
 
           let as = map (timer world . reset) actors
+          let as' = map (trajectory (worldTime world) (worldDt world)) as
 
-          put $ world { bullets = (bullets world) ++ (concat $ map (enemyShoot world) actors) }
+          shoot world
 
-          return as
+          return as'
 
-            where timer w p@Player{} = p { playerShootingTimer = (playerShootingTimer p - (worldDt w)) }
+            where shoot w = put $ w { bullets = (bullets w) ++ (concat $ map (enemyShoot w) actors) }
+
+                  timer w p@Player{} = p { playerShootingTimer = (playerShootingTimer p - (worldDt w)) }
                   timer w e@Enemy{} = e { enemyShootingTimer = (enemyShootingTimer e - (worldDt w)) }
                   timer w a = a
 
@@ -174,14 +182,25 @@ simulate as w = runState state w
         processTimesheet timesheet actors = do 
           world <- get
           return $ actors ++ (newActors world)
-            where newActors w = extractActors $ M.lookup (worldTime w) timesheet
-                  extractActors (Just v) = v
-                  extractActors Nothing = []
+            where newActors w = executeEvent timesheet (worldTime w)
+
+        processEvents :: Events Int -> Actors -> State World Actors
+        processEvents = undefined
 
         movement :: Actors -> State World Actors
         movement actors = do
           world <- get
           put $ world { bullets = map (updateMovement (worldDt world)) (bullets world) }
-          return actors
           return $ map (updateMovement (worldDt world)) actors
 
+        trajectory :: Int -> Float -> Actor -> Actor
+        trajectory time dt e@Enemy{} = e { enemyVelocity = f }
+          where f = [vx,vy,0.0]
+                fTime = (fromIntegral time) / 60.0
+                vx = 50.0 * sin (1.5 * fTime)
+                vy = 50.0 * cos (2.0 * fTime)
+        trajectory time dt a = a
+
+        -- animated background to simulate speeding through the world
+        background :: Actors -> State World Actors
+        background = undefined

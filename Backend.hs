@@ -18,7 +18,7 @@ import Foreign.Ptr
 import Foreign.Marshal.Array
 
 import Data.IORef
-import Data.Map as M hiding (map)
+import qualified Data.Map as M
 
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
@@ -43,8 +43,8 @@ import Primitives
 
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , viewMatrix :: Ptr GLfloat
-                               , shaderProgramsMap :: Map String ShaderProgram
-                               , bufferObjectsMap :: Map String Vbo
+                               , shaderProgramsMap :: M.Map String ShaderProgramData
+                               , bufferObjectsMap :: M.Map String Vbo
                                }
 
 
@@ -122,6 +122,7 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
 
   GLFW.closeWindow
   GLFW.terminate
+
 
 mainLoop :: IORef World -> IORef Actors -> IORef RenderState -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
 mainLoop world actors renderState renderActions simulateAction ioActions = loop 0 world actors renderState
@@ -212,12 +213,13 @@ mouseBtnCallback worldRef button state = modifyIORef worldRef readMouseButtons
 
 updateJoystickState :: IORef World -> IO ()
 updateJoystickState worldRef = do 
-  axises <- GL.get $ GLFW.joystickPos (GLFW.Joystick 0) 4
-  bs <- GL.get $ GLFW.joystickButtons (GLFW.Joystick 0)
+  axises <- GL.get $ GLFW.joystickPos firstJoystick 4
+  bs <- GL.get $ GLFW.joystickButtons firstJoystick
 
-  modifyIORef worldRef (readJoystick axises bs)
+  modifyIORef worldRef (storeJoystickData axises bs)
 
-  where readJoystick ([jlx,jly,jrx,jry]) buttonStates world = world { worldInput = input { inputJoystickAxisL = axisL, inputJoystickAxisR = axisR, inputJoystickButtons = bs } }
+  where firstJoystick = GLFW.Joystick 0
+        storeJoystickData ([jlx,jly,jrx,jry]) buttonStates world = world { worldInput = input { inputJoystickAxisL = axisL, inputJoystickAxisR = axisR, inputJoystickButtons = bs } }
           where input = worldInput world
                 axisL = [jlx,jly,0,0]
                 axisR = [jrx,jry,0,0]

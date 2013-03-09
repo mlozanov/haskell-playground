@@ -10,13 +10,12 @@ data Fbo = Fbo { fboBuffer :: BufferObject
                , fboHeight :: GLuint
                }
 
-newFbo :: GLuint -> GLuint -> IO Fbo
-newFbo width height  = do [f,t,r] <- genObjectNames 3
-                                          
-                          --glBindFramebuffer gl_FRAMEBUFFER f
-
-                          return $ Fbo f t r width height
+fbo :: GLuint -> GLuint -> IO Fbo
+fbo width height  = do [f,t,r] <- genObjectNames 3
+                       --glBindFramebuffer gl_FRAMEBUFFER f
+                       return $ Fbo f t r width height
 
 withFbo :: Fbo -> IO () -> IO ()
 withFbo fbo actions = actions >> return ()
+
 

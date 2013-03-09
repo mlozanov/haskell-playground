@@ -62,7 +62,7 @@ instance Physical Actor where
             v' = addVec nv drag
             age' = age - dt
 
-    updateMovement dt static@(StaticActor _ _ _) = static
+    updateMovement dt static@StaticActor{} = static
 
     updateMovement dt actor = actor
 

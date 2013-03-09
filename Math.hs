@@ -42,6 +42,9 @@ mulScalarVec :: Floating a => a -> Vector a -> Vector a
 mulScalarVec s [x,y,z,w] = [s*x,s*y,s*z,s*w]
 mulScalarVec s v = map (* s) v
 
+scaleVec :: Floating a => a -> Vector a -> Vector a
+scaleVec = mulScalarVec
+
 negateVec :: Floating a => Vector a -> Vector a
 negateVec = map negate
 

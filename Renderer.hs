@@ -17,7 +17,7 @@ import Foreign.Ptr
 import Foreign.Marshal.Array
 
 import Data.IORef
-import Data.Map as M hiding (map)
+import qualified Data.Map as M
 
 import Backend
 
@@ -58,13 +58,13 @@ render worldRef actorsRef renderStateRef = do
 
   toGLMatrix (Math.translate 0 0 (-400)) >>= multMatrix
 
---  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (0.0 * sin (realToFrac t))))
---   in let m = toMatrixQ q
---       in toGLMatrix m >>= multMatrix
+  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (45.0)))
+   in let m = toMatrixQ q
+       in toGLMatrix m >>= multMatrix
   -- view matrix 
 
   -- draw all VBOs in renderstate
-  let p = (shaderProgramsMap renderState) ! "default"
+  let p = (shaderProgramsMap renderState) M.! "default"
   let lx = 60.0 * cos (2.0 * (realToFrac (worldTime world)))
   let ly = 50.0 * sin (realToFrac (worldTime world))
   let lz = 100.0 -- + (50.0 * sin (8.0 * t))
@@ -85,9 +85,13 @@ render worldRef actorsRef renderStateRef = do
     uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
 
     --print $ "=================================================="
-    mapM_ (renderActor renderState) actors
+    mapM_ (draw (worldDt world) renderState) actors
 
-    mapM_ (renderActor renderState) (bullets world)
+    uniform uniformRimCoeff $= Vertex4 0 0 1 (1.276 :: GLfloat)
+    mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
+
+    uniform uniformRimCoeff $= Vertex4 1 0 0 (1.276 :: GLfloat)
+    mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
     --print $ "--------------------------------------------------"
 
   GL.lighting $= GL.Disabled
@@ -111,11 +115,20 @@ transformAndRenderVbo renderState n p q = preservingMatrix $
      toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
      renderVbo (bufferObjectsMap renderState M.! n)
 
-renderActor :: RenderState -> Actor -> IO ()
-renderActor renderState p@Player{} = transformAndRenderVbo renderState (playerName p) (playerPosition p) (playerOrientation p)
-renderActor renderState e@Enemy{} = transformAndRenderVbo renderState (enemyName e) (enemyPosition e) (enemyOrientation e)
-renderActor renderState (StaticActor n p q) = transformAndRenderVbo renderState n p q
-renderActor renderState (Bullet n tag age p v a callback) = transformAndRenderVbo renderState n p identityQ
-renderActor renderState (Rocket n p) = transformAndRenderVbo renderState n p identityQ
-renderActor renderState (Explosion n p age power) = transformAndRenderVbo renderState n p identityQ
+
+class Drawable a where
+  draw :: Float -> RenderState -> a -> IO ()
+
+instance Drawable Actor where
+  draw dt renderState p@Player{} = transformAndRenderVbo renderState (playerName p) (playerPosition p) (playerOrientation p)
+
+  draw dt renderState e@Enemy{} = transformAndRenderVbo renderState (enemyName e) (enemyPosition e) (enemyOrientation e)
+
+  draw dt renderState (StaticActor n p q tag) = transformAndRenderVbo renderState n p q
+
+  draw dt renderState (Bullet n tag age p v a callback) = transformAndRenderVbo renderState n p identityQ
+
+  draw dt renderState r@Rocket{} = transformAndRenderVbo renderState (rocketName r) (rocketPosition r) identityQ
+
+  draw dt renderState (Explosion n p age power) = transformAndRenderVbo renderState n p identityQ
 

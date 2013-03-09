@@ -14,14 +14,18 @@ class Physical a where
 class Tickable a where
   tick :: Float -> a -> a
 
-data ShootingPattern = Single
-                     | Double
-                     | Cross
-                     | Fontain
+data ShootingPattern = Single | Double | Cross | Fontain deriving (Show)
 
-data BulletTag = Ally
-               | Opponent
-               deriving (Eq, Ord)
+type ShootingString = [ShootingPattern]
+
+data BulletTag = Ally | Opponent deriving (Eq, Ord)
+
+data ActorTag = Tag1 | Tag2 deriving (Eq, Ord, Show)
+
+data ActorAI = ActorAI { actorAiTag :: ActorTag
+                       , actorAiShootingString :: ShootingString 
+                       }
+                       deriving (Show)
 
 data Actor = SimpleActor
 
@@ -50,6 +54,8 @@ data Actor = SimpleActor
            | StaticActor { staticActorName :: String 
                          , staticActorPosition :: Vector Float
                          , staticActorOrientation :: Quaternion Float
+
+                         , tag :: ActorTag
                          }
 
            | Bullet { bulletName :: String
@@ -63,6 +69,9 @@ data Actor = SimpleActor
 
            | Rocket { rocketName :: String
                     , rocketPosition :: (Vector Float)
+                    , rocketVelocity :: (Vector Float)
+                    , rocketAcceleration :: (Vector Float)
+                    , rocketCallback :: (Actor -> Actors)
                     }
 
            | Explosion { explosionName :: String 
@@ -74,10 +83,10 @@ data Actor = SimpleActor
 type Actors = [Actor]
 
 newPlayer :: Actor
-newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.1 0.0
+newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.2 0.0
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 0.5 Single 0.0
+newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 0.4 Single 0.0
 
 defaultEnemy :: Vector Float -> Actor
 defaultEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 p)
