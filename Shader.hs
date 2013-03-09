@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Shader where
 
 import Control.Monad
@@ -18,7 +20,8 @@ newProgram v f = do vs <- readAndCompileShader v
                     p <- linkShaders [vs] [fs]
                     return $ SP v f "" p
 
-newtype ShaderProgram = ShaderProgram (StateT ShaderProgramData IO ())
+newtype ShaderProgram a = ShaderProgram (StateT ShaderProgramData IO a)
+  deriving (Monad, MonadIO, MonadState ShaderProgramData, MonadPlus)
 
 withProgram :: ShaderProgramData -> IO () -> IO ()
 withProgram s a = do GL.currentProgram GL.$= Just (program s)
