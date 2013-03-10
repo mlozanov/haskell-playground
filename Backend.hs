@@ -60,11 +60,16 @@ emptyWorld = (World 0 i 0.0166667 cs bs (mkStdGen 1023))
           cs = [EmptyCamera]
           bs = [] :: Actors
 
+setupOpenGL32 :: IO ()
+setupOpenGL32 = sequence_ [GLFW.openWindowHint GLFW.OpenGLVersionMajor 3, GLFW.openWindowHint GLFW.OpenGLVersionMinor 2, GLFW.openWindowHint GLFW.OpenGLProfile GLFW.OpenGLCoreProfile]
 
 setup :: Int -> Int -> String -> SetupAction -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
 setup wx wy title setupAction renderActions simulateAction ioActions = do 
   GLFW.initialize
   -- open window
+
+  --setupOpenGL32
+
   GLFW.openWindow (GL.Size (fromIntegral wx) (fromIntegral wy)) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
   GLFW.windowTitle $= title
   GL.shadeModel    $= GL.Smooth
@@ -72,7 +77,7 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   GL.lineSmooth $= GL.Enabled
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
-  GL.lineWidth  $= 1.0
+  GL.lineWidth  $= 0.5
   GL.pointSize  $= 1.0
   -- set the color to clear background
   GL.clearColor $= Color4 0.18 0.18 0.18 1.0
