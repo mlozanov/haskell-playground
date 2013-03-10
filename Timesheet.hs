@@ -25,11 +25,10 @@ circleOfEnemies v = map defaultEnemy positions
 boss = circleOfEnemies 10
 
 stageOneTimesheet :: Timesheet Int
-stageOneTimesheet = M.fromList []
-                    --M.fromList [(0, circleOfEnemies 2 ++ lineOfEnemies)
-                    --           ,(120, circleOfEnemies 4) 
-                    --           ,(320, circleOfEnemies 6) 
-                    --           ,(620, circleOfEnemies 3) 
-                    --           ,(1020, boss)
-                    --           ]
+stageOneTimesheet = M.fromList [(0, circleOfEnemies 2 ++ lineOfEnemies)
+                               ,(120, circleOfEnemies 4) 
+                               ,(320, circleOfEnemies 6) 
+                               ,(620, circleOfEnemies 3) 
+                               ,(1020, boss)
+                               ]
 
