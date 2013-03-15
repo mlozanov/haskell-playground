@@ -16,8 +16,9 @@ executeEvent timesheet timestamp = fromMaybe' $ M.lookup timestamp timesheet
 newTimesheetRow :: (Eq a, Ord a) => Timesheet a -> (a, Actors) -> Timesheet a
 newTimesheetRow timesheet (k, actors) = M.insert k actors timesheet 
 
-lineOfEnemies = map defaultEnemy positions
-  where positions = [ [x,y,0.0] | x <- [-1.0], y <- [-1.0, 0.0, 1.0] ]
+lineOfEnemies = map enemy positionsAndVelocities
+  where positionsAndVelocities = [ [x,y,0.0] | x <- [2.0], y <- [-1.0, 0.0, 1.0] ]
+        enemy p = newEnemy { enemyPosition = (mulScalarVec 60.0 p), enemyVelocity = [-60,0.0,0.0] }
 
 circleOfEnemies v = map defaultEnemy positions
   where positions = map circleVec [-pi, -(pi - (pi/v)) .. pi]

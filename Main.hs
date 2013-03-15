@@ -41,7 +41,7 @@ setupAction worldRef actorsRef renderStateRef = do
   --let room = StaticActor "room" zeroV identityQ
   let cs = []
   backgroundActorPositions <- mapM (\_ -> rndVec) [1..256]
-  let bs = map (\p -> StaticActor "triangle" (scaleVec 200.0 p) identityQ Tag1) backgroundActorPositions
+  let bs = map (\p -> StaticActor "square" (scaleVec 200.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Tag1) backgroundActorPositions
   modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ bs ++ actors)
 
   renderState <- readIORef renderStateRef
@@ -60,9 +60,11 @@ createGeometryObjects = do
 
   vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 14.0 5.0) (ngonNormals 5.0)
 
-  vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 5.0 3.0) (ngonNormals 3.0)  
+  vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 5.0 3.0) (ngonNormals 3.0)
 
-  return $ M.fromList [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle)]
+  vboSquare <- Vbo.fromList GL.LineStrip (ngonVertices 8.0 4.0) (ngonNormals 4.0)
+
+  return $ M.fromList [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare)]
 
 createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
@@ -94,7 +96,7 @@ simulate as w = runState state w
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
-                          condition = (lb {-|| (btnCross input)-}) && (playerShootingTimer player <= 0.001)
+                          condition = (lb) && (playerShootingTimer player <= 0.001)
 
         shootOneBullet :: Bool -> Actor -> Actors
         shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 10.0 pp initialVelocity zeroV passthru], b ]
@@ -146,7 +148,7 @@ simulate as w = runState state w
 
           return $ concat $ map ((\bs a -> if (not . null $ filter (f a) bs) then [] else [a]) (bullets world)) actors
 
-            where -- f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 12.0), (Circle (bulletPosition b) 2.0)))
+            where --f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 12.0), (Circle (bulletPosition b) 2.0)))
                   f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
                   f _ _ = False
 
@@ -155,11 +157,11 @@ simulate as w = runState state w
           world <- get
 
           let as = map (timer world . reset) actors
-          let as' = map (trajectory (worldTime world) (worldDt world)) as
+          --let as' = map (trajectory (worldTime world) (worldDt world)) as
 
           shoot world
 
-          return as'
+          return as
 
             where shoot w = put $ w { bullets = (bullets w) ++ (concat $ map (enemyShoot w) actors) }
 

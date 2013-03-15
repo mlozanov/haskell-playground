@@ -17,4 +17,3 @@ color3 = GL.Color3
 
 toGLfloat :: Float -> GLfloat
 toGLfloat x = realToFrac x
-

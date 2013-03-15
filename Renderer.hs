@@ -50,17 +50,22 @@ render worldRef actorsRef renderStateRef = do
   -- projection matrix
   GL.matrixMode $= GL.Projection
   toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
+
+  pokeArray (projectionMatrix renderState) (toList Math.perspective)
   -- projection matrix
 
   -- view matrix
   GL.matrixMode $= GL.Modelview 0
   toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
 
-  toGLMatrix (Math.translate 0 0 (-400)) >>= multMatrix
+  let modelMatrix' = Math.translate 0 0 (-400)
+  toGLMatrix modelMatrix' >>= multMatrix
 
-  let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (45.0)))
-   in let m = toMatrixQ q
-       in toGLMatrix m >>= multMatrix
+  pokeArray (modelMatrix renderState) (toList modelMatrix')
+
+  --let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (45.0)))
+  -- in let m = toMatrixQ q
+  --     in toGLMatrix m >>= multMatrix
   -- view matrix 
 
   -- draw all VBOs in renderstate
@@ -79,20 +84,21 @@ render worldRef actorsRef renderStateRef = do
   
     uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
     uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
-    uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.00001 (0.0000001 :: GLfloat)
+    uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.0001 (0.000001 :: GLfloat)
     uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
     uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+
     uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
+    mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
 
-    --print $ "=================================================="
-    mapM_ (draw (worldDt world) renderState) actors
+    uniform uniformRimCoeff $= Vertex4 0.2 0.2 0.2 (1.276 :: GLfloat)
+    mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
 
-    uniform uniformRimCoeff $= Vertex4 0 0 1 (1.276 :: GLfloat)
+    uniform uniformRimCoeff $= Vertex4 1 0 0 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
 
     uniform uniformRimCoeff $= Vertex4 1 0 0 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
-    --print $ "--------------------------------------------------"
 
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled

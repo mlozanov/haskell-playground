@@ -43,6 +43,7 @@ import Primitives
 
 data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
                                , viewMatrix :: Ptr GLfloat
+                               , modelMatrix :: Ptr GLfloat
                                , shaderProgramsMap :: M.Map String ShaderProgramData
                                , bufferObjectsMap :: M.Map String Vbo
                                }
@@ -77,7 +78,7 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   GL.lineSmooth $= GL.Enabled
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
-  GL.lineWidth  $= 0.5
+  GL.lineWidth  $= 1.2
   GL.pointSize  $= 1.0
   -- set the color to clear background
   GL.clearColor $= Color4 0.18 0.18 0.18 1.0
@@ -105,12 +106,13 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
+  modelMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
 
   let objects = M.fromList [] --createGeometryObjects
 
   let shaders = M.fromList [] --createShaderPrograms
 
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray shaders objects)
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray modelMatrixArray shaders objects)
 
   worldRef <- newIORef emptyWorld
 
@@ -148,9 +150,6 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
       writeIORef actorsRef actors'
 
       mapM_ (\action -> action worldRef actorsRef renderStateRef) renderActions
-
-      --debugWorld worldRef
-      --debugInput worldRef
 
       GLFW.swapBuffers
 

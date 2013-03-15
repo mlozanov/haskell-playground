@@ -110,3 +110,15 @@ instance Show Actor where
   show e@Enemy{} = "enemy: shooting timer: " ++ show (enemyShootingTimer e) ++ "\n"
   show sa@StaticActor{} = "static actor:" ++ (staticActorName sa) ++ "\n"
   show a = show "actor" ++ "\n"
+
+isPlayer :: Actor -> Bool
+isPlayer Player{} = True
+isPlayer _ = False
+
+isEnemy :: Actor -> Bool
+isEnemy Enemy{} = True
+isEnemy _ = False
+
+isStatic :: Actor -> Bool
+isStatic StaticActor{} = True
+isStatic _ = False
