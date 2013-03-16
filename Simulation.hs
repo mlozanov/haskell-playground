@@ -48,7 +48,7 @@ instance Physical Actor where
             
     updateMovement dt (Enemy n !p !q !v !a sr sp st) = Enemy n p' q' v' a' sr sp st
       where a' = zeroV
-            drag = mulScalarVec (-0.001) v
+            drag = mulScalarVec (-0.00) v
             nv = euler dt v a
             p' = euler dt p v
             v' = addVec nv drag

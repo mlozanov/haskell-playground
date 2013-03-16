@@ -81,7 +81,7 @@ ioActions = []
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = processTimesheet stageOneTimesheet as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processCollisions >>= movement 
+  where state = processTimesheet (stageOneTimesheet w) as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processCollisions >>= movement 
 
         player@(Player pn pp pq pv pa psr pst) = getPlayer as
 
@@ -146,11 +146,14 @@ simulate as w = runState state w
         processCollisions actors = do
           world <- get
 
-          return $ concat $ map ((\bs a -> if (not . null $ filter (f a) bs) then [] else [a]) (bullets world)) actors
+          return $ concat $ map (forEachActor (bullets world)) actors
 
             where --f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 12.0), (Circle (bulletPosition b) 2.0)))
                   f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
                   f _ _ = False
+
+                  forEachActor :: Actors -> Actor -> Actors
+                  forEachActor bs a = if (not . null $ filter (f a) bs) then [] else [a]
 
         processActors :: Actors -> State World Actors
         processActors actors = do
