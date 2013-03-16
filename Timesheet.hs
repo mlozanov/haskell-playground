@@ -26,20 +26,27 @@ lineOfEnemies origin = map enemy positionsAndVelocities
                            , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 180) 
                            }
 
+lineOfEnemiesHorizondal origin = map enemy positionsAndVelocities
+  where positionsAndVelocities = [ [-1.0, 0.2, 0.0], [0.0, 0.4, 0.0], [1.0, 0.6, 0.0] ]
+        enemy p = newEnemy { enemyPosition = (mulScalarVec 60.0 (addVec origin p))
+                           , enemyVelocity = [-60,0.0,0.0]
+                           , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 180) 
+                           }
+
 circleOfEnemies v = map defaultEnemy positions
   where positions = map circleVec [-pi, -(pi - (pi/v)) .. pi]
 
 boss = circleOfEnemies 10
 
-stageOneLinearWaves = [ (x, lineOfEnemies) | x <- [10, 220 .. 2500] ]
+stageOneLinearWaves = [ (x, lineOfEnemiesHorizondal) | x <- [10, 220 .. 2500] ]
 
 stageOneTimesheet :: World -> Timesheet Int
-stageOneTimesheet world = M.fromList $ initialWave ++ [(2600, circleOfEnemies 3), (2820, boss)]
+stageOneTimesheet world = M.fromList $ (initialWave world) ++ [(2600, circleOfEnemies 3), (2820, boss)]
   where rnds :: [Float]
         rnds = take (length stageOneLinearWaves) (randoms (gen world))
 
-        rndOffset :: Float
-        rndOffset = fst $ random (gen world)
+        rndOffset :: World -> Float
+        rndOffset w = randomFloatR w (-2.5) 2.5
 
-        initialWave = map (\(t, f) -> (t, f [0.0, 3.0 * (0.5 - rndOffset), 0.0])) stageOneLinearWaves
+        initialWave w = map (\(t, f) -> (t, f [10.0, rndOffset w, 0.0])) stageOneLinearWaves
 
