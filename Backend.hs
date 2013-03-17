@@ -149,6 +149,8 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
       writeIORef worldRef (world' { worldTime = t, gen = snd $ next (gen world) })
       writeIORef actorsRef actors'
 
+      --print actors'
+
       mapM_ (\action -> action worldRef actorsRef renderStateRef) renderActions
 
       GLFW.swapBuffers
@@ -157,10 +159,9 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
 
       t1 <- getCPUTime
 
-      -- let dt = 0.0166667 
       let dt = ((fromIntegral (t1 - t0)) / (10^12)) :: Float
 
-      -- writeIORef worldRef (world' { worldDt = dt })
+      --writeIORef worldRef (world' { worldDt = dt })
       --let storeDt dt' w = w { worldDt = dt' } 
       -- in modifyIORef worldRef (storeDt dt)
 

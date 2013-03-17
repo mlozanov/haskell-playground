@@ -20,7 +20,7 @@ type ShootingString = [ShootingPattern]
 
 data BulletTag = Ally | Opponent deriving (Eq, Ord)
 
-data ActorTag = Tag1 | Tag2 deriving (Eq, Ord, Show)
+data ActorTag = Type1 | Type2 | Boss1 | Boss2 deriving (Eq, Ord, Show)
 
 data ActorAI = ActorAI { actorAiTag :: ActorTag
                        , actorAiShootingString :: ShootingString 
@@ -40,8 +40,11 @@ data Actor = SimpleActor
                     }
 
            | Enemy { enemyName :: String
+                   , enemyAge :: Float
+
                    , enemyPosition :: (Vector Float)
                    , enemyOrientation :: (Quaternion Float)
+                   , enemyOmega :: (Vector Float)
                    , enemyVelocity :: (Vector Float)
                    , enemyAcceleration :: (Vector Float)
 
@@ -49,6 +52,8 @@ data Actor = SimpleActor
                    , enemyShootingPattern :: ShootingPattern
 
                    , enemyShootingTimer :: Float
+
+                   , enemyTag :: ActorTag
                    }
 
            | StaticActor { staticActorName :: String 
@@ -83,14 +88,19 @@ data Actor = SimpleActor
 type Actors = [Actor]
 
 newPlayer :: Actor
-newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.2 0.0
+newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.15 0.0
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" zeroV identityQ zeroV zeroV 0.4 Single 0.0
+newEnemy = Enemy "enemy" 20.0 zeroV identityQ zeroV zeroV zeroV 0.1 Single 0.0 Type1
 
 defaultEnemy :: Vector Float -> Actor
 defaultEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 p)
-                          , enemyVelocity = mulScalarVec 30.0 p } 
+                          , enemyVelocity = mulScalarVec 30.0 p
+                          , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 180) 
+                          , enemyOmega = [0.0, 0.0, -2.0] 
+                          } 
+
+rotatingEnemy = newEnemy { enemyOmega = [0.0, 0.0, 3.0] }
 
 newBullet :: Actor
 newBullet = Bullet "bullet" Opponent 1.0 zeroV zeroV zeroV passthru
@@ -107,7 +117,7 @@ getPlayer (player:actors) = player
 instance Show Actor where
   show p@Player{} = "player:" ++ show (playerShootingTimer p) ++ "\n"
   show b@Bullet{} = "bullet:" ++ show (bulletAge b) ++ "\n"
-  show e@Enemy{} = "enemy: shooting timer: " ++ show (enemyShootingTimer e) ++ "\n"
+  show e@Enemy{} = "enemy: " ++ show (enemyAge e) ++ "\n"
   show sa@StaticActor{} = "static actor:" ++ (staticActorName sa) ++ "\n"
   show a = show "actor" ++ "\n"
 

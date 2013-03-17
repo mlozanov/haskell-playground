@@ -29,8 +29,6 @@ randomFloatUnit world = 2 * (0.5 - r)
 randomFloatR :: World -> Float -> Float -> Float
 randomFloatR world a b = fst $ randomR (a,b) (gen world)
 
-
-
 --- debugging
 
 debugInput :: IORef World -> IO ()

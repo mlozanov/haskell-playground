@@ -43,26 +43,29 @@ instance Physical Actor where
             drag = mulScalarVec (-0.3) v
             p' = euler dt p v
             nv = euler dt v a
-            v' = addVec nv drag
-            q' = normQ $ addQ q (scaleQ dt (dqdt [0.0, 0.0, 10.0] q))
+            v' = nv `addVec` drag
+            q' = normQ $ q `addQ` (scaleQ dt (dqdt [0.0, 0.0, 10.0] q))
             
-    updateMovement dt (Enemy n !p !q !v !a sr sp st) = Enemy n p' q' v' a' sr sp st
+    updateMovement dt (Enemy n age !p !q !omega !v !a sr sp st tag) = Enemy n age p' q' omega v' a' sr sp st tag
       where a' = zeroV
             drag = mulScalarVec (-0.00) v
             nv = euler dt v a
             p' = euler dt p v
-            v' = addVec nv drag
-            q' = normQ $ addQ q (scaleQ dt (dqdt [0.0, 0.0, 1.0] q))
+            v' = nv `addVec` drag
+            q' = normQ $ q `addQ` (scaleQ dt (dqdt omega q))
 
     updateMovement dt (Bullet n tag age p v a callback) = Bullet n tag age' p' v' a' callback
       where a' = zeroV
             drag = mulScalarVec (-0.001) v
             nv = euler dt v a
             p' = euler dt p v
-            v' = addVec nv drag
+            v' = nv `addVec` drag
             age' = age - dt
 
-    updateMovement dt static@StaticActor{} = static
+    updateMovement dt static@StaticActor{} = static { staticActorOrientation = q' }
+        where omega = [0.0, 0.0, 1.0]
+              q = staticActorOrientation static
+              q' = normQ $ q `addQ` (scaleQ dt (dqdt omega q))
 
     updateMovement dt actor = actor
 

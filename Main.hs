@@ -41,7 +41,7 @@ setupAction worldRef actorsRef renderStateRef = do
   --let room = StaticActor "room" zeroV identityQ
   let cs = []
   backgroundActorPositions <- mapM (\_ -> rndVec) [1..256]
-  let bs = map (\p -> StaticActor "square" (scaleVec 200.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Tag1) backgroundActorPositions
+  let bs = map (\p -> StaticActor "square" (scaleVec 400.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type1) backgroundActorPositions
   modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ bs ++ actors)
 
   renderState <- readIORef renderStateRef
@@ -90,8 +90,7 @@ simulate as w = runState state w
 
         produceBullets :: Actors -> State World Actors
         produceBullets actors = do
-          world <- get
-          put $ world { bullets = (bullets world) ++ shootOneBulletByPlayer (worldInput world) }
+          modify $ \world -> world { bullets = (bullets world) ++ shootOneBulletByPlayer (worldInput world) }
           return actors
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
@@ -107,12 +106,16 @@ simulate as w = runState state w
           where initialVelocity = mulScalarVec (50 + (lengthVec $ enemyVelocity e)) direction
                 direction = rightV $ enemyOrientation e -- right is our forward in 2d
 
+        shootOneExplosiveBullet b e@Enemy{} = [ bs | bs <- [Bullet "triangle" Opponent 2.0 (enemyPosition e) initialVelocity zeroV explosive], b ]
+          where initialVelocity = mulScalarVec (50 + (lengthVec $ enemyVelocity e)) direction
+                direction = rightV $ enemyOrientation e -- right is our forward in 2d
+
         explosive :: Actor -> Actors
         explosive b = explosion (bulletPosition b)
 
         explosion :: Vector Float -> Actors
-        explosion p = map (\d -> Bullet "triangle" Opponent 4.0 p (mulScalarVec 80 d) zeroV passthru) directions
-          where directions = map circleVec [-pi, -(pi - (pi/4)) .. pi]
+        explosion p = map (\d -> Bullet "circle" Opponent 2.0 p (mulScalarVec 180 d) zeroV passthru) directions
+          where directions = map circleVec [-pi, -(pi - (pi/3)) .. pi]
 
         playerInput :: Actors -> State World Actors
         playerInput (pl:as) = do
@@ -136,8 +139,7 @@ simulate as w = runState state w
 
         filterBullets :: Actors -> State World Actors
         filterBullets actors = do
-          world <- get
-          put $ world { bullets = filter f (bullets world) }
+          modify $ \world -> world { bullets = filter f (bullets world) }
           return actors
             where f bullet@Bullet{} | bulletAge bullet > 0 = True
                                     | otherwise = False
@@ -153,22 +155,21 @@ simulate as w = runState state w
                   f _ _ = False
 
                   forEachActor :: Actors -> Actor -> Actors
+                  forEachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) then [e { enemyAge = (enemyAge e) - 2.0}] else [e]
                   forEachActor bs a = if (not . null $ filter (f a) bs) then [] else [a]
 
         processActors :: Actors -> State World Actors
         processActors actors = do
           world <- get
 
-          let as = map (timer world . reset) actors
+          let as = filter old $ map (age world . timer world . reset) actors
           --let as' = map (trajectory (worldTime world) (worldDt world)) as
 
-          shoot world
+          modify $ \w -> w { bullets = (bullets w) ++ (concat $ map (enemyShoot w) actors) }
 
           return as
 
-            where shoot w = put $ w { bullets = (bullets w) ++ (concat $ map (enemyShoot w) actors) }
-
-                  timer w p@Player{} = p { playerShootingTimer = (playerShootingTimer p - (worldDt w)) }
+            where timer w p@Player{} = p { playerShootingTimer = (playerShootingTimer p - (worldDt w)) }
                   timer w e@Enemy{} = e { enemyShootingTimer = (enemyShootingTimer e - (worldDt w)) }
                   timer w a = a
 
@@ -178,8 +179,17 @@ simulate as w = runState state w
                                    | otherwise = e
                   reset a = a
 
+                  age w e@Enemy{} = e { enemyAge = enemyAge e - (worldDt w)}
+                  age w a = a
+
+                  old e@Enemy{} = enemyAge e > 0.0
+                  old _ = True
+
                   enemyShoot :: World -> Actor -> Actors
-                  enemyShoot w e@Enemy{} = shootOneBullet condtion e
+                  enemyShoot w e@Enemy{} = 
+                    case (enemyTag e) of 
+                      Boss1 -> shootOneExplosiveBullet condtion e
+                      othewise -> shootOneBullet condtion e
                     where condtion = enemyShootingTimer e < -0.0001
                   enemyShoot w _ = []
 
@@ -194,8 +204,8 @@ simulate as w = runState state w
 
         movement :: Actors -> State World Actors
         movement actors = do
+          modify $ \world -> world { bullets = map (updateMovement (worldDt world)) (bullets world) }
           world <- get
-          put $ world { bullets = map (updateMovement (worldDt world)) (bullets world) }
           return $ map (updateMovement (worldDt world)) actors
 
         trajectory :: Int -> Float -> Actor -> Actor
