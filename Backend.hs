@@ -78,10 +78,10 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   GL.lineSmooth $= GL.Enabled
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
-  GL.lineWidth  $= 1.2
+  GL.lineWidth  $= 1.0
   GL.pointSize  $= 1.0
   -- set the color to clear background
-  GL.clearColor $= Color4 0.18 0.18 0.18 1.0
+  GL.clearColor $= Color4 0.48 0.48 0.48 1.0
 
   GL.depthFunc $= Just Lequal
    

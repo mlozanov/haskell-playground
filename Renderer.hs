@@ -70,8 +70,8 @@ render worldRef actorsRef renderStateRef = do
 
   -- draw all VBOs in renderstate
   let p = (shaderProgramsMap renderState) M.! "default"
-  let lx = 60.0 * cos (2.0 * (realToFrac (worldTime world)))
-  let ly = 50.0 * sin (realToFrac (worldTime world))
+  let lx = 60.0 * cos (0.02 * (realToFrac (worldTime world)))
+  let ly = 50.0 * sin (0.02 * (realToFrac (worldTime world)))
   let lz = 100.0 -- + (50.0 * sin (8.0 * t))
 
   withProgram p $ do
@@ -94,10 +94,10 @@ render worldRef actorsRef renderStateRef = do
     uniform uniformRimCoeff $= Vertex4 0.2 0.2 0.2 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
 
-    uniform uniformRimCoeff $= Vertex4 1 0 0 (1.276 :: GLfloat)
+    uniform uniformRimCoeff $= Vertex4 1 0.2 0.2 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
 
-    uniform uniformRimCoeff $= Vertex4 1 0 0 (1.276 :: GLfloat)
+    uniform uniformRimCoeff $= Vertex4 1 0.2 0.2 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
 
   GL.lighting $= GL.Disabled
@@ -109,9 +109,9 @@ render worldRef actorsRef renderStateRef = do
   return ()
 
 title t = preservingMatrix $ do 
-            GL.translate $ vector3 (64.0) 0.0 (-68.0)
+            GL.translate $ vector3 (64.0) 0.0 (-58.0)
             GL.color $ color3 1 1 1
-            GL.scale (0.38) 0.38 (0.38 :: GLfloat)
+            GL.scale 0.6 0.6 (0.60 :: GLfloat)
             renderString Fixed8x16 "sharpshooter"
             GL.color $ color3 1 1 1
 
@@ -136,5 +136,9 @@ instance Drawable Actor where
 
   draw dt renderState r@Rocket{} = transformAndRenderVbo renderState (rocketName r) (rocketPosition r) identityQ
 
-  draw dt renderState (Explosion n p age power) = transformAndRenderVbo renderState n p identityQ
+  draw dt renderState (Explosion n p age power) = preservingMatrix $
+    do GL.translate $ fromVector p
+       GL.scale (3.0 - toGLfloat age) (3.0 - toGLfloat age) (3.0 - toGLfloat age)
+       toGLMatrix (matrixFloatToGLfloat (toMatrixQ identityQ)) >>= multMatrix
+       renderVbo (bufferObjectsMap renderState M.! n)
 

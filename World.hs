@@ -7,6 +7,10 @@ import Input
 import Camera
 import Actor
 
+data Statistics = Statistics { statShootAccuracy :: Float
+                             , statAverageTimeToShootEnemy :: Float
+                             } deriving Show
+
 data World = World { worldTime :: !Int
                    , worldInput :: !Input 
                    , worldDt :: !Float

@@ -35,14 +35,11 @@ main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioAction
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
-  --rndPos <- mapM (\_ -> rndPolarVec) [1..16]
-  --let rndPos = map circleVec [-pi, -(pi - (pi/16)) .. pi]
-  --let cs = map defaultEnemy rndPos
-  --let room = StaticActor "room" zeroV identityQ
-  let cs = []
+  --let room = StaticActor "room" zeroV identityQ Type1
+
   backgroundActorPositions <- mapM (\_ -> rndVec) [1..256]
-  let bs = map (\p -> StaticActor "square" (scaleVec 400.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type1) backgroundActorPositions
-  modifyIORef actorsRef (\actors -> [newPlayer] ++ cs ++ bs ++ actors)
+  let bs = map (\p -> StaticActor "square" (scaleVec 400.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
+  modifyIORef actorsRef (\actors -> [newPlayer] ++ bs ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -60,11 +57,13 @@ createGeometryObjects = do
 
   vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 14.0 5.0) (ngonNormals 5.0)
 
-  vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 5.0 3.0) (ngonNormals 3.0)
+  vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 3.5 3.0) (ngonNormals 3.0)
 
   vboSquare <- Vbo.fromList GL.LineStrip (ngonVertices 8.0 4.0) (ngonNormals 4.0)
 
-  return $ M.fromList [("player", vboPlayer), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare)]
+  vboExplosition <- Vbo.fromList GL.LineStrip (ngonVertices 15.0 8.0) (ngonNormals 8.0)
+
+  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition)]
 
 createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
@@ -150,7 +149,7 @@ simulate as w = runState state w
 
           return $ concat $ map (forEachActor (bullets world)) actors
 
-            where --f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 12.0), (Circle (bulletPosition b) 2.0)))
+            where f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 6.0), (Circle (bulletPosition b) 2.0)))
                   f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
                   f _ _ = False
 
@@ -162,7 +161,7 @@ simulate as w = runState state w
         processActors actors = do
           world <- get
 
-          let as = filter old $ map (age world . timer world . reset) actors
+          let as = filter old $ map (age world . timer world . explode . reset) actors
           --let as' = map (trajectory (worldTime world) (worldDt world)) as
 
           modify $ \w -> w { bullets = (bullets w) ++ (concat $ map (enemyShoot w) actors) }
@@ -180,10 +179,16 @@ simulate as w = runState state w
                   reset a = a
 
                   age w e@Enemy{} = e { enemyAge = enemyAge e - (worldDt w)}
+                  age w e@Explosion{} = e { explosionAge = explosionAge e - (worldDt w)}
                   age w a = a
 
                   old e@Enemy{} = enemyAge e > 0.0
+                  old e@Explosion{} = explosionAge e > 0.0
                   old _ = True
+
+                  explode e@Enemy{} | enemyAge e <= 0.01 = newExplosion (enemyPosition e)
+                                    | otherwise = e
+                  explode a = a
 
                   enemyShoot :: World -> Actor -> Actors
                   enemyShoot w e@Enemy{} = 

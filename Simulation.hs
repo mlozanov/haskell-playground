@@ -62,7 +62,10 @@ instance Physical Actor where
             v' = nv `addVec` drag
             age' = age - dt
 
-    updateMovement dt static@StaticActor{} = static { staticActorOrientation = q' }
+    updateMovement dt static@StaticActor{} = case (tag static) of
+        Type1 -> static 
+        Type2 -> static { staticActorOrientation = q' } 
+        otherwise -> static
         where omega = [0.0, 0.0, 1.0]
               q = staticActorOrientation static
               q' = normQ $ q `addQ` (scaleQ dt (dqdt omega q))
