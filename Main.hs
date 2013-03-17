@@ -179,7 +179,7 @@ simulate as w = runState state w
                   reset a = a
 
                   age w e@Enemy{} = e { enemyAge = enemyAge e - (worldDt w)}
-                  age w e@Explosion{} = e { explosionAge = explosionAge e - (worldDt w)}
+                  age w e@Explosion{} = e { explosionAge = explosionAge e - (5.0 * worldDt w)}
                   age w a = a
 
                   explode e@Enemy{} | enemyAge e <= 0.01 = newExplosion (enemyPosition e)
