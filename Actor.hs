@@ -132,3 +132,11 @@ isEnemy _ = False
 isStatic :: Actor -> Bool
 isStatic StaticActor{} = True
 isStatic _ = False
+
+isAlive :: Actor -> Bool
+isAlive e@Enemy{} = enemyAge e > 0.0
+isAlive b@Bullet{} = bulletAge b > 0.0
+isAlive e@Explosion{} = explosionAge e > 0.0
+
+
+isAlive _ = True

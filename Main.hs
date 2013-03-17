@@ -161,7 +161,7 @@ simulate as w = runState state w
         processActors actors = do
           world <- get
 
-          let as = filter old $ map (age world . timer world . explode . reset) actors
+          let as = filter isAlive $ map (age world . timer world . explode . reset) actors
           --let as' = map (trajectory (worldTime world) (worldDt world)) as
 
           modify $ \w -> w { bullets = (bullets w) ++ (concat $ map (enemyShoot w) actors) }
@@ -181,10 +181,6 @@ simulate as w = runState state w
                   age w e@Enemy{} = e { enemyAge = enemyAge e - (worldDt w)}
                   age w e@Explosion{} = e { explosionAge = explosionAge e - (worldDt w)}
                   age w a = a
-
-                  old e@Enemy{} = enemyAge e > 0.0
-                  old e@Explosion{} = explosionAge e > 0.0
-                  old _ = True
 
                   explode e@Enemy{} | enemyAge e <= 0.01 = newExplosion (enemyPosition e)
                                     | otherwise = e
