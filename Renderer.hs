@@ -30,6 +30,32 @@ import Vbo
 import Fbo
 import Shader
 
+class Drawable a where
+  draw :: Float -> RenderState -> a -> IO ()
+
+
+instance Drawable Actor where
+  draw dt renderState p@Player{} = transformAndRenderVbo renderState (playerName p) (playerPosition p) (playerOrientation p)
+
+  draw dt renderState e@Enemy{} = transformAndRenderVbo renderState (enemyName e) (enemyPosition e) (enemyOrientation e)
+
+  draw dt renderState (StaticActor n p q tag) = transformAndRenderVbo renderState n p q
+
+  draw dt renderState (Bullet n tag age p v a callback) = transformAndRenderVbo renderState n p identityQ
+
+  draw dt renderState r@Rocket{} = transformAndRenderVbo renderState (rocketName r) (rocketPosition r) identityQ
+
+  draw dt renderState (Explosion n p age power) = preservingMatrix $
+    do GL.translate $ fromVector p
+       GL.scale (3.0 - toGLfloat age) (3.0 - toGLfloat age) (3.0 - toGLfloat age)
+       toGLMatrix (matrixFloatToGLfloat (toMatrixQ identityQ)) >>= multMatrix
+       renderVbo (bufferObjectsMap renderState M.! n)
+
+
+instance Drawable Vbo where
+  draw dt renderState vbo = renderVbo vbo
+
+
 {-# INLINE toGLMatrix #-}
 {-# INLINE matrixFloatToGLfloat #-}
 
@@ -94,10 +120,10 @@ render worldRef actorsRef renderStateRef = do
     uniform uniformRimCoeff $= Vertex4 0.2 0.2 0.2 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
 
-    uniform uniformRimCoeff $= Vertex4 1 0.2 0.2 (1.276 :: GLfloat)
+    uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
 
-    uniform uniformRimCoeff $= Vertex4 1 0.2 0.2 (1.276 :: GLfloat)
+    uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
 
   GL.lighting $= GL.Disabled
@@ -119,26 +145,5 @@ transformAndRenderVbo :: RenderState -> String -> Vector Float -> Quaternion Flo
 transformAndRenderVbo renderState n p q = preservingMatrix $
   do GL.translate $ fromVector p
      toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
-     renderVbo (bufferObjectsMap renderState M.! n)
-
-
-class Drawable a where
-  draw :: Float -> RenderState -> a -> IO ()
-
-instance Drawable Actor where
-  draw dt renderState p@Player{} = transformAndRenderVbo renderState (playerName p) (playerPosition p) (playerOrientation p)
-
-  draw dt renderState e@Enemy{} = transformAndRenderVbo renderState (enemyName e) (enemyPosition e) (enemyOrientation e)
-
-  draw dt renderState (StaticActor n p q tag) = transformAndRenderVbo renderState n p q
-
-  draw dt renderState (Bullet n tag age p v a callback) = transformAndRenderVbo renderState n p identityQ
-
-  draw dt renderState r@Rocket{} = transformAndRenderVbo renderState (rocketName r) (rocketPosition r) identityQ
-
-  draw dt renderState (Explosion n p age power) = preservingMatrix $
-    do GL.translate $ fromVector p
-       GL.scale (3.0 - toGLfloat age) (3.0 - toGLfloat age) (3.0 - toGLfloat age)
-       toGLMatrix (matrixFloatToGLfloat (toMatrixQ identityQ)) >>= multMatrix
-       renderVbo (bufferObjectsMap renderState M.! n)
+     draw 0.0166667 renderState (bufferObjectsMap renderState M.! n)
 

@@ -23,6 +23,8 @@ import Collision
 
 import Timesheet
 
+import Ai
+
 -- import TestFFI
 
 type WorldState = State World World
@@ -63,7 +65,9 @@ createGeometryObjects = do
 
   vboExplosition <- Vbo.fromList GL.LineStrip (ngonVertices 15.0 8.0) (ngonNormals 8.0)
 
-  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition)]
+  vboSmallExplosition <- Vbo.fromList GL.LineStrip (ngonVertices 1.0 6.0) (ngonNormals 6.0)
+
+  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition), ("smallExplosion", vboSmallExplosition)]
 
 createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
@@ -94,7 +98,7 @@ simulate as w = runState state w
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
-                          condition = (lb) && (playerShootingTimer player <= 0.001)
+                          condition = (lb || btnCross input) && (playerShootingTimer player <= 0.001)
 
         shootOneBullet :: Bool -> Actor -> Actors
         shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 10.0 pp initialVelocity zeroV passthru], b ]
@@ -120,7 +124,7 @@ simulate as w = runState state w
         playerInput (pl:as) = do
           world <- get
 
-          let (x:y:rest) = inputAxisL (worldInput world)
+          let (x:y:rest) = inputJoystickAxisL (worldInput world)
               a = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ (playerOrientation pl)))
               pl' = pl { playerAcceleration = a }
            in return (pl':as)
@@ -149,13 +153,15 @@ simulate as w = runState state w
 
           return $ concat $ map (forEachActor (bullets world)) actors
 
-            where f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 6.0), (Circle (bulletPosition b) 2.0)))
+            where --f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 6.0), (Circle (bulletPosition b) 2.0)))
                   f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
                   f _ _ = False
 
                   forEachActor :: Actors -> Actor -> Actors
-                  forEachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) then [e { enemyAge = (enemyAge e) - 2.0}] else [e]
+                  forEachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) then [tinyExplosion (enemyPosition e), e { enemyAge = (enemyAge e) - 2.0}] else [e]
                   forEachActor bs a = if (not . null $ filter (f a) bs) then [] else [a]
+
+                  tinyExplosion p = Explosion "smallExplosion" p 1.5 8.0
 
         processActors :: Actors -> State World Actors
         processActors actors = do
@@ -178,7 +184,7 @@ simulate as w = runState state w
                                    | otherwise = e
                   reset a = a
 
-                  age w e@Enemy{} = e { enemyAge = enemyAge e - (worldDt w)}
+                  --age w e@Enemy{} = e { enemyAge = enemyAge e - (worldDt w)}
                   age w e@Explosion{} = e { explosionAge = explosionAge e - (5.0 * worldDt w)}
                   age w a = a
 
