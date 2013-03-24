@@ -98,7 +98,7 @@ simulate as w = runState state w
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
-                          condition = (lb || btnCross input) && (playerShootingTimer player <= 0.001)
+                          condition = (lb) && (playerShootingTimer player <= 0.001)
 
         shootOneBullet :: Bool -> Actor -> Actors
         shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 10.0 pp initialVelocity zeroV passthru], b ]
