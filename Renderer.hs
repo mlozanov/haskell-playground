@@ -49,7 +49,7 @@ instance Drawable Actor where
     do GL.translate $ fromVector p
        GL.scale (3.0 - toGLfloat age) (3.0 - toGLfloat age) (3.0 - toGLfloat age)
        toGLMatrix (matrixFloatToGLfloat (toMatrixQ identityQ)) >>= multMatrix
-       renderVbo (bufferObjectsMap renderState M.! n)
+       renderVbo (vboMap renderState M.! n)
 
 
 instance Drawable Vbo where
@@ -74,15 +74,15 @@ render worldRef actorsRef renderStateRef = do
   actors <- readIORef actorsRef
 
   -- projection matrix
-  GL.matrixMode $= GL.Projection
-  toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
+  -- GL.matrixMode $= GL.Projection
+  -- toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
 
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
   -- projection matrix
 
   -- view matrix
-  GL.matrixMode $= GL.Modelview 0
-  toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
+  -- GL.matrixMode $= GL.Modelview 0
+  -- toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
 
   let modelMatrix' = Math.translate 0 0 (-400)
   toGLMatrix modelMatrix' >>= multMatrix
@@ -93,6 +93,8 @@ render worldRef actorsRef renderStateRef = do
   -- in let m = toMatrixQ q
   --     in toGLMatrix m >>= multMatrix
   -- view matrix 
+
+  -- setup render target
 
   -- draw all VBOs in renderstate
   let p = (shaderProgramsMap renderState) M.! "default"
@@ -126,11 +128,18 @@ render worldRef actorsRef renderStateRef = do
     uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
     mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
 
+  -- setup framebuffer to display render target
+
+  -- run pass thru shader that display final image
+  let fsq = (shaderProgramsMap renderState) M.! "passthru" 
+  withProgram fsq $ do
+    draw (worldDt world) renderState (vboMap renderState M.! "fullscreenQuad")
+
   GL.lighting $= GL.Disabled
   GL.light (Light 0) $= GL.Disabled
 
   -- draw the title
-  title (worldTime world)
+  --title (worldTime world)
 
   return ()
 
@@ -145,5 +154,5 @@ transformAndRenderVbo :: RenderState -> String -> Vector Float -> Quaternion Flo
 transformAndRenderVbo renderState n p q = preservingMatrix $
   do GL.translate $ fromVector p
      toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
-     draw 0.0166667 renderState (bufferObjectsMap renderState M.! n)
+     draw 0.0166667 renderState (vboMap renderState M.! n)
 

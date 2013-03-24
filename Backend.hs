@@ -41,13 +41,7 @@ import Fbo
 import Shader
 import Primitives
 
-data RenderState = RenderState { projectionMatrix :: Ptr GLfloat
-                               , viewMatrix :: Ptr GLfloat
-                               , modelMatrix :: Ptr GLfloat
-                               , shaderProgramsMap :: M.Map String ShaderProgramData
-                               , bufferObjectsMap :: M.Map String Vbo
-                               }
-
+import RenderState
 
 type SetupAction = (IORef World -> IORef Actors -> IORef RenderState -> IO ())
 type RenderAction = (IORef World -> IORef Actors -> IORef RenderState -> IO ())
@@ -69,35 +63,35 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   GLFW.initialize
   -- open window
 
-  --setupOpenGL32
+  setupOpenGL32
 
   GLFW.openWindow (GL.Size (fromIntegral wx) (fromIntegral wy)) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
   GLFW.windowTitle $= title
-  GL.shadeModel    $= GL.Smooth
-  -- enable antialiasing
+  --GL.shadeModel    $= GL.Smooth
+  ---- enable antialiasing
   GL.lineSmooth $= GL.Enabled
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
-  GL.lineWidth  $= 1.0
-  GL.pointSize  $= 1.0
+  --GL.lineWidth  $= 1.0
+  --GL.pointSize  $= 1.0
   -- set the color to clear background
   GL.clearColor $= Color4 0.48 0.48 0.48 1.0
 
   GL.depthFunc $= Just Lequal
    
-  GL.colorMaterial $= Just (GL.FrontAndBack, GL.AmbientAndDiffuse)
+  --GL.colorMaterial $= Just (GL.FrontAndBack, GL.AmbientAndDiffuse)
 
   -- set 2D perspective view inside windowSizeCallback because
   -- any change to the Window size should result in different
   -- OpenGL Viewport.
-  GLFW.windowSizeCallback $= \ size@(GL.Size w h) ->
-       do GL.viewport   $= (GL.Position 0 0, size)
-          GL.matrixMode $= GL.Projection
-          GL.loadIdentity
+  --GLFW.windowSizeCallback $= \ size@(GL.Size w h) ->
+  --     do GL.viewport   $= (GL.Position 0 0, size)
+  --        GL.matrixMode $= GL.Projection
+  --        GL.loadIdentity
 
-          let m' = Math.toList Math.perspective
-          p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
-          multMatrix p
+  --        let m' = Math.toList Math.perspective
+  --        p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
+  --        multMatrix p
 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
@@ -110,9 +104,11 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
 
   let objects = M.fromList [] --createGeometryObjects
 
+  let renderTargets = M.fromList []
+
   let shaders = M.fromList [] --createShaderPrograms
 
-  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray modelMatrixArray shaders objects)
+  renderStateRef <- newIORef (RenderState projMatrixArray viewMatrixArray modelMatrixArray shaders objects renderTargets)
 
   worldRef <- newIORef emptyWorld
 

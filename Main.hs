@@ -12,6 +12,7 @@ import Backend
 import Primitives
 import Shader
 import Vbo
+import Fbo
 
 import Input
 import Math
@@ -47,8 +48,9 @@ setupAction worldRef actorsRef renderStateRef = do
 
   shaders <- createShaderPrograms
   objects <- createGeometryObjects
+  renderTargets <- createRenderTargets
 
-  writeIORef renderStateRef (renderState { shaderProgramsMap = shaders, bufferObjectsMap = objects } )
+  writeIORef renderStateRef (renderState { shaderProgramsMap = shaders, vboMap = objects, fboMap = renderTargets } )
 
 createGeometryObjects :: IO (Map String Vbo)
 createGeometryObjects = do
@@ -67,14 +69,21 @@ createGeometryObjects = do
 
   vboSmallExplosition <- Vbo.fromList GL.LineStrip (ngonVertices 1.0 6.0) (ngonNormals 6.0)
 
-  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition), ("smallExplosion", vboSmallExplosition)]
+  vboFullscreenQuad <- Vbo.fromList GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0] []
+
+  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition), ("smallExplosion", vboSmallExplosition), ("fullscreenQuad", vboFullscreenQuad)]
 
 createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
-  defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
-  sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
+  defaultProgram <- newProgram "data/shaders/320/default.vert" "data/shaders/320/default.frag" 
+  --sphericalProgram <- newProgram "data/shaders/320/sph.vert" "data/shaders/320/sph.frag"  
+  passthruProgram <- newProgram "data/shaders/320/empty.vert" "data/shaders/320/blit.frag"
 
-  return $ M.fromList [("default", defaultProgram), ("spherical", sphericalProgram)]
+  return $ M.fromList [("default", defaultProgram), ("passthru", passthruProgram)]
+
+createRenderTargets :: IO (Map String Fbo)
+createRenderTargets = do
+  return $ M.fromList []  
 
 renderActions :: [RenderAction]
 renderActions = [render]
@@ -98,7 +107,7 @@ simulate as w = runState state w
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
-                          condition = (lb || btnCross input) && (playerShootingTimer player <= 0.001)
+                          condition = (lb) && (playerShootingTimer player <= 0.001)
 
         shootOneBullet :: Bool -> Actor -> Actors
         shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 10.0 pp initialVelocity zeroV passthru], b ]
@@ -124,7 +133,7 @@ simulate as w = runState state w
         playerInput (pl:as) = do
           world <- get
 
-          let (x:y:rest) = inputJoystickAxisL (worldInput world)
+          let (x:y:rest) = inputAxisL (worldInput world)
               a = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ (playerOrientation pl)))
               pl' = pl { playerAcceleration = a }
            in return (pl':as)
