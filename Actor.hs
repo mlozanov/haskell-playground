@@ -22,11 +22,6 @@ data BulletTag = Ally | Opponent deriving (Eq, Ord)
 
 data ActorTag = Type1 | Type2 | Boss1 | Boss2 deriving (Eq, Ord, Show)
 
-data ActorAI = ActorAI { actorAiTag :: ActorTag
-                       , actorAiShootingString :: ShootingString 
-                       }
-                       deriving (Show)
-
 data Actor = SimpleActor
 
            | Player { playerName :: String

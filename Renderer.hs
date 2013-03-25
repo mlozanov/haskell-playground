@@ -25,6 +25,7 @@ import Graphics
 import Math
 import Camera
 import Actor
+import Ai
 
 import Vbo
 import Fbo
@@ -54,6 +55,10 @@ instance Drawable Actor where
 
 instance Drawable Vbo where
   draw dt renderState vbo = renderVbo vbo
+
+
+instance Drawable Seed where
+  draw dt renderState seed = transformAndRenderVbo renderState "seed" (seedPosition seed) identityQ
 
 
 {-# INLINE toGLMatrix #-}

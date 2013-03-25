@@ -41,6 +41,9 @@ setupAction worldRef actorsRef renderStateRef = do
 
   backgroundActorPositions <- mapM (\_ -> rndVec) [1..256]
   let bs = map (\p -> StaticActor "square" (scaleVec 400.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
+
+  let seeds = [seed]
+
   modifyIORef actorsRef (\actors -> [newPlayer] ++ bs ++ actors)
 
   renderState <- readIORef renderStateRef
@@ -67,7 +70,16 @@ createGeometryObjects = do
 
   vboSmallExplosition <- Vbo.fromList GL.LineStrip (ngonVertices 1.0 6.0) (ngonNormals 6.0)
 
-  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition), ("smallExplosion", vboSmallExplosition)]
+  return $ M.fromList [ ("player", vboSquare)
+                      , ("circle", vboCircle)
+                      , ("enemy", vboPentagon)
+                      , ("room", vboRoom)
+                      , ("triangle", vboTriangle)
+                      , ("square", vboSquare)
+                      , ("explosion", vboExplosition)
+                      , ("smallExplosion", vboSmallExplosition)
+                      , ("seed", vboTriangle)
+                      ]
 
 createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
