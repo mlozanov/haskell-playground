@@ -61,19 +61,16 @@ setupOpenGL32 = sequence_ [GLFW.openWindowHint GLFW.OpenGLVersionMajor 3, GLFW.o
 setup :: Int -> Int -> String -> SetupAction -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
 setup wx wy title setupAction renderActions simulateAction ioActions = do 
   GLFW.initialize
-  -- open window
-
+  
   setupOpenGL32
 
+  -- open window
   GLFW.openWindow (GL.Size (fromIntegral wx) (fromIntegral wy)) [GLFW.DisplayAlphaBits 8, GLFW.DisplayDepthBits 24] GLFW.Window
   GLFW.windowTitle $= title
-  --GL.shadeModel    $= GL.Smooth
+
   ---- enable antialiasing
-  GL.lineSmooth $= GL.Enabled
   GL.blend      $= GL.Enabled
   GL.blendFunc  $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
-  --GL.lineWidth  $= 1.0
-  --GL.pointSize  $= 1.0
   -- set the color to clear background
   GL.clearColor $= Color4 0.48 0.48 0.48 1.0
 
@@ -84,15 +81,9 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   -- set 2D perspective view inside windowSizeCallback because
   -- any change to the Window size should result in different
   -- OpenGL Viewport.
-  --GLFW.windowSizeCallback $= \ size@(GL.Size w h) ->
-  --     do GL.viewport   $= (GL.Position 0 0, size)
-  --        GL.matrixMode $= GL.Projection
-  --        GL.loadIdentity
-
-  --        let m' = Math.toList Math.perspective
-  --        p <- newMatrix GL.RowMajor m' :: IO (GLmatrix GLfloat)
-  --        multMatrix p
-
+  GLFW.windowSizeCallback $= \ size@(GL.Size w h) ->
+       do GL.viewport   $= (GL.Position 0 0, size)
+ 
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
   GL.get GL.glVersion >>= print
@@ -135,7 +126,7 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
     loop t worldRef actorsRef renderStateRef = do
       t0 <- getCPUTime
 
-      updateJoystickState worldRef
+      --updateJoystickState worldRef
 
       mapM_ (\action -> action worldRef) ioActions
 
@@ -149,6 +140,7 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
 
       mapM_ (\action -> action worldRef actorsRef renderStateRef) renderActions
 
+      GL.flush
       GLFW.swapBuffers
 
       --performGC
