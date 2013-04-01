@@ -52,7 +52,7 @@ setupAction worldRef actorsRef renderStateRef = do
 
 createGeometryObjects :: IO (Map String Vbo)
 createGeometryObjects = do
-  vboRoom <- Vbo.fromList GL.Triangles (map (* 10) room) (concat roomNormals)
+  vboRoom <- Vbo.fromList GL.Triangles (map (* 140) room) (concat roomNormals)
 
   vboFullscreenQuad <- Vbo.fromList GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0] [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
 

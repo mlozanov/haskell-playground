@@ -269,7 +269,7 @@ perspective = frustum left right top bottom near far
           far = 2000.0
           left = -top * aspect
           right = top * aspect
-          top = near * tan (60.0 * pi / 360.0)
+          top = near * tan (45.0 * pi / 360.0)
           bottom = -top
           aspect = 1.85
 
@@ -278,10 +278,10 @@ lookat :: Floating a => Vector a -> Vector a -> Vector a -> Vector a -> Matrix a
 lookat up side forward position = M (concat [up,side,forward,position])
 
 translate :: Floating a => a -> a -> a -> Matrix a
-translate x y z = M [1,0,0,x
-                    ,0,1,0,y
-                    ,0,0,1,z
-                    ,0,0,0,1]
+translate x y z = M [1,0,0,0
+                    ,0,1,0,0
+                    ,0,0,1,0
+                    ,x,y,z,1]
 
 rotate :: Floating a => a -> a -> a -> Matrix a
 rotate ax ay az = identity
