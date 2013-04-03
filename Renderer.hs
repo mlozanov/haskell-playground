@@ -79,69 +79,75 @@ render worldRef actorsRef renderStateRef = do
   -- setup render target
   -- draw all VBOs in renderstate
 
-  let pd = (shaderProgramsMap renderState) M.! "default"
-  withProgram pd $ do
-    attribLocation (program pd) "in_Position" $= AttribLocation 0
-    attribLocation (program pd) "in_Normal" $= AttribLocation 1
-    bindFragDataLocation (program pd) "Color" $= 0
+  let f = (fboMap renderState) M.! "default"
 
-    -- glGetUniformLocation :: GLuint -> Ptr GLchar -> IO GLint
-    uniformProjectionMatrix <- getUniformLocation pd "projectionMatrix"
-    uniformViewMatrix <- getUniformLocation pd "viewMatrix"
-    uniformModelMatrix <- getUniformLocation pd "modelMatrix"
+  withFbo f $ do
+    let pd = (shaderProgramsMap renderState) M.! "default"
+    withProgram pd $ do
+      attribLocation (program pd) "in_Position" $= AttribLocation 0
+      attribLocation (program pd) "in_Normal" $= AttribLocation 1
+      bindFragDataLocation (program pd) "Color" $= 0
 
-    --print uniformProjectionMatrix
-    --print uniformViewMatrix
-    --print uniformModelMatrix
+      -- glGetUniformLocation :: GLuint -> Ptr GLchar -> IO GLint
+      uniformProjectionMatrix <- getUniformLocation pd "projectionMatrix"
+      uniformViewMatrix <- getUniformLocation pd "viewMatrix"
+      uniformModelMatrix <- getUniformLocation pd "modelMatrix"
 
-    uniformLightPosition <- getUniformLocation pd "lightPos"
-    uniformCameraPosition <- getUniformLocation pd "cameraPos"
-    uniformTermCoeff <- getUniformLocation pd "termCoeff"
-    uniformColorDiffuse <- getUniformLocation pd "colorDiffuse"
-    uniformColorSpecular <- getUniformLocation pd "colorSpecular"
-    uniformRimCoeff <- getUniformLocation pd "rimCoeff"
+      --print uniformProjectionMatrix
+      --print uniformViewMatrix
+      --print uniformModelMatrix
 
-    --print uniformRimCoeff
+      uniformLightPosition <- getUniformLocation pd "lightPos"
+      uniformCameraPosition <- getUniformLocation pd "cameraPos"
+      uniformTermCoeff <- getUniformLocation pd "termCoeff"
+      uniformColorDiffuse <- getUniformLocation pd "colorDiffuse"
+      uniformColorSpecular <- getUniformLocation pd "colorSpecular"
+      uniformRimCoeff <- getUniformLocation pd "rimCoeff"
 
-    --peekArray 16 (projectionMatrix renderState) >>= print
-    --peekArray 16 (viewMatrix renderState) >>= print
-    --peekArray 16 (modelMatrix renderState) >>= print
+      --print uniformRimCoeff
 
-    glUniformMatrix4fv (GL.getUniformLocationID uniformProjectionMatrix) 1 0 (projectionMatrix renderState)
-    glUniformMatrix4fv (GL.getUniformLocationID uniformViewMatrix) 1 0 (viewMatrix renderState)
-    glUniformMatrix4fv (GL.getUniformLocationID uniformModelMatrix) 1 0 (modelMatrix renderState)
+      --peekArray 16 (projectionMatrix renderState) >>= print
+      --peekArray 16 (viewMatrix renderState) >>= print
+      --peekArray 16 (modelMatrix renderState) >>= print
 
-    --uniformv uniformProjectionMatrix 16 (castPtr (projectionMatrix renderState) :: Ptr (TexCoord1 GLfloat))
-    --uniformv uniformViewMatrix 16 (castPtr (viewMatrix renderState) :: Ptr (TexCoord1 GLfloat))
-    --uniformv uniformModelMatrix 16 (castPtr (modelMatrix renderState) :: Ptr (TexCoord1 GLfloat))
+      glUniformMatrix4fv (GL.getUniformLocationID uniformProjectionMatrix) 1 0 (projectionMatrix renderState)
+      glUniformMatrix4fv (GL.getUniformLocationID uniformViewMatrix) 1 0 (viewMatrix renderState)
+      glUniformMatrix4fv (GL.getUniformLocationID uniformModelMatrix) 1 0 (modelMatrix renderState)
 
-    uniform uniformLightPosition $= Vertex4 200.0 0.0 100.0 (0 :: GLfloat)
-    uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
-    uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.0001 (0.000001 :: GLfloat)
-    uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
-    uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+      --uniformv uniformProjectionMatrix 16 (castPtr (projectionMatrix renderState) :: Ptr (TexCoord1 GLfloat))
+      --uniformv uniformViewMatrix 16 (castPtr (viewMatrix renderState) :: Ptr (TexCoord1 GLfloat))
+      --uniformv uniformModelMatrix 16 (castPtr (modelMatrix renderState) :: Ptr (TexCoord1 GLfloat))
 
-    uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
-    mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
+      uniform uniformLightPosition $= Vertex4 200.0 0.0 100.0 (0 :: GLfloat)
+      uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
+      uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.0001 (0.000001 :: GLfloat)
+      uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
+      uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
 
-    uniform uniformRimCoeff $= Vertex4 0.2 0.2 0.2 (1.276 :: GLfloat)
-    mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
+      uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
 
-    uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
-    mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
+      uniform uniformRimCoeff $= Vertex4 0.2 0.2 0.2 (1.276 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
 
-    uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
-    mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
+      uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
+
+      uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
+
+  
   -- setup framebuffer to display render target
+  
 
   -- run pass thru shader that display final image
-  --let fsq = (shaderProgramsMap renderState) M.! "passthru" 
-  --withProgram fsq $ do
-  --  attribLocation (program fsq) "in_Position" $= AttribLocation 0
-  --  attribLocation (program fsq) "in_Normal" $= AttribLocation 1
-  --  bindFragDataLocation (program fsq) "Color" $= 0
+  let fsq = (shaderProgramsMap renderState) M.! "passthru" 
+  withProgram fsq $ do
+    attribLocation (program fsq) "in_Position" $= AttribLocation 0
+    attribLocation (program fsq) "in_Normal" $= AttribLocation 1
+    bindFragDataLocation (program fsq) "Color" $= 0
 
-  --  renderVbo (vboMap renderState M.! "fullscreenQuad")
+    renderVbo (vboMap renderState M.! "fullscreenQuad")
 
   -- GL.lighting $= GL.Disabled
   -- GL.light (Light 0) $= GL.Disabled

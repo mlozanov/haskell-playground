@@ -46,7 +46,7 @@ setupAction worldRef actorsRef renderStateRef = do
 
   shaders <- createShaderPrograms
   objects <- createGeometryObjects
-  renderTargets <- createRenderTargets
+  renderTargets <- createFramebuffers
 
   writeIORef renderStateRef (renderState { shaderProgramsMap = shaders, vboMap = objects, fboMap = renderTargets } )
 
@@ -58,16 +58,18 @@ createGeometryObjects = do
 
   return $ M.fromList [("room", vboRoom), ("fullscreenQuad", vboFullscreenQuad)]
 
+createFramebuffers :: IO (Map String Fbo)
+createFramebuffers = do
+  fboDefault <- fbo 1280 720
+
+  return $ M.fromList [("default", fboDefault)]
+
 createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
   defaultProgram <- newProgram "data/shaders/320/default.vert" "data/shaders/320/default.frag" 
   passthruProgram <- newProgram "data/shaders/320/empty.vert" "data/shaders/320/blit.frag"
 
   return $ M.fromList [("default", defaultProgram), ("passthru", passthruProgram)]
-
-createRenderTargets :: IO (Map String Fbo)
-createRenderTargets = do
-  return $ M.fromList []  
 
 renderActions :: [RenderAction]
 renderActions = [render]
