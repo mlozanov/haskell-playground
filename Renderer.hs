@@ -138,7 +138,6 @@ render worldRef actorsRef renderStateRef = do
 
   
   -- setup framebuffer to display render target
-  
 
   -- run pass thru shader that display final image
   let fsq = (shaderProgramsMap renderState) M.! "passthru" 
@@ -147,7 +146,14 @@ render worldRef actorsRef renderStateRef = do
     attribLocation (program fsq) "in_Normal" $= AttribLocation 1
     bindFragDataLocation (program fsq) "Color" $= 0
 
+    textureBinding Texture2D $= Just (textureObject f)
+
+    texel <- getUniformLocation fsq "fb"
+    uniform texel $= TextureUnit 1
+
     renderVbo (vboMap renderState M.! "fullscreenQuad")
+
+    textureBinding Texture2D $= Nothing
 
   -- GL.lighting $= GL.Disabled
   -- GL.light (Light 0) $= GL.Disabled
