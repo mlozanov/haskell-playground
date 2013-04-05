@@ -65,6 +65,11 @@ zeroV = [0,0,0]
 identityV :: Floating a => Vector a
 identityV = [0,0,0]
 
+normalizeV :: (Floating a, Ord a) => Vector a -> Vector a
+normalizeV v = if len > 0.0 then scaleVec (1.0/len) v
+               else [0.0,0.0,1.0]
+  where len = lengthVec v
+
 rndVec :: IO (Vector Float)
 rndVec = mapM (\_ -> randomRIO (-1.0,1.0)) [1..3]
 
@@ -330,6 +335,14 @@ dqdt :: (Floating a, Ord a) => Vector a -> Quaternion a -> Quaternion a
 dqdt (x:y:z:rest) q = q'
   where qv = (Q 0.0 x y z)
         q' = scaleQ 0.5 (mulQ qv q)
+
+distanceV :: (Floating a) => Vector a -> Vector a -> a
+distanceV a b = lengthVec (subVec a b)
+
+clampV :: (Floating a, Ord a) => a -> Vector a -> Vector a
+clampV c v = if lengthVec v > c 
+             then scaleVec c (normalizeV v)
+             else v
 
 --- debug
 --- unit tests

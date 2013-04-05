@@ -102,11 +102,16 @@ defaultEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 
 
 rotatingEnemy = newEnemy { enemyOmega = [0.0, 0.0, 3.0] }
 
-newBullet :: Actor
-newBullet = Bullet "bullet" Opponent 1.0 zeroV zeroV zeroV passthru
+actorPosition :: Actor -> Vector Float
+actorPosition actor@Player{} = playerPosition actor
+actorPosition actor@Enemy{} = enemyPosition actor
+actorPosition actor = undefined
 
-newExplosion :: Vector Float -> Actor
-newExplosion p = Explosion "explosion" p 1.5 8.0
+bullet :: Actor
+bullet = Bullet "bullet" Opponent 1.0 zeroV zeroV zeroV passthru
+
+explosion :: Vector Float -> Actor
+explosion p = Explosion "explosion" p 1.5 8.0
 
 passthru :: Actor -> Actors
 passthru a = [a]
@@ -137,6 +142,4 @@ isAlive :: Actor -> Bool
 isAlive e@Enemy{} = enemyAge e > 0.0
 isAlive b@Bullet{} = bulletAge b > 0.0
 isAlive e@Explosion{} = explosionAge e > 0.0
-
-
 isAlive _ = True

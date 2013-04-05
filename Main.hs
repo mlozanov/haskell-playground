@@ -114,10 +114,10 @@ simulate as w = runState state w
                 direction = rightV $ enemyOrientation e -- right is our forward in 2d
 
         explosive :: Actor -> Actors
-        explosive b = explosion (bulletPosition b)
+        explosive b = makeExplosion (bulletPosition b)
 
-        explosion :: Vector Float -> Actors
-        explosion p = map (\d -> Bullet "circle" Opponent 2.0 p (mulScalarVec 180 d) zeroV passthru) directions
+        makeExplosion :: Vector Float -> Actors
+        makeExplosion p = map (\d -> Bullet "circle" Opponent 2.0 p (mulScalarVec 180 d) zeroV passthru) directions
           where directions = map circleVec [-pi, -(pi - (pi/3)) .. pi]
 
         playerInput :: Actors -> State World Actors
@@ -151,15 +151,15 @@ simulate as w = runState state w
         processCollisions actors = do
           world <- get
 
-          return $ concat $ map (forEachActor (bullets world)) actors
+          return $ concat $ map (eachActor (bullets world)) actors
 
             where --f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 6.0), (Circle (bulletPosition b) 2.0)))
                   f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
                   f _ _ = False
 
-                  forEachActor :: Actors -> Actor -> Actors
-                  forEachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) then [tinyExplosion (enemyPosition e), e { enemyAge = (enemyAge e) - 2.0}] else [e]
-                  forEachActor bs a = if (not . null $ filter (f a) bs) then [] else [a]
+                  eachActor :: Actors -> Actor -> Actors
+                  eachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) then [tinyExplosion (enemyPosition e), e { enemyAge = (enemyAge e) - 2.0}] else [e]
+                  eachActor bs a = if (not . null $ filter (f a) bs) then [] else [a]
 
                   tinyExplosion p = Explosion "smallExplosion" p 1.5 8.0
 
@@ -167,7 +167,7 @@ simulate as w = runState state w
         processActors actors = do
           world <- get
 
-          let as = filter isAlive $ map (age world . timer world . explode . reset) actors
+          let as = filter isAlive $ map (flee . follow . age world . timer world . explode . reset) actors
           --let as' = map (trajectory (worldTime world) (worldDt world)) as
 
           modify $ \w -> w { bullets = (bullets w) ++ (concat $ map (enemyShoot w) actors) }
@@ -184,13 +184,18 @@ simulate as w = runState state w
                                    | otherwise = e
                   reset a = a
 
-                  --age w e@Enemy{} = e { enemyAge = enemyAge e - (worldDt w)}
+                  age w e@Enemy{} = e { enemyAge = enemyAge e - (worldDt w)}
                   age w e@Explosion{} = e { explosionAge = explosionAge e - (5.0 * worldDt w)}
                   age w a = a
 
-                  explode e@Enemy{} | enemyAge e <= 0.01 = newExplosion (enemyPosition e)
+                  explode e@Enemy{} | enemyAge e <= 0.01 = explosion (enemyPosition e)
                                     | otherwise = e
                   explode a = a
+
+                  player = getPlayer actors
+
+                  follow = followTarget 0.01666667 player
+                  flee = fleeTarget 0.01666667 player
 
                   enemyShoot :: World -> Actor -> Actors
                   enemyShoot w e@Enemy{} = 
@@ -222,6 +227,23 @@ simulate as w = runState state w
                 vx = 50.0 * sin (1.5 * fTime)
                 vy = 50.0 * cos (2.0 * fTime)
         trajectory time dt a = a
+
+        followTarget :: Float -> Actor -> Actor -> Actor
+        followTarget dt target actor@Enemy{} = actor { enemyVelocity = v }
+          where v = clampV 60.0 ((enemyVelocity actor) `addVec` direction)
+                direction = (actorPosition target) `subVec` (actorPosition actor)
+
+        followTarget dt target actor = actor
+
+        fleeTarget :: Float -> Actor -> Actor -> Actor
+        fleeTarget dt target actor@Enemy{} = actor { enemyVelocity = v }
+          where v = if distance < 50.0 
+                    then clampV 60.0 ((enemyVelocity actor) `addVec` direction)
+                    else enemyVelocity actor
+                direction = (actorPosition actor) `subVec` (actorPosition target)
+                distance = lengthVec direction
+
+        fleeTarget dt target actor = actor
 
         -- animated background to simulate speeding through the world
         background :: Actors -> State World Actors
