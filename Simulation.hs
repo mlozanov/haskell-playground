@@ -25,18 +25,6 @@ import Math
 import Camera
 import Actor
 
-updateCameras :: World -> Cameras -> Cameras
-updateCameras world cameras = undefined
-
-collectCollisions :: World -> Actors -> [(Actor,Actor)]
-collectCollisions = undefined
-
-resolveCollisions :: World -> [(Actor,Actor)] -> Actors
-resolveCollisions = undefined
-
-updateLogic :: World -> Actors -> Actors
-updateLogic world actors = undefined
-
 instance Physical Actor where
     updateMovement dt (Player n !p !q !v !a sr st) = Player n p' q v' a' sr st
       where a' = zeroV
@@ -56,7 +44,7 @@ instance Physical Actor where
 
     updateMovement dt (Bullet n tag age p v a callback) = Bullet n tag age' p' v' a' callback
       where a' = zeroV
-            drag = mulScalarVec (-0.001) v
+            drag = mulScalarVec (-0.00) v
             nv = euler dt v a
             p' = euler dt p v
             v' = nv `addVec` drag
@@ -75,8 +63,10 @@ instance Physical Actor where
 setAccelerationActor :: Vector Float -> Actor -> Actor
 setAccelerationActor newAcc player@Player{} = player { playerAcceleration = newAcc }
 setAccelerationActor newAcc enemy@Enemy{} = enemy { enemyAcceleration = newAcc }
+setAccelerationActor _ a = a
 
 setVelocityActor :: Vector Float -> Actor -> Actor
 setVelocityActor newVel player@Player{} = player { playerVelocity = newVel }
 setVelocityActor newVel enemy@Enemy{} = enemy { enemyVelocity = newVel }
+setVelocityActor _ a = a
 

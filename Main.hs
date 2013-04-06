@@ -192,8 +192,6 @@ simulate as w = runState state w
                                     | otherwise = e
                   explode a = a
 
-                  player = getPlayer actors
-
                   follow = followTarget 0.01666667 player
                   flee = fleeTarget 0.01666667 player
 
