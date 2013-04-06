@@ -98,7 +98,7 @@ simulate as w = runState state w
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
-                          condition = (lb) && (playerShootingTimer player <= 0.001)
+                          condition = (lb || keySpace input) && (playerShootingTimer player <= 0.001)
 
         shootOneBullet :: Bool -> Actor -> Actors
         shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 10.0 pp initialVelocity zeroV passthru], b ]
@@ -124,7 +124,7 @@ simulate as w = runState state w
         playerInput (pl:as) = do
           world <- get
 
-          let (x:y:rest) = inputJoystickAxisL (worldInput world)
+          let (x:y:rest) = inputAxisL (worldInput world)
               a = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ (playerOrientation pl)))
               pl' = pl { playerAcceleration = a }
            in return (pl':as)

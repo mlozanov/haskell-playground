@@ -1,10 +1,15 @@
 module Input where
 
+import qualified Data.Set as S
+
+import Graphics.UI.GLFW as GLFW
+
 import Math
 
 data Input = Input { inputAxisL :: Vector Float
                    , inputAxisR :: Vector Float
                    , inputButtons :: [Bool]
+                   , inputKeys :: S.Set GLFW.Key
                    , inputMousePosition :: (Int,Int)
                    , inputMouseButtons :: (Bool,Bool)
                    , inputJoystickAxisL :: Vector Float
@@ -12,6 +17,7 @@ data Input = Input { inputAxisL :: Vector Float
                    , inputJoystickButtons :: [Bool]
                    } deriving Show
 
+keySpace i = S.member (GLFW.CharKey ' ') (inputKeys i)
 
 btnTriangle i = b1
   where (b1:rest) = inputJoystickButtons i

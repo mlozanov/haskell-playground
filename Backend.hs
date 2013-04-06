@@ -19,6 +19,7 @@ import Foreign.Marshal.Array
 
 import Data.IORef
 import qualified Data.Map as M
+import qualified Data.Set as S
 
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
@@ -57,7 +58,7 @@ type IOActions = [(IORef World -> IO ())]
 
 emptyWorld :: World
 emptyWorld = (World 0 i 0.0166667 cs bs (mkStdGen 1023))
-    where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] (0,0) (False,False) zeroV zeroV [False, False]
+    where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] S.empty (0,0) (False,False) zeroV zeroV [False, False]
           cs = [EmptyCamera]
           bs = [] :: Actors
 
@@ -180,9 +181,10 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
 
 keyboardCallback :: IORef World -> KeyCallback
 keyboardCallback worldRef key Press = modifyIORef worldRef readKeys  -- >> print key >> print state
-  where readKeys world = world { worldInput = input { inputAxisL = axisL } }
+  where readKeys world = world { worldInput = input { inputAxisL = axisL, inputKeys = keys } }
           where input = worldInput world
                 (x:y:zs) = inputAxisL input
+                keys = S.insert key (inputKeys input)
                 axisL = case key of
                           GLFW.CharKey 'D' -> (1.0:y:zs)
                           GLFW.CharKey 'A' -> ((-1.0):y:zs)
@@ -191,9 +193,10 @@ keyboardCallback worldRef key Press = modifyIORef worldRef readKeys  -- >> print
                           otherwise -> [x,y,0.0,0.0]
 
 keyboardCallback worldRef key Release = modifyIORef worldRef readKeys  -- >> print key >> print state
-  where readKeys world = world { worldInput = input { inputAxisL = axisL } }
+  where readKeys world = world { worldInput = input { inputAxisL = axisL, inputKeys = keys } }
           where input = worldInput world
                 (x:y:zs) = inputAxisL input
+                keys = S.delete key (inputKeys input)
                 axisL = case key of
                           GLFW.CharKey 'D' -> (0.0:y:zs)
                           GLFW.CharKey 'A' -> (0.0:y:zs)
