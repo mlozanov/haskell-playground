@@ -167,7 +167,7 @@ simulate as w = runState state w
         processActors actors = do
           world <- get
 
-          let as = filter isAlive $ map (flee . follow . age world . timer world . explode . reset) actors
+          let as = filter isAlive $ map (behaviour world) actors
           --let as' = map (trajectory (worldTime world) (worldDt world)) as
 
           modify $ \w -> w { bullets = (bullets w) ++ (concat $ map (enemyShoot w) actors) }
@@ -194,6 +194,9 @@ simulate as w = runState state w
 
                   follow = followTarget 0.01666667 player
                   flee = fleeTarget 0.01666667 player
+
+                  behaviour :: World -> Actor -> Actor
+                  behaviour w = flee . follow . age w . timer w . explode . reset
 
                   enemyShoot :: World -> Actor -> Actors
                   enemyShoot w e@Enemy{} = 
