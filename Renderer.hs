@@ -142,14 +142,15 @@ render worldRef actorsRef renderStateRef = do
   -- run pass thru shader that display final image
   let fsq = (shaderProgramsMap renderState) M.! "passthru" 
   withProgram fsq $ do
+    activeTexture $= TextureUnit 0
+    textureBinding Texture2D $= Just (textureObject f)
+
     attribLocation (program fsq) "in_Position" $= AttribLocation 0
     attribLocation (program fsq) "in_Normal" $= AttribLocation 1
     bindFragDataLocation (program fsq) "Color" $= 0
 
-    textureBinding Texture2D $= Just (textureObject f)
-
     texel <- getUniformLocation fsq "fb"
-    uniform texel $= Index1 (1 :: GLint)
+    uniform texel $= Index1 (0 :: GLint)
 
     renderVbo (vboMap renderState M.! "fullscreenQuad")
 
