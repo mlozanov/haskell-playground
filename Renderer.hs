@@ -149,7 +149,7 @@ render worldRef actorsRef renderStateRef = do
     textureBinding Texture2D $= Just (textureObject f)
 
     texel <- getUniformLocation fsq "fb"
-    uniform texel $= TextureUnit 1
+    uniform texel $= Index1 (1 :: GLint)
 
     renderVbo (vboMap renderState M.! "fullscreenQuad")
 
