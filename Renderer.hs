@@ -83,6 +83,7 @@ render worldRef actorsRef renderStateRef = do
 
   withFbo f $ do
     let pd = (shaderProgramsMap renderState) M.! "default"
+    textureBinding Texture2D $= Just (textureObject f)
     withProgram pd $ do
       attribLocation (program pd) "in_Position" $= AttribLocation 0
       attribLocation (program pd) "in_Normal" $= AttribLocation 1
@@ -136,15 +137,15 @@ render worldRef actorsRef renderStateRef = do
       uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
 
+    textureBinding Texture2D $= Nothing
   
   -- setup framebuffer to display render target
+
+  GL.depthFunc $= Nothing
 
   -- run pass thru shader that display final image
   let fsq = (shaderProgramsMap renderState) M.! "passthru" 
   withProgram fsq $ do
-    activeTexture $= TextureUnit 0
-    textureBinding Texture2D $= Just (textureObject f)
-
     attribLocation (program fsq) "in_Position" $= AttribLocation 0
     attribLocation (program fsq) "in_Normal" $= AttribLocation 1
     bindFragDataLocation (program fsq) "Color" $= 0
@@ -152,10 +153,14 @@ render worldRef actorsRef renderStateRef = do
     texel <- getUniformLocation fsq "fb"
     uniform texel $= Index1 (0 :: GLint)
 
+    activeTexture $= TextureUnit 0
+    textureBinding Texture2D $= Just (textureObject f)
+
     renderVbo (vboMap renderState M.! "fullscreenQuad")
 
     textureBinding Texture2D $= Nothing
 
+  GL.depthFunc $= Just Lequal
   -- GL.lighting $= GL.Disabled
   -- GL.light (Light 0) $= GL.Disabled
 
