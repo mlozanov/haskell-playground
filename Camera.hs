@@ -6,9 +6,9 @@ import Math
 import Actor
 
 data Camera = EmptyCamera
-            | Camera { transform :: Matrix Float
-                     , position :: Vector Float
-                     , orientation :: Quaternion Float
+            | Camera { cameraTransform :: Matrix Float
+                     , cameraPosition :: Vector Float
+                     , cameraOrientation :: Quaternion Float
                      , up :: Vector Float
                      , direction :: Vector Float
                      , fov :: Float }
@@ -49,8 +49,8 @@ cameraFrameActors camera = return camera
 cameraFinalize :: Camera -> State Actors Camera
 cameraFinalize EmptyCamera = return EmptyCamera
 cameraFinalize c = return $ c { transform = r `mulMM` translate (x p) (y p) (z p) }
-    where p = position c
-          r = toMatrixQ $ orientation c
+    where p = cameraPosition c
+          r = toMatrixQ $ cameraOrientation c
 
 
 --- compositions

@@ -192,11 +192,11 @@ simulate as w = runState state w
                                     | otherwise = e
                   explode a = a
 
-                  follow = followTarget 0.01666667 player
-                  flee = fleeTarget 0.01666667 player
+                  follow w = followTarget (worldDt w) player
+                  flee w = fleeTarget (worldDt w) player
 
                   behaviour :: World -> Actor -> Actor
-                  behaviour w = flee . follow . age w . timer w . explode . reset
+                  behaviour w = flee w . follow w . age w . timer w . explode . reset
 
                   enemyShoot :: World -> Actor -> Actors
                   enemyShoot w e@Enemy{} = 
@@ -224,27 +224,34 @@ simulate as w = runState state w
         trajectory :: Int -> Float -> Actor -> Actor
         trajectory time dt e@Enemy{} = e { enemyVelocity = f }
           where f = [vx,vy,0.0]
-                fTime = (fromIntegral time) / 60.0
+                fTime = fromIntegral time / 60.0
                 vx = 50.0 * sin (1.5 * fTime)
                 vy = 50.0 * cos (2.0 * fTime)
         trajectory time dt a = a
 
         followTarget :: Float -> Actor -> Actor -> Actor
         followTarget dt target actor@Enemy{} = actor { enemyVelocity = v }
-          where v = clampV 60.0 ((enemyVelocity actor) `addVec` direction)
-                direction = (actorPosition target) `subVec` (actorPosition actor)
+          where v = clampV 60.0 ((velocity actor) `addVec` direction)
+                direction = (position target) `subVec` (position actor)
 
         followTarget dt target actor = actor
 
         fleeTarget :: Float -> Actor -> Actor -> Actor
         fleeTarget dt target actor@Enemy{} = actor { enemyVelocity = v }
           where v = if distance < 50.0 
-                    then clampV 60.0 ((enemyVelocity actor) `addVec` direction)
-                    else enemyVelocity actor
-                direction = (actorPosition actor) `subVec` (actorPosition target)
+                    then clampV 60.0 ((velocity actor) `addVec` direction)
+                    else velocity actor
+                direction = (position actor) `subVec` (position target)
                 distance = lengthVec direction
 
         fleeTarget dt target actor = actor
+
+        targetInRange :: (Float, Float) -> Actor -> Actor -> Bool
+        targetInRange (rmin, rmax) target actor = inRange (rmin, rmax) distance
+          where distance = distanceV (position actor) (position target)
+
+        targetInRangeDefault :: Actor -> Actor -> Bool
+        targetInRangeDefault = targetInRange (5.0, 10.0)
 
         -- animated background to simulate speeding through the world
         background :: Actors -> State World Actors

@@ -344,6 +344,8 @@ clampV c v = if lengthVec v > c
              then scaleVec c (normalizeV v)
              else v
 
+inRange :: (Floating a, Ord a) => (a,a) -> a -> Bool
+inRange (rmin, rmax) v = (v > rmin) && (v < rmax)
 --- debug
 --- unit tests
 t :: Floating a => Matrix a -> [[a]]

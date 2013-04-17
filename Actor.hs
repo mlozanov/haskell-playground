@@ -102,10 +102,15 @@ defaultEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 
 
 rotatingEnemy = newEnemy { enemyOmega = [0.0, 0.0, 3.0] }
 
-actorPosition :: Actor -> Vector Float
-actorPosition actor@Player{} = playerPosition actor
-actorPosition actor@Enemy{} = enemyPosition actor
-actorPosition actor = undefined
+position :: Actor -> Vector Float
+position actor@Player{} = playerPosition actor
+position actor@Enemy{} = enemyPosition actor
+position actor = [0,0,0]
+
+velocity :: Actor -> Vector Float
+velocity actor@Player{} = playerVelocity actor
+velocity actor@Enemy{} = enemyVelocity actor
+velocity actor = [0,0,0]
 
 bullet :: Actor
 bullet = Bullet "bullet" Opponent 1.0 zeroV zeroV zeroV passthru
