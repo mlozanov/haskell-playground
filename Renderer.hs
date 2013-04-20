@@ -81,9 +81,11 @@ render worldRef actorsRef renderStateRef = do
 
   let f = (fboMap renderState) M.! "default"
 
+  activeTexture $= TextureUnit 0
+  
   withFbo f $ do
     let pd = (shaderProgramsMap renderState) M.! "default"
-    textureBinding Texture2D $= Just (textureObject f)
+    --textureBinding Texture2D $= Just (textureObject f)
     withProgram pd $ do
       attribLocation (program pd) "in_Position" $= AttribLocation 0
       attribLocation (program pd) "in_Normal" $= AttribLocation 1
@@ -137,7 +139,7 @@ render worldRef actorsRef renderStateRef = do
       uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
 
-    textureBinding Texture2D $= Nothing
+    --textureBinding Texture2D $= Nothing
   
   -- setup framebuffer to display render target
 
@@ -155,6 +157,7 @@ render worldRef actorsRef renderStateRef = do
 
     activeTexture $= TextureUnit 0
     textureBinding Texture2D $= Just (textureObject f)
+    --generateMipmap Texture2D $= Enabled
 
     renderVbo (vboMap renderState M.! "fullscreenQuad")
 
