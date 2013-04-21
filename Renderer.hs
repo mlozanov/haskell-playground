@@ -71,7 +71,7 @@ render worldRef actorsRef renderStateRef = do
   actors <- readIORef actorsRef
 
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-200)
+  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-340)
   let mm = Math.identity
   pokeArray (viewMatrix renderState) (toList vm)
   pokeArray (modelMatrix renderState) (toList mm)
@@ -81,11 +81,16 @@ render worldRef actorsRef renderStateRef = do
 
   let f = (fboMap renderState) M.! "default"
 
+  let lightX = 300.0 * sin (3.14 * 0.1 * (worldDt world) * fromIntegral (worldTime world))
+  let lightY = 300.0 * cos (3.14 * 0.1 * (worldDt world) * fromIntegral (worldTime world))
+  let lightZ = 100.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
+
   activeTexture $= TextureUnit 0
-  
+
   withFbo f $ do
+    GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+
     let pd = (shaderProgramsMap renderState) M.! "default"
-    --textureBinding Texture2D $= Just (textureObject f)
     withProgram pd $ do
       attribLocation (program pd) "in_Position" $= AttribLocation 0
       attribLocation (program pd) "in_Normal" $= AttribLocation 1
@@ -96,10 +101,6 @@ render worldRef actorsRef renderStateRef = do
       uniformViewMatrix <- getUniformLocation pd "viewMatrix"
       uniformModelMatrix <- getUniformLocation pd "modelMatrix"
 
-      --print uniformProjectionMatrix
-      --print uniformViewMatrix
-      --print uniformModelMatrix
-
       uniformLightPosition <- getUniformLocation pd "lightPos"
       uniformCameraPosition <- getUniformLocation pd "cameraPos"
       uniformTermCoeff <- getUniformLocation pd "termCoeff"
@@ -107,23 +108,13 @@ render worldRef actorsRef renderStateRef = do
       uniformColorSpecular <- getUniformLocation pd "colorSpecular"
       uniformRimCoeff <- getUniformLocation pd "rimCoeff"
 
-      --print uniformRimCoeff
-
-      --peekArray 16 (projectionMatrix renderState) >>= print
-      --peekArray 16 (viewMatrix renderState) >>= print
-      --peekArray 16 (modelMatrix renderState) >>= print
-
       glUniformMatrix4fv (GL.getUniformLocationID uniformProjectionMatrix) 1 0 (projectionMatrix renderState)
       glUniformMatrix4fv (GL.getUniformLocationID uniformViewMatrix) 1 0 (viewMatrix renderState)
       glUniformMatrix4fv (GL.getUniformLocationID uniformModelMatrix) 1 0 (modelMatrix renderState)
 
-      --uniformv uniformProjectionMatrix 16 (castPtr (projectionMatrix renderState) :: Ptr (TexCoord1 GLfloat))
-      --uniformv uniformViewMatrix 16 (castPtr (viewMatrix renderState) :: Ptr (TexCoord1 GLfloat))
-      --uniformv uniformModelMatrix 16 (castPtr (modelMatrix renderState) :: Ptr (TexCoord1 GLfloat))
-
-      uniform uniformLightPosition $= Vertex4 200.0 0.0 100.0 (0 :: GLfloat)
+      uniform uniformLightPosition $= Vertex4 (100.0 + (toGLfloat lightX)) (toGLfloat lightY) 130.0 (0 :: GLfloat)
       uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
-      uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.0001 (0.000001 :: GLfloat)
+      uniform uniformTermCoeff $= Vertex4 2.0 1.0 0.0001 (0.000001 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
 
@@ -138,8 +129,6 @@ render worldRef actorsRef renderStateRef = do
 
       uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
-
-    --textureBinding Texture2D $= Nothing
   
   -- setup framebuffer to display render target
 
@@ -157,15 +146,12 @@ render worldRef actorsRef renderStateRef = do
 
     activeTexture $= TextureUnit 0
     textureBinding Texture2D $= Just (textureObject f)
-    --generateMipmap Texture2D $= Enabled
 
     renderVbo (vboMap renderState M.! "fullscreenQuad")
 
     textureBinding Texture2D $= Nothing
 
   GL.depthFunc $= Just Lequal
-  -- GL.lighting $= GL.Disabled
-  -- GL.light (Light 0) $= GL.Disabled
 
   e <- GL.get GL.errors
   when (length e > 0) (print e)
