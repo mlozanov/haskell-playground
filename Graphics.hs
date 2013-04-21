@@ -1,6 +1,8 @@
 module Graphics where
 
 import Graphics.Rendering.OpenGL as GL
+import Foreign.Ptr
+import Foreign.Marshal.Array
 import Math
 
 vertex3 :: GLfloat -> GLfloat -> GLfloat -> GL.Vertex3 GLfloat
@@ -17,3 +19,9 @@ color3 = GL.Color3
 
 toGLfloat :: Float -> GLfloat
 toGLfloat x = realToFrac x
+
+toGLfloatList :: [Float] -> [GLfloat]
+toGLfloatList xs = map toGLfloat xs
+
+toPtrMatrix :: Math.Matrix Float -> (Ptr GLfloat -> IO ()) -> IO ()
+toPtrMatrix m fu = withArray (toGLfloatList (Math.toList m)) fu

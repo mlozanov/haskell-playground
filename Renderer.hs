@@ -71,7 +71,7 @@ render worldRef actorsRef renderStateRef = do
   actors <- readIORef actorsRef
 
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-340)
+  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-200)
   let mm = Math.identity
   pokeArray (viewMatrix renderState) (toList vm)
   pokeArray (modelMatrix renderState) (toList mm)
@@ -81,9 +81,11 @@ render worldRef actorsRef renderStateRef = do
 
   let f = (fboMap renderState) M.! "default"
 
-  let lightX = 300.0 * sin (3.14 * 0.1 * (worldDt world) * fromIntegral (worldTime world))
-  let lightY = 300.0 * cos (3.14 * 0.1 * (worldDt world) * fromIntegral (worldTime world))
+  let lightX = 300.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  let lightY = 300.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
   let lightZ = 100.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
+
+  GL.depthFunc $= Just Lequal
 
   activeTexture $= TextureUnit 0
 
@@ -151,8 +153,6 @@ render worldRef actorsRef renderStateRef = do
 
     textureBinding Texture2D $= Nothing
 
-  GL.depthFunc $= Just Lequal
-
   e <- GL.get GL.errors
   when (length e > 0) (print e)
 
@@ -160,5 +160,11 @@ render worldRef actorsRef renderStateRef = do
 
 
 transformAndRenderVbo :: RenderState -> String -> Vector Float -> Quaternion Float -> IO ()
-transformAndRenderVbo renderState n p q = draw 0.0166667 renderState (vboMap renderState M.! n)
+transformAndRenderVbo renderState n p q = do
+  let pd = (shaderProgramsMap renderState) M.! "default"
+  uniformModelMatrix <- getUniformLocation pd "modelMatrix"
+  let mm = Math.translate (x p) (y p) (z p)
+
+  toPtrMatrix mm (\ptr -> glUniformMatrix4fv (GL.getUniformLocationID uniformModelMatrix) 1 0 ptr)
+  draw 0.0166667 renderState (vboMap renderState M.! n)
 

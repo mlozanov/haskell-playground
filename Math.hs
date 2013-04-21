@@ -123,10 +123,10 @@ x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
 z :: Floating a => Vector a -> a
 w :: Floating a => Vector a -> a
-x [x,_,_,_] = x
-y [_,y,_,_] = y
-z [_,_,z,_] = z
-w [_,_,_,w] = w
+x (x:y:z:rest) = x
+y (x:y:z:rest) = y
+z (x:y:z:rest) = z
+w (x:y:z:w:rest) = w
 
 {-# INLINE degToRad #-}
 {-# INLINE radToDeg #-}

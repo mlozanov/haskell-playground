@@ -40,7 +40,9 @@ setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
   let room = StaticActor "room" zeroV identityQ Type1
 
-  modifyIORef actorsRef (\actors -> [room])
+  positions <- mapM (\i -> rndSphereVec) [1.. 5000]
+
+  modifyIORef actorsRef (\actors -> [] ++ (map (\p -> StaticActor "pentagon" p Math.identityQ Type1) (map (scaleVec 400.0) positions)))
 
   renderState <- readIORef renderStateRef
 
@@ -54,9 +56,13 @@ createGeometryObjects :: IO (Map String Vbo)
 createGeometryObjects = do
   vboRoom <- Vbo.fromList GL.Triangles (map (* 140) room) (concat roomNormals)
 
+  vboBall <- Vbo.fromList GL.Points ballVertices ballNormals
+
+  vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 14.0 5.0) (ngonNormals 5.0)
+
   vboFullscreenQuad <- Vbo.fromList GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0] [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
 
-  return $ M.fromList [("room", vboRoom), ("fullscreenQuad", vboFullscreenQuad)]
+  return $ M.fromList [("room", vboRoom), ("ball", vboBall), ("pentagon", vboPentagon), ("fullscreenQuad", vboFullscreenQuad)]
 
 createFramebuffers :: IO (Map String Fbo)
 createFramebuffers = do

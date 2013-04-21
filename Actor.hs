@@ -105,6 +105,7 @@ rotatingEnemy = newEnemy { enemyOmega = [0.0, 0.0, 3.0] }
 actorPosition :: Actor -> Vector Float
 actorPosition actor@Player{} = playerPosition actor
 actorPosition actor@Enemy{} = enemyPosition actor
+actorPosition actor@StaticActor{} = staticActorPosition actor
 actorPosition actor = undefined
 
 bullet :: Actor
