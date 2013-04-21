@@ -1,6 +1,7 @@
 module Renderer where
 
 import Graphics.Rendering.OpenGL as GL
+import Graphics.Rendering.OpenGL.Raw.ARB.ShaderObjects
 import Graphics.UI.GLFW as GLFW
 import Graphics.UI.GLUT.Objects as O
 import Graphics.Rendering.OpenGL (($=))
@@ -15,6 +16,7 @@ import System.CPUTime
 
 import Foreign.Ptr
 import Foreign.Marshal.Array
+import Foreign.C.String
 
 import Data.IORef
 import qualified Data.Map as M
@@ -45,16 +47,11 @@ instance Drawable Actor where
 
   draw dt renderState r@Rocket{} = transformAndRenderVbo renderState (rocketName r) (rocketPosition r) identityQ
 
-  draw dt renderState (Explosion n p age power) = preservingMatrix $
-    do GL.translate $ fromVector p
-       GL.scale (3.0 - toGLfloat age) (3.0 - toGLfloat age) (3.0 - toGLfloat age)
-       toGLMatrix (matrixFloatToGLfloat (toMatrixQ identityQ)) >>= multMatrix
-       renderVbo (bufferObjectsMap renderState M.! n)
+  draw dt renderState (Explosion n p age power) = transformAndRenderVbo renderState n p identityQ
 
 
 instance Drawable Vbo where
   draw dt renderState vbo = renderVbo vbo
-
 
 {-# INLINE toGLMatrix #-}
 {-# INLINE matrixFloatToGLfloat #-}
@@ -73,77 +70,101 @@ render worldRef actorsRef renderStateRef = do
   world <- readIORef worldRef 
   actors <- readIORef actorsRef
 
-  -- projection matrix
-  GL.matrixMode $= GL.Projection
-  toGLMatrix Math.perspective >>= (\m -> matrix (Just GL.Projection) $= m)
-
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  -- projection matrix
+  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-200)
+  let mm = Math.identity
+  pokeArray (viewMatrix renderState) (toList vm)
+  pokeArray (modelMatrix renderState) (toList mm)
 
-  -- view matrix
-  GL.matrixMode $= GL.Modelview 0
-  toGLMatrix Math.identity >>= (\m -> matrix (Just (GL.Modelview 0)) $= m)
-
-  let modelMatrix' = Math.translate 0 0 (-400)
-  toGLMatrix modelMatrix' >>= multMatrix
-
-  pokeArray (modelMatrix renderState) (toList modelMatrix')
-
-  --let q = normQ (fromAxisAngleQ 0 1 0 (degToRad (45.0)))
-  -- in let m = toMatrixQ q
-  --     in toGLMatrix m >>= multMatrix
-  -- view matrix 
-
+  -- setup render target
   -- draw all VBOs in renderstate
-  let p = (shaderProgramsMap renderState) M.! "default"
-  let lx = 60.0 * cos (0.02 * (realToFrac (worldTime world)))
-  let ly = 50.0 * sin (0.02 * (realToFrac (worldTime world)))
-  let lz = 100.0 -- + (50.0 * sin (8.0 * t))
 
-  withProgram p $ do
-    uniformLightPosition <- getUniformLocation p "lightPos"
-    uniformCameraPosition <- getUniformLocation p "cameraPos"
-    uniformTermCoeff <- getUniformLocation p "termCoeff"
-    uniformColorDiffuse <- getUniformLocation p "colorDiffuse"
-    uniformColorSpecular <- getUniformLocation p "colorSpecular"
-    uniformRimCoeff <- getUniformLocation p "rimCoeff"
+  let f = (fboMap renderState) M.! "default"
+
+  let lightX = 300.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  let lightY = 300.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  let lightZ = 100.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
+
+  GL.depthFunc $= Just Lequal
+
+  activeTexture $= TextureUnit 0
+
+  withFbo f $ do
+    GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+
+    let pd = (shaderProgramsMap renderState) M.! "default"
+    withProgram pd $ do
+      attribLocation (program pd) "in_Position" $= AttribLocation 0
+      attribLocation (program pd) "in_Normal" $= AttribLocation 1
+      bindFragDataLocation (program pd) "Color" $= 0
+
+      -- glGetUniformLocation :: GLuint -> Ptr GLchar -> IO GLint
+      uniformProjectionMatrix <- getUniformLocation pd "projectionMatrix"
+      uniformViewMatrix <- getUniformLocation pd "viewMatrix"
+      uniformModelMatrix <- getUniformLocation pd "modelMatrix"
+
+      uniformLightPosition <- getUniformLocation pd "lightPos"
+      uniformCameraPosition <- getUniformLocation pd "cameraPos"
+      uniformTermCoeff <- getUniformLocation pd "termCoeff"
+      uniformColorDiffuse <- getUniformLocation pd "colorDiffuse"
+      uniformColorSpecular <- getUniformLocation pd "colorSpecular"
+      uniformRimCoeff <- getUniformLocation pd "rimCoeff"
+
+      glUniformMatrix4fv (GL.getUniformLocationID uniformProjectionMatrix) 1 0 (projectionMatrix renderState)
+      glUniformMatrix4fv (GL.getUniformLocationID uniformViewMatrix) 1 0 (viewMatrix renderState)
+      glUniformMatrix4fv (GL.getUniformLocationID uniformModelMatrix) 1 0 (modelMatrix renderState)
+
+      uniform uniformLightPosition $= Vertex4 (100.0 + (toGLfloat lightX)) (toGLfloat lightY) 130.0 (0 :: GLfloat)
+      uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
+      uniform uniformTermCoeff $= Vertex4 2.0 1.0 0.0001 (0.000001 :: GLfloat)
+      uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
+      uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+
+      uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
+
+      uniform uniformRimCoeff $= Vertex4 0.2 0.2 0.2 (1.276 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
+
+      uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
+
+      uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
   
-    uniform uniformLightPosition $= Vertex4 lx ly lz (0 :: GLfloat)
-    uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
-    uniform uniformTermCoeff $= Vertex4 0.7 0.1 0.0001 (0.000001 :: GLfloat)
-    uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
-    uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+  -- setup framebuffer to display render target
 
-    uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
-    mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
+  GL.depthFunc $= Nothing
 
-    uniform uniformRimCoeff $= Vertex4 0.2 0.2 0.2 (1.276 :: GLfloat)
-    mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
+  -- run pass thru shader that display final image
+  let fsq = (shaderProgramsMap renderState) M.! "passthru" 
+  withProgram fsq $ do
+    attribLocation (program fsq) "in_Position" $= AttribLocation 0
+    attribLocation (program fsq) "in_Normal" $= AttribLocation 1
+    bindFragDataLocation (program fsq) "Color" $= 0
 
-    uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
-    mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
+    texel <- getUniformLocation fsq "fb"
+    uniform texel $= Index1 (0 :: GLint)
 
-    uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
-    mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
+    activeTexture $= TextureUnit 0
+    textureBinding Texture2D $= Just (textureObject f)
 
-  GL.lighting $= GL.Disabled
-  GL.light (Light 0) $= GL.Disabled
+    renderVbo (vboMap renderState M.! "fullscreenQuad")
 
-  -- draw the title
-  title (worldTime world)
+    textureBinding Texture2D $= Nothing
+
+  e <- GL.get GL.errors
+  when (length e > 0) (print e)
 
   return ()
 
-title t = preservingMatrix $ do 
-            GL.translate $ vector3 (64.0) 0.0 (-58.0)
-            GL.color $ color3 1 1 1
-            GL.scale 0.6 0.6 (0.60 :: GLfloat)
-            renderString Fixed8x16 "sharpshooter"
-            GL.color $ color3 1 1 1
 
 transformAndRenderVbo :: RenderState -> String -> Vector Float -> Quaternion Float -> IO ()
-transformAndRenderVbo renderState n p q = preservingMatrix $
-  do GL.translate $ fromVector p
-     toGLMatrix (matrixFloatToGLfloat (toMatrixQ q)) >>= multMatrix
-     draw 0.0166667 renderState (bufferObjectsMap renderState M.! n)
+transformAndRenderVbo renderState n p q = do
+  let pd = (shaderProgramsMap renderState) M.! "default"
+  uniformModelMatrix <- getUniformLocation pd "modelMatrix"
+  let mm = Math.translate (x p) (y p) (z p)
+
+  toPtrMatrix mm (\ptr -> glUniformMatrix4fv (GL.getUniformLocationID uniformModelMatrix) 1 0 ptr)
+  draw 0.0166667 renderState (vboMap renderState M.! n)
 

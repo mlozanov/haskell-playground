@@ -12,6 +12,7 @@ import Backend
 import Primitives
 import Shader
 import Vbo
+import Fbo
 
 import Input
 import Math
@@ -47,8 +48,9 @@ setupAction worldRef actorsRef renderStateRef = do
 
   shaders <- createShaderPrograms
   objects <- createGeometryObjects
+  renderTargets <- createFramebuffers
 
-  writeIORef renderStateRef (renderState { shaderProgramsMap = shaders, bufferObjectsMap = objects } )
+  writeIORef renderStateRef (renderState { shaderProgramsMap = shaders, vboMap = objects, fboMap = renderTargets } )
 
 createGeometryObjects :: IO (Map String Vbo)
 createGeometryObjects = do
@@ -67,14 +69,22 @@ createGeometryObjects = do
 
   vboSmallExplosition <- Vbo.fromList GL.LineStrip (ngonVertices 1.0 6.0) (ngonNormals 6.0)
 
-  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition), ("smallExplosion", vboSmallExplosition)]
+  vboFullscreenQuad <- Vbo.fromList GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0] [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
+
+  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition), ("smallExplosion", vboSmallExplosition), ("fullscreenQuad", vboFullscreenQuad)]
+
+createFramebuffers :: IO (Map String Fbo)
+createFramebuffers = do
+  fboDefault <- fbo 1280 720
+
+  return $ M.fromList [("default", fboDefault)]
 
 createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
-  defaultProgram <- newProgram "../data/shaders/default.vert" "../data/shaders/default.frag" 
-  sphericalProgram <- newProgram "../data/shaders/sph.vert" "../data/shaders/sph.frag"  
+  defaultProgram <- newProgram "data/shaders/320/default.vert" "data/shaders/320/default.frag" 
+  passthruProgram <- newProgram "data/shaders/320/empty.vert" "data/shaders/320/blit.frag"
 
-  return $ M.fromList [("default", defaultProgram), ("spherical", sphericalProgram)]
+  return $ M.fromList [("default", defaultProgram), ("passthru", passthruProgram)]
 
 renderActions :: [RenderAction]
 renderActions = [render]
