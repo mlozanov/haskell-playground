@@ -71,7 +71,7 @@ render worldRef actorsRef renderStateRef = do
   actors <- readIORef actorsRef
 
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-200)
+  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-400)
   let mm = Math.identity
   pokeArray (viewMatrix renderState) (toList vm)
   pokeArray (modelMatrix renderState) (toList mm)
@@ -116,7 +116,7 @@ render worldRef actorsRef renderStateRef = do
 
       uniform uniformLightPosition $= Vertex4 (100.0 + (toGLfloat lightX)) (toGLfloat lightY) 130.0 (0 :: GLfloat)
       uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
-      uniform uniformTermCoeff $= Vertex4 2.0 1.0 0.0001 (0.000001 :: GLfloat)
+      uniform uniformTermCoeff $= Vertex4 20.0 1.0 0.0001 (0.000001 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
 
