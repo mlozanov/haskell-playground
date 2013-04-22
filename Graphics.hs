@@ -23,5 +23,5 @@ toGLfloat x = realToFrac x
 toGLfloatList :: [Float] -> [GLfloat]
 toGLfloatList xs = map toGLfloat xs
 
-toPtrMatrix :: Math.Matrix Float -> (Ptr GLfloat -> IO ()) -> IO ()
-toPtrMatrix m fu = withArray (toGLfloatList (Math.toList m)) fu
+toPtrMatrix :: (Ptr GLfloat -> IO ()) -> Math.Matrix Float -> IO ()
+toPtrMatrix fu m = withArray (toGLfloatList (Math.toList m)) fu
