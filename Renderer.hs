@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Renderer where
 
 import Graphics.Rendering.OpenGL as GL
@@ -35,7 +37,6 @@ import Shader
 class Drawable a where
   draw :: Float -> RenderState -> a -> IO ()
 
-
 instance Drawable Actor where
   draw dt renderState p@Player{} = transformAndRenderVbo renderState (playerName p) (playerPosition p) (playerOrientation p)
 
@@ -49,9 +50,27 @@ instance Drawable Actor where
 
   draw dt renderState (Explosion n p age power) = transformAndRenderVbo renderState n p identityQ
 
-
 instance Drawable Vbo where
   draw dt renderState vbo = renderVbo vbo
+
+instance Uniform ([Float]) where
+  uniform location = makeStateVar getter setter
+    where setter ms = withArray (toGLfloatList ms) fu
+          getter = undefined
+          fu = glUniformMatrix4fv (GL.getUniformLocationID location) 1 0
+  uniformv = undefined
+
+instance Uniform (Math.Matrix Float) where
+  uniform location = makeStateVar getter setter
+    where setter = toPtrMatrix (\ptr -> glUniformMatrix4fv (GL.getUniformLocationID location) 1 0 ptr)
+          getter = undefined
+  uniformv = undefined
+
+uniformMatrix4 :: UniformLocation -> StateVar (Ptr GLfloat)
+uniformMatrix4 location = makeStateVar getter setter
+  where setter = glUniformMatrix4fv (GL.getUniformLocationID location) 1 0
+        getter = undefined
+
 
 {-# INLINE toGLMatrix #-}
 {-# INLINE matrixFloatToGLfloat #-}
@@ -98,7 +117,6 @@ render worldRef actorsRef renderStateRef = do
       attribLocation (program pd) "in_Normal" $= AttribLocation 1
       bindFragDataLocation (program pd) "Color" $= 0
 
-      -- glGetUniformLocation :: GLuint -> Ptr GLchar -> IO GLint
       uniformProjectionMatrix <- getUniformLocation pd "projectionMatrix"
       uniformViewMatrix <- getUniformLocation pd "viewMatrix"
       uniformModelMatrix <- getUniformLocation pd "modelMatrix"
@@ -110,9 +128,9 @@ render worldRef actorsRef renderStateRef = do
       uniformColorSpecular <- getUniformLocation pd "colorSpecular"
       uniformRimCoeff <- getUniformLocation pd "rimCoeff"
 
-      glUniformMatrix4fv (GL.getUniformLocationID uniformProjectionMatrix) 1 0 (projectionMatrix renderState)
-      glUniformMatrix4fv (GL.getUniformLocationID uniformViewMatrix) 1 0 (viewMatrix renderState)
-      glUniformMatrix4fv (GL.getUniformLocationID uniformModelMatrix) 1 0 (modelMatrix renderState)
+      uniformMatrix4 uniformProjectionMatrix $= projectionMatrix renderState
+      uniformMatrix4 uniformViewMatrix $= viewMatrix renderState
+      uniformMatrix4 uniformModelMatrix $= modelMatrix renderState
 
       uniform uniformLightPosition $= Vertex4 (100.0 + (toGLfloat lightX)) (toGLfloat lightY) 130.0 (0 :: GLfloat)
       uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
@@ -165,6 +183,6 @@ transformAndRenderVbo renderState n p q = do
   uniformModelMatrix <- getUniformLocation pd "modelMatrix"
   let mm = Math.translate (x p) (y p) (z p)
 
-  toPtrMatrix mm (\ptr -> glUniformMatrix4fv (GL.getUniformLocationID uniformModelMatrix) 1 0 ptr)
+  uniform uniformModelMatrix $= mm
   draw 0.0166667 renderState (vboMap renderState M.! n)
 
