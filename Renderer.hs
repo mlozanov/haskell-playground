@@ -181,8 +181,12 @@ transformAndRenderVbo :: RenderState -> String -> Vector Float -> Quaternion Flo
 transformAndRenderVbo renderState n p q = do
   let pd = (shaderProgramsMap renderState) M.! "default"
   uniformModelMatrix <- getUniformLocation pd "modelMatrix"
-  let mm = Math.translate (x p) (y p) (z p)
+  uniformLocalRotationMatrix <- getUniformLocation pd "localRotationMatrix"
+  -- let rp = rotateVQ q p
+  let lrm = (Math.toMatrixQ q)
+  let mm = (Math.translate (x p) (y p) (z p)) -- `mulMM` (Math.toMatrixQ q)
 
   uniform uniformModelMatrix $= mm
+  uniform uniformLocalRotationMatrix $= lrm
   draw 0.0166667 renderState (vboMap renderState M.! n)
 

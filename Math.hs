@@ -215,9 +215,9 @@ identityQ :: Floating a => Quaternion a
 identityQ = Q 1 0 0 0
 
 toMatrixQ :: Floating a => Quaternion a -> Matrix a
-toMatrixQ (Q w x y z) = M [ 1.0 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0.0
-                          , 2*x*y + 2*z*w, 1.0 - 2*x*x - 2*z*z, 2*y*z + 2*x*w, 0.0
-                          , 2*x*z - 2*y*w, 2*y*z - 2*x*w, 1.0 - 2*x*x - 2*y*y, 0.0
+toMatrixQ (Q w x y z) = M [ 1.0 - 2*y*y - 2*z*z,       2*x*y - 2*z*w,       2*x*z + 2*y*w, 0.0
+                          ,       2*x*y + 2*z*w, 1.0 - 2*x*x - 2*z*z,       2*y*z + 2*x*w, 0.0
+                          ,       2*x*z - 2*y*w,       2*y*z - 2*x*w, 1.0 - 2*x*x - 2*y*y, 0.0
                           , 0.0, 0.0, 0.0, 1.0 ]
 
 fromMatrixQ :: Floating a => [a] -> Quaternion a
@@ -283,10 +283,10 @@ lookat :: Floating a => Vector a -> Vector a -> Vector a -> Vector a -> Matrix a
 lookat up side forward position = M (concat [up,side,forward,position])
 
 translate :: Floating a => a -> a -> a -> Matrix a
-translate x y z = M [1,0,0,0
-                    ,0,1,0,0
-                    ,0,0,1,0
-                    ,x,y,z,1]
+translate x y z = M [1,0,0,0 -- column 1
+                    ,0,1,0,0 -- column 2
+                    ,0,0,1,0 -- column 3 etc
+                    ,x,y,z,1] -- column major 
 
 rotate :: Floating a => a -> a -> a -> Matrix a
 rotate ax ay az = identity

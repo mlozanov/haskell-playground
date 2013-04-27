@@ -54,7 +54,7 @@ instance Physical Actor where
         Type1 -> static 
         Type2 -> static { staticActorOrientation = q' } 
         otherwise -> static
-        where omega = [0.0, 0.0, 1.0]
+        where omega = [0.0, 0.0, 0.0]
               q = staticActorOrientation static
               q' = normQ $ q `addQ` (scaleQ dt (dqdt omega q))
 

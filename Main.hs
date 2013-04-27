@@ -38,10 +38,10 @@ main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioAction
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
-  --let room = StaticActor "room" zeroV identityQ Type1
+  let room = StaticActor "room" zeroV identityQ Type1
 
   backgroundActorPositions <- mapM (\_ -> rndVec) [1..256]
-  let bs = map (\p -> StaticActor "square" (scaleVec 400.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
+  let bs = map (\p -> StaticActor "circle" (scaleVec 400.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
   modifyIORef actorsRef (\actors -> [newPlayer] ++ bs ++ actors)
 
   renderState <- readIORef renderStateRef
@@ -71,7 +71,16 @@ createGeometryObjects = do
 
   vboFullscreenQuad <- Vbo.fromList GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0] [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
 
-  return $ M.fromList [("player", vboSquare), ("circle", vboCircle), ("enemy", vboPentagon), ("room", vboRoom), ("triangle", vboTriangle), ("square", vboSquare), ("explosion", vboExplosition), ("smallExplosion", vboSmallExplosition), ("fullscreenQuad", vboFullscreenQuad)]
+  return $ M.fromList [ ("player", vboSquare)
+                      , ("circle", vboCircle)
+                      , ("enemy", vboPentagon)
+                      , ("room", vboRoom)
+                      , ("ball", vboBall)
+                      , ("triangle", vboTriangle)
+                      , ("square", vboSquare)
+                      , ("explosion", vboExplosition)
+                      , ("smallExplosion", vboSmallExplosition)
+                      , ("fullscreenQuad", vboFullscreenQuad)]
 
 createFramebuffers :: IO (Map String Fbo)
 createFramebuffers = do
