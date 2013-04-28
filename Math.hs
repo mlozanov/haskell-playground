@@ -215,9 +215,9 @@ identityQ :: Floating a => Quaternion a
 identityQ = Q 1 0 0 0
 
 toMatrixQ :: Floating a => Quaternion a -> Matrix a
-toMatrixQ (Q w x y z) = M [ 1.0 - 2*y*y - 2*z*z,       2*x*y - 2*z*w,       2*x*z + 2*y*w, 0.0
-                          ,       2*x*y + 2*z*w, 1.0 - 2*x*x - 2*z*z,       2*y*z + 2*x*w, 0.0
-                          ,       2*x*z - 2*y*w,       2*y*z - 2*x*w, 1.0 - 2*x*x - 2*y*y, 0.0
+toMatrixQ (Q w x y z) = M [ 1.0 - 2*y*y - 2*z*z,       2*x*y + 2*z*w,       2*x*z - 2*y*w, 0.0
+                          ,       2*x*y - 2*z*w, 1.0 - 2*x*x - 2*z*z,       2*y*z - 2*x*w, 0.0
+                          ,       2*x*z + 2*y*w,       2*y*z + 2*x*w, 1.0 - 2*x*x - 2*y*y, 0.0
                           , 0.0, 0.0, 0.0, 1.0 ]
 
 fromMatrixQ :: Floating a => [a] -> Quaternion a

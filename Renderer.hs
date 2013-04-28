@@ -90,7 +90,7 @@ render worldRef actorsRef renderStateRef = do
   actors <- readIORef actorsRef
 
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-400)
+  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-300)
   let mm = Math.identity
   pokeArray (viewMatrix renderState) (toList vm)
   pokeArray (modelMatrix renderState) (toList mm)
