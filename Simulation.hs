@@ -33,7 +33,7 @@ instance Physical Actor where
             nv = euler dt v a
             v' = nv `addVec` drag
             q' = normQ $ q `addQ` (scaleQ dt (dqdt [0.0, 0.0, 10.0] q))
-            
+
     updateMovement dt (Enemy n age !p !q !omega !v !a sr sp st tag) = Enemy n age p' q' omega v' a' sr sp st tag
       where a' = zeroV
             drag = mulScalarVec (-0.00) v
@@ -51,8 +51,8 @@ instance Physical Actor where
             age' = age - dt
 
     updateMovement dt static@StaticActor{} = case (tag static) of
-        Type1 -> static 
-        Type2 -> static { staticActorOrientation = q' } 
+        Type1 -> static
+        Type2 -> static { staticActorOrientation = q' }
         otherwise -> static
         where omega = [0.0, 0.0, 1.0]
               q = staticActorOrientation static
@@ -60,13 +60,4 @@ instance Physical Actor where
 
     updateMovement dt actor = actor
 
-setAccelerationActor :: Vector Float -> Actor -> Actor
-setAccelerationActor newAcc player@Player{} = player { playerAcceleration = newAcc }
-setAccelerationActor newAcc enemy@Enemy{} = enemy { enemyAcceleration = newAcc }
-setAccelerationActor _ a = a
-
-setVelocityActor :: Vector Float -> Actor -> Actor
-setVelocityActor newVel player@Player{} = player { playerVelocity = newVel }
-setVelocityActor newVel enemy@Enemy{} = enemy { enemyVelocity = newVel }
-setVelocityActor _ a = a
 

@@ -133,21 +133,21 @@ render worldRef actorsRef renderStateRef = do
       uniformMatrix4 uniformModelMatrix $= modelMatrix renderState
 
       uniform uniformLightPosition $= Vertex4 (100.0 + (toGLfloat lightX)) (toGLfloat lightY) 130.0 (0 :: GLfloat)
-      uniform uniformCameraPosition $= Vertex4 0 0 200 (0 :: GLfloat)
-      uniform uniformTermCoeff $= Vertex4 20.0 1.0 0.0001 (0.000001 :: GLfloat)
+      uniform uniformCameraPosition $= Vertex4 0 0 300 (0 :: GLfloat)
+      uniform uniformTermCoeff $= Vertex4 10.0 40.0 0.0001 (0.000001 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
 
-      uniform uniformRimCoeff $= Vertex4 1 1 1 (1.276 :: GLfloat)
+      uniform uniformColorSpecular $= Vertex4 1 1 1 (1.0 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
 
-      uniform uniformRimCoeff $= Vertex4 0.2 0.2 0.2 (1.276 :: GLfloat)
+      uniform uniformColorSpecular $= Vertex4 0.2 0.2 0.2 (1.0 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
 
-      uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
+      uniform uniformColorSpecular $= Vertex4 100.0 0.0 0.0 (1.0 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
 
-      uniform uniformRimCoeff $= Vertex4 0.0 0.0 0.0 (1.276 :: GLfloat)
+      uniform uniformColorSpecular $= Vertex4 100.0 0.0 0.0 (1.0 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
   
   -- setup framebuffer to display render target

@@ -105,12 +105,39 @@ rotatingEnemy = newEnemy { enemyOmega = [0.0, 0.0, 3.0] }
 position :: Actor -> Vector Float
 position actor@Player{} = playerPosition actor
 position actor@Enemy{} = enemyPosition actor
-position actor = [0,0,0]
+position actor@StaticActor{} = staticActorPosition actor
+position actor = zeroV
+
+orientation :: Actor -> Quaternion Float
+orientation actor@Player{} = playerOrientation actor
+orientation actor@Enemy{} = enemyOrientation actor
+orientation actor@StaticActor{} = staticActorOrientation actor
+orientation actor = identityQ
 
 velocity :: Actor -> Vector Float
 velocity actor@Player{} = playerVelocity actor
 velocity actor@Enemy{} = enemyVelocity actor
-velocity actor = [0,0,0]
+velocity actor = zeroV
+
+acceleration :: Actor -> Vector Float
+acceleration actor@Player{} = playerAcceleration actor
+acceleration actor@Enemy{} = enemyAcceleration actor
+acceleration actor = zeroV
+
+setAcceleration :: Vector Float -> Actor -> Actor
+setAcceleration newAcc player@Player{} = player { playerAcceleration = newAcc }
+setAcceleration newAcc enemy@Enemy{} = enemy { enemyAcceleration = newAcc }
+setAcceleration _ a = a
+
+setVelocity :: Vector Float -> Actor -> Actor
+setVelocity newVel player@Player{} = player { playerVelocity = newVel }
+setVelocity newVel enemy@Enemy{} = enemy { enemyVelocity = newVel }
+setVelocity _ a = a
+
+setPosition :: Vector Float -> Actor -> Actor
+setPosition newPosition p@Player{} = p { playerPosition = newPosition }
+setPosition newPosition e@Enemy{} = e { enemyPosition = newPosition }
+setPosition _ a = a
 
 bullet :: Actor
 bullet = Bullet "bullet" Opponent 1.0 zeroV zeroV zeroV passthru

@@ -14,7 +14,7 @@ data Fbo = Fbo { fboBuffers :: FramebufferObject
 fbo :: GLuint -> GLuint -> IO Fbo
 fbo width height  = do [textureObject] <- genObjectNames 1
                        textureBinding Texture2D $= Just textureObject
-                       texImage2D Nothing NoProxy 0 RGB32F (TextureSize2D 1280 720) 0 (PixelData BGR Float (plusPtr nullPtr 0))
+                       texImage2D Nothing NoProxy 0 RGB32F (TextureSize2D 1280 720) 0 (PixelData RGB Float (plusPtr nullPtr 0))
                        textureFilter Texture2D $= ((Linear', Nothing), Linear')
                        textureBinding Texture2D $= Nothing
 
