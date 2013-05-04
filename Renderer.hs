@@ -100,9 +100,15 @@ render worldRef actorsRef renderStateRef = do
 
   let f = (fboMap renderState) M.! "default"
 
-  let lightX = 300.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
-  let lightY = 300.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
-  let lightZ = 100.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
+  --let lightX = 300.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  --let lightY = 300.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  --let lightZ = 100.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
+
+  let player = getPlayer actors
+  let (lightX:lightY:rest) = Actor.position player
+  let lightZ = -300.0
+
+  --print $ Actor.position player
 
   GL.depthFunc $= Just Lequal
 
@@ -132,24 +138,24 @@ render worldRef actorsRef renderStateRef = do
       uniformMatrix4 uniformViewMatrix $= viewMatrix renderState
       uniformMatrix4 uniformModelMatrix $= modelMatrix renderState
 
-      uniform uniformLightPosition $= Vertex4 (100.0 + (toGLfloat lightX)) (toGLfloat lightY) 130.0 (0 :: GLfloat)
-      uniform uniformCameraPosition $= Vertex4 0 0 300 (0 :: GLfloat)
+      uniform uniformLightPosition $= Vertex4 (toGLfloat lightX) (toGLfloat lightY) (toGLfloat lightZ) (0 :: GLfloat)
+      uniform uniformCameraPosition $= Vertex4 0 0 (-300) (0 :: GLfloat)
       uniform uniformTermCoeff $= Vertex4 10.0 40.0 0.0001 (0.000001 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
 
-      uniform uniformColorSpecular $= Vertex4 1 1 1 (1.0 :: GLfloat)
-      mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
-
-      uniform uniformColorSpecular $= Vertex4 0.2 0.2 0.2 (1.0 :: GLfloat)
-      mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
-
-      uniform uniformColorSpecular $= Vertex4 100.0 0.0 0.0 (1.0 :: GLfloat)
+      uniform uniformColorDiffuse $= Vertex4 1 0.4 0.2 (1 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
 
-      uniform uniformColorSpecular $= Vertex4 100.0 0.0 0.0 (1.0 :: GLfloat)
+      uniform uniformColorDiffuse $= Vertex4 1 0.4 0.2 (1 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
   
+      uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
+
+      uniform uniformColorDiffuse $= Vertex4 0.2 0.3 0.5 (1 :: GLfloat)
+      mapM_ (draw (worldDt world) renderState) (filter isStatic actors)
+
   -- setup framebuffer to display render target
 
   GL.depthFunc $= Nothing

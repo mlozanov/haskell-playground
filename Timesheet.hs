@@ -10,6 +10,7 @@ import System.Random
 import Math
 import Actor
 import World
+import Enemies
 
 type Timesheet a = M.Map a Actors
 type Events a = (a, (a -> Actors))
@@ -26,20 +27,12 @@ newTimesheetRow :: (Eq a, Ord a) => Timesheet a -> (a, Actors) -> Timesheet a
 newTimesheetRow timesheet (k, actors) = M.insert k actors timesheet 
 
 lineOfEnemies origin = map enemy positionsAndVelocities
-  where positionsAndVelocities = [ [x,y,0.0] | x <- [4.0], y <- [-1.5, 0.0, 1.5] ]
-        enemy p = newEnemy { enemyPosition = (mulScalarVec 60.0 (addVec origin p))
-                           , enemyVelocity = [-60,0.0,0.0]
-                           , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 180) 
-                           , enemyOmega = [0.0, 0.0, -3.5]
-                           }
+  where positionsAndVelocities = [ origin `addVec` [x,y,0.0] | x <- [4.0], y <- [-1.5, 0.0, 1.5] ]
+        enemy = simpleEnemy
 
 lineOfEnemiesHorizondal origin = map enemy positionsAndVelocities
-  where positionsAndVelocities = [ [-1.5, 0.2, 0.0], [0.0, 0.4, 0.0], [1.5, 0.6, 0.0] ]
-        enemy p = newEnemy { enemyPosition = (mulScalarVec 60.0 (addVec origin p))
-                           , enemyVelocity = [-60,0.0,0.0]
-                           , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 180) 
-                           , enemyOmega = [0.0, 0.0, 3.0]
-                           }
+  where positionsAndVelocities = map (addVec origin) [ [-1.5, 0.2, 0.0], [0.0, 0.4, 0.0], [1.5, 0.6, 0.0] ]
+        enemy = rotatorEnemy
 
 circleOfEnemies v = map defaultEnemy positions
   where positions = map circleVec [-pi, -(pi - (pi/v)) .. pi]

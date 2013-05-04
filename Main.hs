@@ -41,8 +41,8 @@ setupAction worldRef actorsRef renderStateRef = do
   let room = StaticActor "room" zeroV identityQ Type1
 
   backgroundActorPositions <- mapM (\_ -> rndVec) [1..256]
-  let bs = map (\p -> StaticActor "square" (scaleVec 400.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
-  modifyIORef actorsRef (\actors -> [newPlayer] ++ [room] ++ bs ++ actors)
+  let bs = map (\p -> StaticActor "square" (scaleVec 600.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
+  modifyIORef actorsRef (\actors -> [newPlayer] ++ bs ++ actors)
 
   renderState <- readIORef renderStateRef
 
