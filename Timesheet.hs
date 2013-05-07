@@ -27,11 +27,11 @@ newTimesheetRow :: (Eq a, Ord a) => Timesheet a -> (a, Actors) -> Timesheet a
 newTimesheetRow timesheet (k, actors) = M.insert k actors timesheet 
 
 lineOfEnemies origin = map enemy positionsAndVelocities
-  where positionsAndVelocities = [ origin `addVec` [x,y,0.0] | x <- [4.0], y <- [-1.5, 0.0, 1.5] ]
+  where positionsAndVelocities = [ origin `addVec` [x,y,0.0] | x <- [4.0], y <- [-2.5, 0.0, 2.5] ]
         enemy = simpleEnemy
 
 lineOfEnemiesHorizondal origin = map enemy positionsAndVelocities
-  where positionsAndVelocities = map (addVec origin) [ [-1.5, 0.2, 0.0], [0.0, 0.4, 0.0], [1.5, 0.6, 0.0] ]
+  where positionsAndVelocities = map (addVec origin) [ [-2.5, 0.2, 0.0], [0.0, 0.4, 0.0], [2.5, 0.6, 0.0] ]
         enemy = rotatorEnemy
 
 circleOfEnemies v = map defaultEnemy positions

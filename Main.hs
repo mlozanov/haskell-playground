@@ -24,6 +24,8 @@ import Collision
 
 import Timesheet
 
+import Behaviours
+
 import Ai
 
 -- import TestFFI
@@ -41,7 +43,7 @@ setupAction worldRef actorsRef renderStateRef = do
   let room = StaticActor "room" zeroV identityQ Type1
 
   backgroundActorPositions <- mapM (\_ -> rndVec) [1..256]
-  let bs = map (\p -> StaticActor "square" (scaleVec 600.0 (mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
+  let bs = map (\p -> StaticActor "square" (scaleVec 600.0 (addVec [0.0, 0.0, -0.4] $ mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
   modifyIORef actorsRef (\actors -> [newPlayer] ++ bs ++ actors)
 
   renderState <- readIORef renderStateRef
@@ -59,11 +61,11 @@ createGeometryObjects = do
   vboPlayer <- Vbo.fromList GL.Points playerVertices playerNormals
   vboCircle <- Vbo.fromList GL.LineStrip (circleVertices 2.0) circleNormals
 
-  vboPentagon <- Vbo.fromList GL.LineStrip (ngonVertices 14.0 5.0) (ngonNormals 5.0)
+  vboPentagon <- Vbo.fromList GL.TriangleStrip (ngonVertices 14.0 5.0) (ngonNormals 5.0)
 
-  vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 3.5 3.0) (ngonNormals 3.0)
+  vboTriangle <- Vbo.fromList GL.TriangleStrip (ngonVertices 3.5 3.0) (ngonNormals 3.0)
 
-  vboSquare <- Vbo.fromList GL.LineStrip (ngonVertices 8.0 4.0) (ngonNormals 4.0)
+  vboSquare <- Vbo.fromList GL.TriangleStrip (ngonVertices 8.0 4.0) (ngonNormals 4.0)
 
   vboExplosition <- Vbo.fromList GL.LineStrip (ngonVertices 15.0 8.0) (ngonNormals 8.0)
 
@@ -247,23 +249,6 @@ simulate as w = runState state w
                 vx = 50.0 * sin (1.5 * fTime)
                 vy = 50.0 * cos (2.0 * fTime)
         trajectory time dt a = a
-
-        followTarget :: Float -> Actor -> Actor -> Actor
-        followTarget dt target actor@Enemy{} = actor { enemyVelocity = v }
-          where v = clampV 60.0 ((velocity actor) `addVec` direction)
-                direction = (position target) `subVec` (position actor)
-
-        followTarget dt target actor = actor
-
-        fleeTarget :: Float -> Actor -> Actor -> Actor
-        fleeTarget dt target actor@Enemy{} = actor { enemyVelocity = v }
-          where v = if distance < 50.0 
-                    then clampV 60.0 ((velocity actor) `addVec` direction)
-                    else velocity actor
-                direction = (position actor) `subVec` (position target)
-                distance = lengthVec direction
-
-        fleeTarget dt target actor = actor
 
         targetInRange :: (Float, Float) -> Actor -> Actor -> Bool
         targetInRange (rmin, rmax) target actor = inRange (rmin, rmax) distance
