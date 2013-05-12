@@ -18,3 +18,9 @@ rotatorEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 
                           , enemyOmega = [0.0, 0.0, -10.0] 
                           , enemyShootingRate = 1.6
                           } 
+
+curveEnemy :: Float -> Vector Float -> Actor
+curveEnemy radius p = undefined
+
+splineEnemy :: Spline Float -> Actor
+splineEnemy spline = undefined

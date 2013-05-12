@@ -16,6 +16,8 @@ data Shape a = Rectangle a a a a
              | Box (Vector a) (Vector a) -- center, extent
              deriving (Eq, Ord, Show)
 
+type Spline a = [Vector a]
+
 {-# INLINE addVec #-} 
 {-# INLINE subVec #-}
 {-# INLINE mulVec #-}

@@ -20,3 +20,11 @@ fleeTarget dt target actor@Enemy{} = actor { enemyVelocity = v }
 
 fleeTarget dt target actor = actor
 
+circleAroundPoint :: Float -> Vector Float -> Actor -> Actor
+circleAroundPoint dt target actor = undefined
+
+keepDistance :: Float -> Vector Float -> Actor -> Actor
+keepDistance dt target actor = undefined
+
+steerOnSpline :: Float -> Spline Float -> Actor -> Actor
+steerOnSpline dt spline actor = undefined
