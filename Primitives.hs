@@ -33,14 +33,14 @@ playerVertices :: [GLfloat]
 playerVertices = concat [ [t,u,v] | t <- [(-6.0)..6.0], u <- [(-6.0)..6.0], v <- [(-6.0)..6.0], 2*u*u + 0.5*u*v + 2*v*v + t < 8.0 ]
 
 playerNormals :: [GLfloat]
-playerNormals = concat $ replicate ( length playerVertices ) [0.0, 0.0, 1.0]
+playerNormals = concat $ replicate ( 3 * length playerVertices ) [0.0, 0.0, 1.0]
 
 
 ngonVertices :: GLfloat -> GLfloat -> [GLfloat]
-ngonVertices r n = concat [ [ r * sin t, r * cos t, 0.0] | t <- [0, 2*pi/n .. 2*pi] ]
+ngonVertices r n = concat [ [ r * cos t, r * sin t, 0.0] | t <- [0.0, 2.0*pi/n .. 2.0*pi] ]
 
 ngonNormals :: GLfloat -> [GLfloat]
-ngonNormals n = concat [ [ 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0] | t <- [0, 2*pi/n .. 2*pi] ]
+ngonNormals n = concat [ [ 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0] | t <- [0.0, 2.0*pi/n .. 2.0*pi] ]
 
 unitNgon :: GLfloat -> [GLfloat]
 unitNgon = ngonVertices 1.0
@@ -49,5 +49,5 @@ circleVertices :: GLfloat -> [GLfloat]
 circleVertices = (flip ngonVertices) 24
 
 circleNormals :: [GLfloat]
-circleNormals = concat [ [ 0.0, 0.0, -1.0] | t <- [0, 2*pi/24.0 .. 2*pi] ]
+circleNormals = ngonNormals 24 -- concat [ [ 0.0, 0.0, -1.0] | t <- [0, 2*pi/24.0 .. 2*pi] ]
 

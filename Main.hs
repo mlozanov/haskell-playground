@@ -63,9 +63,9 @@ createGeometryObjects = do
 
   vboPentagon <- Vbo.fromList GL.TriangleStrip (ngonVertices 14.0 5.0) (ngonNormals 5.0)
 
-  vboTriangle <- Vbo.fromList GL.TriangleStrip (ngonVertices 3.5 3.0) (ngonNormals 3.0)
+  vboTriangle <- Vbo.fromList GL.LineStrip (ngonVertices 3.5 3.0) (ngonNormals 3.0)
 
-  vboSquare <- Vbo.fromList GL.TriangleStrip (ngonVertices 8.0 4.0) (ngonNormals 4.0)
+  vboSquare <- Vbo.fromList GL.LineStrip (ngonVertices 8.0 4.0) (ngonNormals 4.0)
 
   vboExplosition <- Vbo.fromList GL.LineStrip (ngonVertices 15.0 8.0) (ngonNormals 8.0)
 

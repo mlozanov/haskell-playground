@@ -241,10 +241,11 @@ toAxisAngleQ :: (Floating a, Ord a) => Quaternion a -> ([a], a)
 toAxisAngleQ (Q w x y z) | abs w > 0.9999 = ([0,0,1.0], 0.0)
                          | otherwise = ([ax,ay,az], angle)
     where ww = 1.0 - w*w
-          angle = 2*acos w
-          ax = x / sqrt ww
-          ay = y / sqrt ww
-          az = z / sqrt ww
+          sqww = 1.0 / sqrt ww
+          angle = 2.0 * acos w
+          ax = x * sqww
+          ay = y * sqww
+          az = z * sqww
 
 fromList :: Floating a => [a] -> Matrix a
 fromList l = M l
