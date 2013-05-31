@@ -3,7 +3,7 @@ module Actor where
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLUT.Objects as O
 
-import Data.Map
+import qualified Data.Map as M
 
 import Math
 import Graphics
@@ -86,6 +86,13 @@ data Actor = SimpleActor
                        }
 
 type Actors = [Actor]
+
+data ActorKey = ActorKeyBackground | ActorKeyDynamic deriving Show
+
+type ActorsMap = M.Map ActorKey Actors
+
+actorsmap :: ActorsMap
+actorsmap = M.empty
 
 newPlayer :: Actor
 newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.15 0.0
