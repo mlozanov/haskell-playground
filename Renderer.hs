@@ -117,11 +117,15 @@ render worldRef actorsRef renderStateRef = do
   withFbo f $ do
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
+    drawBuffers $= [FBOColorAttachment 0, FBOColorAttachment 1, FBOColorAttachment 2]
+
     let pd = (shaderProgramsMap renderState) M.! "default"
     withProgram pd $ do
       attribLocation (program pd) "in_Position" $= AttribLocation 0
       attribLocation (program pd) "in_Normal" $= AttribLocation 1
       bindFragDataLocation (program pd) "Color" $= 0
+      bindFragDataLocation (program pd) "Lighting" $= 1
+      bindFragDataLocation (program pd) "Bloom" $= 2
 
       uniformProjectionMatrix <- getUniformLocation pd "projectionMatrix"
       uniformViewMatrix <- getUniformLocation pd "viewMatrix"
@@ -171,7 +175,13 @@ render worldRef actorsRef renderStateRef = do
     uniform texel $= Index1 (0 :: GLint)
 
     activeTexture $= TextureUnit 0
-    textureBinding Texture2D $= Just (textureObject f)
+    textureBinding Texture2D $= Just (albedoTarget f)
+
+    activeTexture $= TextureUnit 1
+    textureBinding Texture2D $= Just (lightingTarget f)
+
+    activeTexture $= TextureUnit 2
+    textureBinding Texture2D $= Just (bloomTarget f)
 
     renderVbo (vboMap renderState M.! "fullscreenQuad")
 
