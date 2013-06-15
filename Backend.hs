@@ -106,6 +106,8 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
 
   actorsRef <- newIORef ([] :: Actors)
 
+  actorsMapRef <- newIORef (Actor.actorsmap)
+
   setupAction worldRef actorsRef renderStateRef
 
   GLFW.keyCallback $= keyboardCallback worldRef

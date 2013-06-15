@@ -46,6 +46,8 @@ setupAction worldRef actorsRef renderStateRef = do
   let bs = map (\p -> StaticActor "square" (scaleVec 600.0 (addVec [0.0, 0.0, -0.4] $ mulVec [1.0, 0.5, 1.0] p)) identityQ Type2) backgroundActorPositions
   modifyIORef actorsRef (\actors -> [newPlayer] ++ bs ++ actors)
 
+  --modifyIORef actorsMapRef (\m -> M.insert m bs)
+
   renderState <- readIORef renderStateRef
 
   shaders <- createShaderPrograms
