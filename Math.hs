@@ -121,6 +121,13 @@ circleVec i = [x,y,z]
         y = sin i
         z = 0.0
 
+sphereVec :: Float -> Float -> Vector Float
+sphereVec azimut zenith = [x,y,z]
+  where x = sin zenith * cos azimut
+        y = sin zenith * sin azimut
+        z = cos zenith
+
+
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
 z :: Floating a => Vector a -> a
