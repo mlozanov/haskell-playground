@@ -9,6 +9,8 @@ import Data.Map as M hiding (map,filter,null)
 
 import Backend
 
+import Graphics
+
 import Primitives
 import Shader
 import Vbo
@@ -41,8 +43,9 @@ main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioAction
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
   let room = StaticActor "room" zeroV identityQ Type1
+  let forest = StaticActor "forest" zeroV identityQ Type2
 
-  modifyIORef actorsRef (\actors -> [room] ++ actors)
+  modifyIORef actorsRef (\actors -> [room, forest] ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -52,14 +55,29 @@ setupAction worldRef actorsRef renderStateRef = do
 
   writeIORef renderStateRef (renderState { shaderProgramsMap = shaders, vboMap = objects, fboMap = renderTargets } )
 
+scale140 = (*) 140
+
+forestVertices :: [GL.GLfloat]
+forestVertices = concat vs
+  where vs = [ toGLfloatList (sphereVec azimuth zenith) | azimuth <- [-pi, -pi/4.0 .. pi], zenith <- [-pi, -pi/4.0 .. pi]]
+
+
+forestNormals :: [GL.GLfloat]
+forestNormals = concat ns
+  where ns = replicate 16 [0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0 :: GL.GLfloat]
+
 createGeometryObjects :: IO (Map String Vbo)
 createGeometryObjects = do
-  vboRoom <- Vbo.fromList GL.Triangles (map (* 140) room) (concat roomNormals)
+  vboRoom <- Vbo.fromList GL.Triangles (map scale140 room) (concat roomNormals)
+
+  vboForest <- Vbo.fromList GL.Triangles (map scale140 forestVertices) forestNormals
   
   vboFullscreenQuad <- Vbo.fromList GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0] [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
 
   return $ M.fromList [ ("room", vboRoom)
                       , ("fullscreenQuad", vboFullscreenQuad)
+
+                      , ("forest", vboForest)
                       ]
 
 createFramebuffers :: IO (Map String Fbo)
@@ -84,4 +102,5 @@ ioActions = []
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
   where state :: State World Actors
-        state = return as
+        state = do w <- get 
+                   return (map (updateMovement (worldDt w)) as)
