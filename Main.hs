@@ -36,6 +36,35 @@ type WorldState = State World World
 
 newtype Simulation = Simulation (StateT World IO ())
 
+
+--- THE EXPERIMENT
+scale140 = (*) 140
+
+minusPiToPi scale = [(-pi) - (-pi/scale), (-pi) - (-2.0*pi/scale) .. pi]
+
+treeTrunk :: [GL.GLfloat]
+treeTrunk = (toGLfloatList . concat) [ sphereVec azimuth zenith | zenith <- [-2.0*pi/3.0, pi], azimuth <- minusPiToPi 16.0]
+
+forestVertices :: [GL.GLfloat]
+forestVertices = toGLfloatList vs'
+  where vs = [ sphereVec azimuth zenith | zenith <- minusPiToPi 4.0, azimuth <- minusPiToPi 4.0 ]
+        vs' = concat $ map triangleAtPosition (map (rotateVQ q) vs)
+        q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad 45.0)
+
+        triangleAtPosition position = concat $ map (addVec position) (ngonVerticesVec 0.2 3.0)
+
+forestNormals :: [GL.GLfloat]
+forestNormals = concat ns
+  where ns = replicate 2048 [0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0 :: GL.GLfloat]
+
+normalFromPolygon :: [Vector Float] -> Vector Float 
+normalFromPolygon (p:q:ps) = c
+  where a = subVec p q
+        b = subVec q (head ps)
+        c = crossVec a b
+
+--- THE EXPERIMENT
+
 main :: IO ()
 main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
 
@@ -45,7 +74,7 @@ setupAction worldRef actorsRef renderStateRef = do
   let room = StaticActor "room" zeroV identityQ Type1
   let forest = StaticActor "forest" zeroV identityQ Type2
 
-  modifyIORef actorsRef (\actors -> [room, forest] ++ actors)
+  modifyIORef actorsRef (\actors -> [forest] ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -54,17 +83,6 @@ setupAction worldRef actorsRef renderStateRef = do
   renderTargets <- createFramebuffers
 
   writeIORef renderStateRef (renderState { shaderProgramsMap = shaders, vboMap = objects, fboMap = renderTargets } )
-
-scale140 = (*) 140
-
-forestVertices :: [GL.GLfloat]
-forestVertices = concat vs
-  where vs = [ toGLfloatList (sphereVec azimuth zenith) | azimuth <- [-pi, -pi/4.0 .. pi], zenith <- [-pi, -pi/4.0 .. pi]]
-
-
-forestNormals :: [GL.GLfloat]
-forestNormals = concat ns
-  where ns = replicate 16 [0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0 :: GL.GLfloat]
 
 createGeometryObjects :: IO (Map String Vbo)
 createGeometryObjects = do

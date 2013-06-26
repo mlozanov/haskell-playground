@@ -100,13 +100,13 @@ render worldRef actorsRef renderStateRef = do
 
   let f = (fboMap renderState) M.! "default"
 
-  --let lightX = 300.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
-  --let lightY = 300.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
-  --let lightZ = 100.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
+  let lightX = 300.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  let lightY = 300.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  let lightZ = 100.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
 
-  let player = getPlayer actors
-  let (lightX:lightY:rest) = Actor.position player
-  let lightZ = -300.0
+  --let player = getPlayer actors
+  --let (lightX:lightY:rest) = Actor.position player
+  --let lightZ = -300.0
 
   --print $ Actor.position player
 

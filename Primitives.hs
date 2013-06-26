@@ -37,10 +37,12 @@ playerNormals = concat $ replicate ( 3 * length playerVertices ) [0.0, 0.0, 1.0]
 
 
 ngonVertices :: GLfloat -> GLfloat -> [GLfloat]
-ngonVertices r n = concat [ [ r * cos t, r * sin t, 0.0] | t <- [0.0, 2.0*pi/n .. 2.0*pi] ]
+ngonVertices r n = concat [ [ r * cos t, r * sin t, 0.0] | t <- [0.0, 2.0*pi/n .. 2.0*pi - 2.0*pi/n] ]
+
+ngonVerticesVec r n = [ [ r * cos t, r * sin t, 0.0] | t <- [0.0, 2.0*pi/n .. 2.0*pi - 2.0*pi/n] ]
 
 ngonNormals :: GLfloat -> [GLfloat]
-ngonNormals n = concat [ [ 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0] | t <- [0.0, 2.0*pi/n .. 2.0*pi] ]
+ngonNormals n = concat [ [ 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0] | t <- [0.0, 2.0*pi/n .. 2.0*pi - 2.0*pi/n] ]
 
 unitNgon :: GLfloat -> [GLfloat]
 unitNgon = ngonVertices 1.0
