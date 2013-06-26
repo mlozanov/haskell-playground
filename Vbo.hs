@@ -33,7 +33,7 @@ fromList mode vs ns =
        withStorableArray arr (\ptr -> bufferData ArrayBuffer $= (toEnum vsize, ptr, StaticDraw))
        --GL.get GL.errors >>= print
 
-       vertexAttribPointer (AttribLocation 0) $= (ToFloat, (VertexArrayDescriptor 3 Float 0 offset0))
+       vertexAttribPointer (AttribLocation 0) $= (ToFloat, (VertexArrayDescriptor 3 Float 0 (offset 0)))
        --GL.get GL.errors >>= print
        vertexAttribArray (AttribLocation 0) $= Enabled
        --GL.get GL.errors >>= print
