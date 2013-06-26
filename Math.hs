@@ -53,6 +53,10 @@ negateVec = map negate
 dotVec :: Floating a => Vector a -> Vector a -> a
 dotVec a b = sum $ mulVec a b
 
+crossVec :: Floating a => Vector a -> Vector a -> Vector a
+crossVec [ax,ay,az] [bx,by,bz] = [ ay*bz - by*az, az*bx - bz*ax, ax*by - bx*ay ]
+crossVec a b = undefined
+
 lengthVec :: Floating a => Vector a -> a
 lengthVec a = sqrt . sum $ map square a
     where square x = x*x
