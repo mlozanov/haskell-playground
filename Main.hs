@@ -30,6 +30,8 @@ import Behaviours
 
 import Ai
 
+import Generator
+
 -- import TestFFI
 
 type WorldState = State World World
