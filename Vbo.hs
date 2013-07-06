@@ -13,66 +13,94 @@ data Vbo = Vbo { bufferArray :: VertexArrayObject
                , normalBufferSize :: GLuint
                , primitiveMode :: PrimitiveMode
                }
-         | IndexVbo { vertexBuffer :: BufferObject
-                    , indexBuffer :: BufferObject
-                    , vertexBufferSize :: GLuint
-                    , indexBufferSize :: GLuint
+         | IndexVbo { ivboBufferArray :: VertexArrayObject
+                    , ivboPrimitiveMode :: PrimitiveMode
+                    , ivboElementBuffer :: BufferObject
+                    , ivboIndexBuffer :: BufferObject
+                    , ivboElementBufferSize :: GLuint
+                    , ivboIndexBufferSize :: GLuint
                     }
 
 fromList :: PrimitiveMode -> [GLfloat] -> [GLfloat] -> IO Vbo
-fromList mode vs ns = 
-    do [buffer] <- genObjectNames 1
-       [ba] <- genObjectNames 1
+fromList mode vs ns = do
+  [buffer] <- genObjectNames 1
+  [ba] <- genObjectNames 1
 
-       arr <- newListArray (0, vsize - 1) elems
-                        
-       bindVertexArrayObject $= Just ba
-       --GL.get GL.errors >>= print
+  arr <- newListArray (0, vsize - 1) elems
+                  
+  bindVertexArrayObject $= Just ba
+  --GL.get GL.errors >>= print
 
-       bindBuffer ArrayBuffer $= Just buffer                     
-       withStorableArray arr (\ptr -> bufferData ArrayBuffer $= (toEnum vsize, ptr, StaticDraw))
-       --GL.get GL.errors >>= print
+  bindBuffer ArrayBuffer $= Just buffer                     
+  withStorableArray arr (\ptr -> bufferData ArrayBuffer $= (toEnum vsize, ptr, StaticDraw))
+  --GL.get GL.errors >>= print
 
-       vertexAttribPointer (AttribLocation 0) $= (ToFloat, (VertexArrayDescriptor 3 Float 0 (offset 0)))
-       --GL.get GL.errors >>= print
-       vertexAttribArray (AttribLocation 0) $= Enabled
-       --GL.get GL.errors >>= print
+  vertexAttribPointer (AttribLocation 0) $= (ToFloat, (VertexArrayDescriptor 3 Float 0 (offset 0)))
+  --GL.get GL.errors >>= print
+  vertexAttribArray (AttribLocation 0) $= Enabled
+  --GL.get GL.errors >>= print
 
-       vertexAttribPointer (AttribLocation 1) $= (ToFloat, (VertexArrayDescriptor 3 Float 0 (offset (fromIntegral (4 * vsLength)))))
-       --GL.get GL.errors >>= print
-       vertexAttribArray (AttribLocation 1) $= Enabled
-       --GL.get GL.errors >>= print
+  vertexAttribPointer (AttribLocation 1) $= (ToFloat, (VertexArrayDescriptor 3 Float 0 (offset (fromIntegral (4 * vsLength)))))
+  --GL.get GL.errors >>= print
+  vertexAttribArray (AttribLocation 1) $= Enabled
+  --GL.get GL.errors >>= print
 
-       bindVertexArrayObject $= Nothing
-       --GL.get GL.errors >>= print
+  bindVertexArrayObject $= Nothing
+  --GL.get GL.errors >>= print
 
-       return $ Vbo ba buffer (toEnum vsize) vsLength nsLength mode
-           where elems = vs ++ ns
-                 vsize = 4 * length elems
-                 vsLength = toEnum $ length vs
-                 nsLength = toEnum $ length ns
+  return $ Vbo ba buffer (toEnum vsize) vsLength nsLength mode
+     where elems = vs ++ ns
+           vsize = 4 * length elems
+           vsLength = toEnum $ length vs
+           nsLength = toEnum $ length ns
+
+fromList' :: PrimitiveMode -> [GLfloat] -> [GLuint] -> IO Vbo
+fromList' mode vs is = do
+  [vbuffer] <- genObjectNames 1
+  [ibuffer] <- genObjectNames 1
+  [ba] <- genObjectNames 1
+
+  bindVertexArrayObject $= Just ba
+
+  varr <- newListArray (0, varrSize - 1) vs
+  iarr <- newListArray (0, iarrSize - 1) is
+
+  bindBuffer ArrayBuffer $= Just vbuffer
+  withStorableArray varr (\ptr -> bufferData ArrayBuffer $= (toEnum varrSize, ptr, StaticDraw))
+
+  bindBuffer ElementArrayBuffer $= Just ibuffer
+  withStorableArray iarr (\ptr -> bufferData ElementArrayBuffer $= (toEnum iarrSize, ptr, StaticDraw))
+
+  vertexAttribPointer (AttribLocation 0) $= (ToFloat, (VertexArrayDescriptor 3 Float 24) (offset 0))
+  vertexAttribArray (AttribLocation 0) $= Enabled
+
+  vertexAttribPointer (AttribLocation 1) $= (ToFloat, (VertexArrayDescriptor 3 Float 24) (offset 12))
+  vertexAttribArray (AttribLocation 1) $= Enabled
+
+  bindVertexArrayObject $= Nothing
+
+  return $ IndexVbo ba mode vbuffer ibuffer vssize issize
+    where vssize = f vs
+          issize = f is
+          varrSize = 4 * length vs
+          iarrSize = 4 * length is
+          f = toEnum . length
 
 
 renderVbo :: Vbo -> IO ()
 renderVbo (Vbo va vs vsize vssize nssize mode) = do
   bindVertexArrayObject $= Just va
-  drawArrays mode 0 $ (toEnum . fromEnum) vsize
+  drawArrays mode 0 (convertType vsize)
   bindVertexArrayObject $= Nothing
 
-renderVbo vbo@(IndexVbo v i vsize _) = do 
-  bindBuffer ArrayBuffer $= Just v
-  arrayPointer VertexArray $= VertexArrayDescriptor 3 Float 0 offset0
-  arrayPointer NormalArray $= VertexArrayDescriptor 3 Float 0 (offset 288)
-  clientState VertexArray $= Enabled
-  clientState NormalArray $= Enabled
+renderVbo vbo@(IndexVbo va mode elements indices essize issize) = do 
+  bindVertexArrayObject $= Just va
+  bindBuffer ElementArrayBuffer $= Just indices
+  drawElements mode (convertType essize) UnsignedInt (offset 0)
+  bindVertexArrayObject $= Nothing
 
-  bindBuffer ElementArrayBuffer $= Just i
-  clientState IndexArray $= Enabled
-  drawElements Triangles ((toEnum . fromEnum) vsize) UnsignedInt offset0
 
-  clientState VertexArray $= Disabled
-  clientState NormalArray $= Disabled
-  clientState IndexArray $= Disabled
-
+-- helpers
 offset a = plusPtr nullPtr a
-offset0 = offset 0
+
+convertType = toEnum . fromEnum
