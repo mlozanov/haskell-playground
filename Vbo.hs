@@ -77,6 +77,8 @@ fromList' mode vs is = do
   vertexAttribPointer (AttribLocation 1) $= (ToFloat, (VertexArrayDescriptor 3 Float 24) (offset 12))
   vertexAttribArray (AttribLocation 1) $= Enabled
 
+  --bindBuffer ArrayBuffer $= Nothing
+  --bindBuffer ElementArrayBuffer $= Nothing
   bindVertexArrayObject $= Nothing
 
   return $ IndexVbo ba mode vbuffer ibuffer vssize issize
@@ -96,7 +98,7 @@ renderVbo (Vbo va vs vsize vssize nssize mode) = do
 renderVbo vbo@(IndexVbo va mode elements indices essize issize) = do 
   bindVertexArrayObject $= Just va
   bindBuffer ElementArrayBuffer $= Just indices
-  drawElements mode (convertType essize) UnsignedInt (offset 0)
+  drawElements mode (convertType issize) UnsignedInt (offset 0)
   bindVertexArrayObject $= Nothing
 
 
