@@ -49,17 +49,18 @@ treeTrunk = (toGLfloatList . concat) [ sphereVec azimuth zenith | zenith <- [-2.
 
 forestVertices :: [GL.GLfloat]
 forestVertices = toGLfloatList vs''
-  where vs = [ sphereVec azimuth zenith | zenith <- minusPiToPi 8.0, azimuth <- minusPiToPi 4.0 ]
+  where vs = [ sphereVec azimuth zenith | zenith <- minusPiToPi 6.0, azimuth <- minusPiToPi 6.0 ]
+        tvs = map (rotateVQ q) vs
+        vs' = map triangleAtPosition tvs
         vs'' = concat $ map attachNormal vs'
-        vs' = map triangleAtPosition (map (rotateVQ q) vs)
         q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad 45.0)
 
-        triangleAtPosition position = concat $ map (addVec position) (ngonVerticesVec 0.2 3.0)
+        triangleAtPosition position = position -- concat $ map (addVec position) (ngonVerticesVec 0.2 3.0)
 
-        attachNormal v = v ++ normalizeV v
+        attachNormal v = v ++ (normalizeV . negateVec) v
 
 forestIndices :: [GL.GLuint]
-forestIndices = [0 .. c]
+forestIndices = concat [ [i, i+1, i+12, i, i+12, i+11] | i <- [0 .. (c-18)] ]
   where c = toEnum vcount
         vcount = length forestVertices `div` 12
 
@@ -103,7 +104,7 @@ createGeometryObjects = do
 
   vboForest <- Vbo.fromList' GL.Triangles (map scale140 forestVertices) forestIndices
 
-  vboFullscreenQuad <- Vbo.fromList' GL.Triangles [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] [0, 1, 2, 0, 2, 3]
+  vboFullscreenQuad <- Vbo.fromList' GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] [0, 1, 3, 2]
 
   return $ M.fromList [ ("room", vboRoom)
                       , ("fullscreenQuad", vboFullscreenQuad)
