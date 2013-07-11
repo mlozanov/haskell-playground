@@ -44,6 +44,9 @@ mulScalarVec :: Floating a => a -> Vector a -> Vector a
 mulScalarVec s [x,y,z,w] = [s*x,s*y,s*z,s*w]
 mulScalarVec s v = map (* s) v
 
+mulScalarAddVec :: Floating a => a -> Vector a -> Vector a
+mulScalarAddVec s v = addVec v $ mulScalarVec s v
+
 scaleVec :: Floating a => a -> Vector a -> Vector a
 scaleVec = mulScalarVec
 
