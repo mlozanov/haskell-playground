@@ -7,6 +7,8 @@ import qualified Graphics.Rendering.OpenGL as GL
 import Data.IORef
 import Data.Map as M hiding (map,filter,null)
 
+import System.Random
+
 import Backend
 
 import Graphics
@@ -42,25 +44,28 @@ newtype Simulation = Simulation (StateT World IO ())
 --- THE EXPERIMENT
 scale140 = (*) 140
 
-minusPiToPi scale = [(-pi) - (-pi/scale), (-pi) - (-2.0*pi/scale) .. pi]
+minusPiToPi scale = [(-pi), (-pi) - (-1.0*pi/scale) .. pi]
 
 treeTrunk :: [GL.GLfloat]
 treeTrunk = (toGLfloatList . concat) [ sphereVec azimuth zenith | zenith <- [-2.0*pi/3.0, pi], azimuth <- minusPiToPi 16.0]
 
 forestVertices :: [GL.GLfloat]
 forestVertices = toGLfloatList vs''
-  where vs = [ sphereVec azimuth zenith | zenith <- minusPiToPi 6.0, azimuth <- minusPiToPi 6.0 ]
-        tvs = map (rotateVQ q) vs
+  where vs = [ sphereVec azimuth zenith | zenith <- minusPiToPi 16.0, azimuth <- minusPiToPi 16.0 ]
+        tvs = map (rotateVQ q) rs'
         vs' = map triangleAtPosition tvs
         vs'' = concat $ map attachNormal vs'
         q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad 45.0)
 
         triangleAtPosition position = position -- concat $ map (addVec position) (ngonVerticesVec 0.2 3.0)
 
+        rs = take (length vs) $ randoms (mkStdGen 1023)
+        rs' = map (\(v,f) -> mulScalarAddVec (f*0.1) v) (zip vs rs)
+
         attachNormal v = v ++ (normalizeV . negateVec) v
 
 forestIndices :: [GL.GLuint]
-forestIndices = concat [ [i, i+1, i+12, i, i+12, i+11] | i <- [0 .. (c-18)] ]
+forestIndices = concat [ [i, i+1, i+33, i, i+32, i+33] | i <- [0 .. (c-32)] ]
   where c = toEnum vcount
         vcount = length forestVertices `div` 12
 
