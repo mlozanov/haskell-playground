@@ -100,9 +100,9 @@ render worldRef actorsRef renderStateRef = do
 
   let f = (fboMap renderState) M.! "default"
 
-  let lightX = 300.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
-  let lightY = 300.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
-  let lightZ = 100.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
+  let lightX = 400.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  let lightY = 400.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
+  let lightZ = 1000.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
 
   --let player = getPlayer actors
   --let (lightX:lightY:rest) = Actor.position player
@@ -115,6 +115,8 @@ render worldRef actorsRef renderStateRef = do
   activeTexture $= TextureUnit 0
 
   withFbo f $ do
+    GL.depthFunc $= Just Lequal
+
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
     drawBuffers $= [FBOColorAttachment 0, FBOColorAttachment 1, FBOColorAttachment 2]
