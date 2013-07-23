@@ -146,7 +146,7 @@ render worldRef actorsRef renderStateRef = do
 
       uniform uniformLightPosition $= Vertex4 (toGLfloat lightX) (toGLfloat lightY) (toGLfloat lightZ) (0 :: GLfloat)
       uniform uniformCameraPosition $= Vertex4 0 0 (-300) (0 :: GLfloat)
-      uniform uniformTermCoeff $= Vertex4 10.0 40.0 0.0001 (0.000001 :: GLfloat)
+      uniform uniformTermCoeff $= Vertex4 200.0 40.0 0.0001 (0.000001 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
 
