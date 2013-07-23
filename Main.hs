@@ -48,25 +48,36 @@ minusPiToPi scale = [(-pi), (-pi) - (-1.0*pi/scale) .. pi]
 
 attachNormal v = v ++ (normalizeV . negateVec) v
 
+concatGL = toGLfloatList . concat
+
 treeTrunk :: [GL.GLfloat]
-treeTrunk = (toGLfloatList . concat) tvs
+treeTrunk = concatGL tvs
   where vs = [ (sphereVec azimuth zenith) | zenith <- [-2.0*pi/16.0, pi], azimuth <- minusPiToPi 2.0]
         tvs = map attachNormal rvs
-        rvs = map (rotateVQ q) vs
-        q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad 90.0)
+        rvs = map (rotateXQ 90.0) vs
 
 treeTrunkIndices :: [GL.GLuint]
 treeTrunkIndices = concat [ [c, i, i+1] | i <- [0..(c-2)] ]
-  where c = toEnum vcount
-        vcount = length treeTrunk `div` 12
+  where c = toEnum $ length treeTrunk `div` 12
+
+treeLeaf :: Float -> Float -> [GL.GLfloat]
+treeLeaf = concatGL nvs
+  where vs = [ sphereVec azimuth zenith | zenith <- [-0.2, 0.2], azimuth <- minusPiToPi 3.0 ]
+        nvs = map attachNormal tvs
+        tvs = map translateV rvs
+        rvs = map (rotateXQ 45.0) vs
+        translateV = addVec [0.0, 1.0, 0.0]
+
+treeLeafIndices :: [GL.GLuint]
+treeLeafIndices = concat [ [c, i, i+1] | i <- [0..(c-1)] ]
+  where c = toEnum $ length treeLeaf `div` 12
 
 randomizedSphereVertices :: [GL.GLfloat]
-randomizedSphereVertices = toGLfloatList vs''
+randomizedSphereVertices = concatGL vs''
   where vs = [ sphereVec azimuth zenith | zenith <- minusPiToPi 16.0, azimuth <- minusPiToPi 16.0 ]
-        tvs = map (rotateVQ q) rs'
+        tvs = map (rotateXQ 30.0) rs'
         vs' = map triangleAtPosition tvs
-        vs'' = concat $ map attachNormal vs'
-        q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad 30.0)
+        vs'' = map attachNormal vs'
 
         triangleAtPosition position = position -- concat $ map (addVec position) (ngonVerticesVec 0.2 3.0)
 
@@ -100,8 +111,9 @@ setupAction worldRef actorsRef renderStateRef = do
   let room = StaticActor "room" zeroV identityQ Type1
   let randomizedSphere = StaticActor "randomizedsphere" zeroV identityQ Type2
   let trunk = StaticActor "treetrunk" zeroV identityQ Type2
+  let leaf = StaticActor "treeleaf" zeroV identityQ Type2
 
-  modifyIORef actorsRef (\actors -> [trunk] ++ actors)
+  modifyIORef actorsRef (\actors -> [trunk, leaf] ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -120,12 +132,14 @@ createGeometryObjects = do
   vboFullscreenQuad <- Vbo.fromList' GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] [0, 1, 3, 2]
 
   vboTrunk <- Vbo.fromList' GL.Triangles (map scale140 treeTrunk) treeTrunkIndices
+  vboLeaf <- Vbo.fromList' GL.Triangles (map scale140 treeLeaf) treeLeafIndices
 
   return $ M.fromList [ ("room", vboRoom)
                       , ("fullscreenQuad", vboFullscreenQuad)
 
                       , ("randomizedsphere", vboRandomizedSphere)
                       , ("treetrunk", vboTrunk)
+                      , ("treeleaf", vboLeaf)
                       ]
 
 createFramebuffers :: IO (Map String Fbo)
