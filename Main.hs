@@ -46,31 +46,41 @@ scale140 = (*) 140
 
 minusPiToPi scale = [(-pi), (-pi) - (-1.0*pi/scale) .. pi]
 
-treeTrunk :: [GL.GLfloat]
-treeTrunk = (toGLfloatList . concat) [ sphereVec azimuth zenith | zenith <- [-2.0*pi/3.0, pi], azimuth <- minusPiToPi 16.0]
+attachNormal v = v ++ (normalizeV . negateVec) v
 
-forestVertices :: [GL.GLfloat]
-forestVertices = toGLfloatList vs''
+treeTrunk :: [GL.GLfloat]
+treeTrunk = (toGLfloatList . concat) tvs
+  where vs = [ (sphereVec azimuth zenith) | zenith <- [-2.0*pi/16.0, pi], azimuth <- minusPiToPi 2.0]
+        tvs = map attachNormal rvs
+        rvs = map (rotateVQ q) vs
+        q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad 90.0)
+
+treeTrunkIndices :: [GL.GLuint]
+treeTrunkIndices = concat [ [c, i, i+1] | i <- [0..(c-2)] ]
+  where c = toEnum vcount
+        vcount = length treeTrunk `div` 12
+
+randomizedSphereVertices :: [GL.GLfloat]
+randomizedSphereVertices = toGLfloatList vs''
   where vs = [ sphereVec azimuth zenith | zenith <- minusPiToPi 16.0, azimuth <- minusPiToPi 16.0 ]
         tvs = map (rotateVQ q) rs'
         vs' = map triangleAtPosition tvs
         vs'' = concat $ map attachNormal vs'
-        q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad 45.0)
+        q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad 30.0)
 
         triangleAtPosition position = position -- concat $ map (addVec position) (ngonVerticesVec 0.2 3.0)
 
         rs = take (length vs) $ randoms (mkStdGen 1023)
         rs' = map (\(v,f) -> mulScalarAddVec (f*0.1) v) (zip vs rs)
 
-        attachNormal v = v ++ (normalizeV . negateVec) v
 
-forestIndices :: [GL.GLuint]
-forestIndices = concat [ [i, i+1, i+33, i, i+32, i+33] | i <- [0 .. (c-32)] ]
+randomizedSphereIndices :: [GL.GLuint]
+randomizedSphereIndices = concat [ [i, i+1, i+33, i, i+32, i+33] | i <- [0 .. (c-32)] ]
   where c = toEnum vcount
-        vcount = length forestVertices `div` 12
+        vcount = length randomizedSphereVertices `div` 12
 
---forestNormals :: [GL.GLfloat]
---forestNormals = concat ns
+--RandomizedSphereNormals :: [GL.GLfloat]
+--RandomizedSphereNormals = concat ns
 --  where ns = replicate 2048 [0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0 :: GL.GLfloat]
 
 normalFromPolygon :: [Vector Float] -> Vector Float 
@@ -88,9 +98,10 @@ main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioAction
 setupAction :: SetupAction
 setupAction worldRef actorsRef renderStateRef = do
   let room = StaticActor "room" zeroV identityQ Type1
-  let forest = StaticActor "forest" zeroV identityQ Type2
+  let randomizedSphere = StaticActor "randomizedsphere" zeroV identityQ Type2
+  let trunk = StaticActor "treetrunk" zeroV identityQ Type2
 
-  modifyIORef actorsRef (\actors -> [forest] ++ actors)
+  modifyIORef actorsRef (\actors -> [trunk] ++ actors)
 
   renderState <- readIORef renderStateRef
 
@@ -104,17 +115,17 @@ createGeometryObjects :: IO (Map String Vbo)
 createGeometryObjects = do
   vboRoom <- Vbo.fromList GL.Triangles (map scale140 room) (concat roomNormals)
 
-  --vboForest <- Vbo.fromList GL.Triangles (map scale140 forestVertices) forestNormals
-  --vboFullscreenQuad <- Vbo.fromList GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0] [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
-
-  vboForest <- Vbo.fromList' GL.Triangles (map scale140 forestVertices) forestIndices
+  vboRandomizedSphere <- Vbo.fromList' GL.Triangles (map scale140 randomizedSphereVertices) randomizedSphereIndices
 
   vboFullscreenQuad <- Vbo.fromList' GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] [0, 1, 3, 2]
+
+  vboTrunk <- Vbo.fromList' GL.Triangles (map scale140 treeTrunk) treeTrunkIndices
 
   return $ M.fromList [ ("room", vboRoom)
                       , ("fullscreenQuad", vboFullscreenQuad)
 
-                      , ("forest", vboForest)
+                      , ("randomizedsphere", vboRandomizedSphere)
+                      , ("treetrunk", vboTrunk)
                       ]
 
 createFramebuffers :: IO (Map String Fbo)
