@@ -316,6 +316,18 @@ rotate2d angle (x:y:rest) = x':y':rest
   where x' = x*cos angle - y*sin angle
         y' = y*cos angle + x*sin angle
 
+rotateXQ :: Floating a => a -> Vector a -> Vector a
+rotateXQ angle = rotateVQ q
+  where q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad angle)
+
+rotateYQ :: Floating a => a -> Vector a -> Vector a
+rotateYQ angle = rotateVQ q
+  where q = fromAxisAngleQ 0.0 1.0 0.0 (degToRad angle)
+
+rotateZQ :: Floating a => a -> Vector a -> Vector a
+rotateZQ angle = rotateVQ q
+  where q = fromAxisAngleQ 0.0 0.0 1.0 (degToRad angle)
+
 -- curves
 --linearInterpolate :: Floating a => [a] -> a -> a
 linearInterpolate :: [Float] -> Float -> Float
