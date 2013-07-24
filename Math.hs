@@ -305,6 +305,16 @@ translate x y z = M [1,0,0,0 -- column 1
                     ,0,0,1,0 -- column 3 etc
                     ,x,y,z,1] -- column major 
 
+
+translateXV :: Floating a => a -> Vector a -> Vector a
+translateXV offset = addVec [offset, 0.0, 0.0]
+
+translateYV :: Floating a => a -> Vector a -> Vector a
+translateYV offset = addVec [0.0, offset, 0.0]
+
+translateZV :: Floating a => a -> Vector a -> Vector a
+translateZV offset = addVec [0.0, 0.0, offset]
+
 rotate :: Floating a => a -> a -> a -> Matrix a
 rotate ax ay az = identity
 

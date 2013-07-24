@@ -151,6 +151,7 @@ setVelocity _ a = a
 setPosition :: Vector Float -> Actor -> Actor
 setPosition newPosition p@Player{} = p { playerPosition = newPosition }
 setPosition newPosition e@Enemy{} = e { enemyPosition = newPosition }
+setPosition newPosition s@StaticActor{} = s { staticActorPosition = newPosition }
 setPosition _ a = a
 
 bullet :: Actor
