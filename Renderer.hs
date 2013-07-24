@@ -146,9 +146,11 @@ render worldRef actorsRef renderStateRef = do
 
       uniform uniformLightPosition $= Vertex4 (toGLfloat lightX) (toGLfloat lightY) (toGLfloat lightZ) (0 :: GLfloat)
       uniform uniformCameraPosition $= Vertex4 0 0 (-300) (0 :: GLfloat)
-      uniform uniformTermCoeff $= Vertex4 200.0 40.0 0.0001 (0.000001 :: GLfloat)
+      uniform uniformTermCoeff $= Vertex4 200.0 40.0 0.0001 (0.0 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
+
+      uniform uniformRimCoeff $= Vertex4 0.9 0.3 0.2 (10 :: GLfloat)
 
       uniform uniformColorDiffuse $= Vertex4 1 0.4 0.2 (1 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
