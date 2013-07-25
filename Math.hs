@@ -101,6 +101,26 @@ rndPolarVec = do
       z = 0.0
    in return [x,y,z]
 
+circleVec :: Float ->  Vector Float
+circleVec i = [x,y,z]
+  where x = cos i
+        y = sin i
+        z = 0.0
+
+sphereVec :: Float -> Float -> Vector Float
+sphereVec azimut zenith = [x,y,z]
+  where x = sin zenith * cos azimut
+        y = sin zenith * sin azimut
+        z = cos zenith
+
+
+rndCylinderV :: StdGen -> (Vector Float, StdGen)
+rndCylinderV gen = (v', gen'')
+  where (v, gen') = rndPolarV gen
+        (height, gen'') = randomR (-1.0, 1.0) gen'
+
+        v' = addVec v (mulScalarVec height vecZ)
+
 rndSphereVec :: IO (Vector Float)
 rndSphereVec = do
   azimut <- randomRIO (-pi, pi)
@@ -118,18 +138,13 @@ rndCylinderVec = do
       y = 1.0 * sin azimut
    in return [x,y,height]
 
-
-circleVec :: Float ->  Vector Float
-circleVec i = [x,y,z]
-  where x = cos i
-        y = sin i
-        z = 0.0
-
-sphereVec :: Float -> Float -> Vector Float
-sphereVec azimut zenith = [x,y,z]
-  where x = sin zenith * cos azimut
-        y = sin zenith * sin azimut
-        z = cos zenith
+rndInsideSphereV :: StdGen -> (Vector Float, StdGen)
+rndInsideSphereV g = (v, g')
+  where (azimut, ga) = randomR (-pi, pi) g
+        (zenith, gh) = randomR (-pi, pi) ga
+        (radius, g') = randomR (0.0, 1.0) gh
+        s = (sphereVec azimut zenith)
+        v = mulScalarVec radius s
 
 rndInsideCylinderV :: StdGen -> (Vector Float, StdGen)
 rndInsideCylinderV g = (v, gr)
