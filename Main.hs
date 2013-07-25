@@ -43,52 +43,70 @@ newtype Simulation = Simulation (StateT World IO ())
 
 --- THE EXPERIMENT
 scale140 = (*) 140
+scale80 = (*) 80
 
 minusPiToPi scale = [(-pi), (-pi) - (-1.0*pi/scale) .. pi]
 
-attachNormal v = v ++ (normalizeV . negateVec) v
+attachNormal v = v ++ (normalizeV) v
 
 concatGL = toGLfloatList . concat
 
 treeTrunk :: [GL.GLfloat]
-treeTrunk = concatGL tvs
+treeTrunk = f vs
   where vs = [ (sphereVec azimuth zenith) | zenith <- [-2.0*pi/16.0, pi], azimuth <- minusPiToPi 2.0]
-        tvs = map attachNormal rvs
-        rvs = map (rotateXQ 90.0) vs
+        f = concatGL . map attachNormal . map (rotateXQ 90.0) . map (mulVec [80.0, 80.0, 140.0])
 
 treeTrunkIndices :: [GL.GLuint]
-treeTrunkIndices = concat [ [c, i, i+1] | i <- [0..(c-2)] ]
+treeTrunkIndices = concat [ [c, i, i+1] | i <- [0..c] ]
   where c = toEnum $ length treeTrunk `div` 12
 
-treeLeaf :: Float -> Float -> [GL.GLfloat]
-treeLeaf = concatGL nvs
-  where vs = [ sphereVec azimuth zenith | zenith <- [-0.2, 0.2], azimuth <- minusPiToPi 3.0 ]
-        nvs = map attachNormal tvs
-        tvs = map translateV rvs
-        rvs = map (rotateXQ 45.0) vs
-        translateV = addVec [0.0, 1.0, 0.0]
+treeLeaf :: [GL.GLfloat]
+treeLeaf = f vs
+  where vs = [ sphereVec azimuth zenith | zenith <- [-pi*0.5, pi*0.5], azimuth <- minusPiToPi 3.0 ]
+        f = concatGL . 
+            map attachNormal . 
+            map (rotateXQ 60.0) . 
+            map (mulVec [50.0, 50.0, 50.0]) . 
+            map (translateYV 1.0)
 
 treeLeafIndices :: [GL.GLuint]
-treeLeafIndices = concat [ [c, i, i+1] | i <- [0..(c-1)] ]
+treeLeafIndices = concat [ [c, i, i+1] | i <- [0..c] ]
   where c = toEnum $ length treeLeaf `div` 12
 
+theLeaf = (treeLeaf, treeLeafIndices)
+theTrunk = (treeTrunk, treeTrunkIndices)
+
 randomizedSphereVertices :: [GL.GLfloat]
-randomizedSphereVertices = concatGL vs''
-  where vs = [ sphereVec azimuth zenith | zenith <- minusPiToPi 16.0, azimuth <- minusPiToPi 16.0 ]
-        tvs = map (rotateXQ 30.0) rs'
-        vs' = map triangleAtPosition tvs
-        vs'' = map attachNormal vs'
-
-        triangleAtPosition position = position -- concat $ map (addVec position) (ngonVerticesVec 0.2 3.0)
-
-        rs = take (length vs) $ randoms (mkStdGen 1023)
-        rs' = map (\(v,f) -> mulScalarAddVec (f*0.1) v) (zip vs rs)
+randomizedSphereVertices = f rs
+  where vs = [ sphereVec azimuth zenith | azimuth <- minusPiToPi 32.0, zenith <- minusPiToPi 32.0 ]
+        f = concatGL . map attachNormal . map (rotateXQ 0.0) . map (\(v,f) -> mulScalarAddVec (f*0.2) v) . zip vs . take (length vs)
+        rs = randoms (mkStdGen 1023)
 
 
 randomizedSphereIndices :: [GL.GLuint]
 randomizedSphereIndices = concat [ [i, i+1, i+33, i, i+32, i+33] | i <- [0 .. (c-32)] ]
-  where c = toEnum vcount
-        vcount = length randomizedSphereVertices `div` 12
+  where c = toEnum $ length randomizedSphereVertices `div` 12
+
+
+randomizedSphereOfPointsV :: [GL.GLfloat]
+randomizedSphereOfPointsV = vs
+  where vs = []
+
+randomizedCylinderV :: [GL.GLfloat]
+randomizedCylinderV = f (fst mkRS)
+  where f = concatGL . map attachNormal . map (rotateXQ 90.0) . map (mulVec [100.0, 100.0, 100.0])
+
+        rs :: StdGen -> [Vector Float] -> Int -> ([Vector Float], StdGen)
+        rs g vs 0 = (v:vs, g')
+          where (v, g') = rndCylinderV g
+        rs g vs i = rs g' (v:vs) (i-1)
+          where (v, g') = rndCylinderV g
+
+        mkRS = rs (mkStdGen 8347) [] 2000
+
+randomizedCylinderIndices :: [GL.GLuint]
+randomizedCylinderIndices = [0 .. c]
+  where c = toEnum $ length randomizedCylinderV `div` 6
 
 --RandomizedSphereNormals :: [GL.GLfloat]
 --RandomizedSphereNormals = concat ns
@@ -103,7 +121,7 @@ normalFromPolygon (p:q:ps) = c
 --- THE EXPERIMENT
 
 main :: IO ()
-main = setup 1280 720 "sharpshooter" setupAction renderActions simulate ioActions
+main = setup 1280 720 "sharpshooter \\ procedural" setupAction renderActions simulate ioActions
 
 -- setup and render actinos are monadic to work with IO
 setupAction :: SetupAction
@@ -112,8 +130,9 @@ setupAction worldRef actorsRef renderStateRef = do
   let randomizedSphere = StaticActor "randomizedsphere" zeroV identityQ Type2
   let trunk = StaticActor "treetrunk" zeroV identityQ Type2
   let leaf = StaticActor "treeleaf" zeroV identityQ Type2
+  let rndCyl = StaticActor "cyl" zeroV identityQ Type2
 
-  modifyIORef actorsRef (\actors -> [trunk, leaf] ++ actors)
+  modifyIORef actorsRef (\actors -> [rndCyl] ++ actors) -- , trunk, leaf, (setPosition [250.0, 0.0, -250.0] randomizedSphere)
 
   renderState <- readIORef renderStateRef
 
@@ -131,8 +150,10 @@ createGeometryObjects = do
 
   vboFullscreenQuad <- Vbo.fromList' GL.TriangleStrip [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] [0, 1, 3, 2]
 
-  vboTrunk <- Vbo.fromList' GL.Triangles (map scale140 treeTrunk) treeTrunkIndices
-  vboLeaf <- Vbo.fromList' GL.Triangles (map scale140 treeLeaf) treeLeafIndices
+  vboTrunk <- Vbo.fromPairList' GL.Triangles theTrunk
+  vboLeaf <- Vbo.fromPairList' GL.Triangles theLeaf
+
+  vboRndCyl <- Vbo.fromPairList' GL.Points (randomizedCylinderV, randomizedCylinderIndices)
 
   return $ M.fromList [ ("room", vboRoom)
                       , ("fullscreenQuad", vboFullscreenQuad)
@@ -140,6 +161,7 @@ createGeometryObjects = do
                       , ("randomizedsphere", vboRandomizedSphere)
                       , ("treetrunk", vboTrunk)
                       , ("treeleaf", vboLeaf)
+                      , ("cyl", vboRndCyl)
                       ]
 
 createFramebuffers :: IO (Map String Fbo)
