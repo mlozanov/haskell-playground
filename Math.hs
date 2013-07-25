@@ -131,6 +131,13 @@ sphereVec azimut zenith = [x,y,z]
         y = sin zenith * sin azimut
         z = cos zenith
 
+rndInsideCylinderV :: StdGen -> (Vector Float, StdGen)
+rndInsideCylinderV g = (v, gr)
+  where (c, gc) = rndPolarV g
+        (height, gh) = randomR (-1.0, 1.0) gc
+        (radius, gr) = randomR (0.0, 1.0) gh
+
+        v = addVec (mulScalarVec radius c) (mulScalarVec height vecZ)
 
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
