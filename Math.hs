@@ -90,8 +90,8 @@ rndVec2d = do
   return [rx,ry,0.0]
 
 rndPolarV :: StdGen -> (Vector Float, StdGen)
-rndPolarV gen = (v, nextGen)
-  where (azimut, nextGen) = randomR (-pi,pi) gen 
+rndPolarV gen = (v, gen')
+  where (azimut, gen') = randomR (-pi,pi) gen 
         x = cos azimut
         y = sin azimut
         v = [x,y,0.0]
@@ -103,6 +103,13 @@ rndPolarVec = do
       y = 1.0 * sin azimut
       z = 0.0
    in return [x,y,z]
+
+rndCylinderV :: StdGen -> (Vector Float, StdGen)
+rndCylinderV gen = (v', gen'')
+  where (v, gen') = rndPolarV gen
+        (height, gen'') = randomR (-1.0, 1.0) gen'
+
+        v' = addVec v (mulScalarVec height vecZ)
 
 rndSphereVec :: IO (Vector Float)
 rndSphereVec = do
@@ -328,15 +335,24 @@ rotate2d angle (x:y:rest) = x':y':rest
 
 rotateXQ :: Floating a => a -> Vector a -> Vector a
 rotateXQ angle = rotateVQ q
-  where q = fromAxisAngleQ 1.0 0.0 0.0 (degToRad angle)
+  where q = rotationXQ angle
 
 rotateYQ :: Floating a => a -> Vector a -> Vector a
 rotateYQ angle = rotateVQ q
-  where q = fromAxisAngleQ 0.0 1.0 0.0 (degToRad angle)
+  where q = rotationYQ angle
 
 rotateZQ :: Floating a => a -> Vector a -> Vector a
 rotateZQ angle = rotateVQ q
-  where q = fromAxisAngleQ 0.0 0.0 1.0 (degToRad angle)
+  where q = rotationZQ angle
+
+rotationXQ :: Floating a => a -> Quaternion a
+rotationXQ angle = fromAxisAngleQ 1.0 0.0 0.0 (degToRad angle)
+
+rotationYQ :: Floating a => a -> Quaternion a
+rotationYQ angle = fromAxisAngleQ 0.0 1.0 0.0 (degToRad angle)
+
+rotationZQ :: Floating a => a -> Quaternion a
+rotationZQ angle = fromAxisAngleQ 0.0 0.0 1.0 (degToRad angle)
 
 -- curves
 --linearInterpolate :: Floating a => [a] -> a -> a
