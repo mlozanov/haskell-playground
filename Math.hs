@@ -149,6 +149,13 @@ rndInsideSphereV g = (v, g')
         s = (sphereVec azimut zenith)
         v = mulScalarVec radius s
 
+rndInsideCylinderV :: StdGen -> (Vector Float, StdGen)
+rndInsideCylinderV g = (v, gr)
+  where (c, gc) = rndPolarV g
+        (height, gh) = randomR (-1.0, 1.0) gc
+        (radius, gr) = randomR (0.0, 1.0) gh
+
+        v = addVec (mulScalarVec radius c) (mulScalarVec height vecZ)
 
 x :: Floating a => Vector a -> a
 y :: Floating a => Vector a -> a
