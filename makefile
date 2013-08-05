@@ -10,7 +10,8 @@ CPP_OBJS = test.cpp
 # -fexcess-precision -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
 
 GHC_CC_OPT = -threaded -rtsopts -fexcess-precision  -L/usr/local/lib -L/usr/lib -lglfw -lstdc++ --make -odir `uname -m` -hidir `uname -m`
-GHC_CC_OPTIMIZE = -O3 -fllvm -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
+GHC_CC_OPTIMIZE = -O3 -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
+# -fllvm 
 GHC_LD_OPT = 
 GHC_LD_PACKAGES =
 GHC_CC_PROF_OPT = -prof -auto-all $(GHC_CC_OPT) 
