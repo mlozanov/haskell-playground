@@ -4,6 +4,7 @@ module Timesheet where
 
 import Control.Monad.State.Strict
 import qualified Data.Map as M
+import Control.Applicative
 
 import System.Random
 

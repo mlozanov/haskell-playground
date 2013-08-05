@@ -75,7 +75,12 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   -- set the color to clear background
   GL.clearColor $= Color4 0.48 0.48 0.48 1.0
 
+  GL.clearDepth $= 1.0
   GL.depthFunc $= Just Lequal
+
+  GL.pointSize $= 4.0
+  
+  --GL.cullFace $= Just Front
    
   --GL.colorMaterial $= Just (GL.FrontAndBack, GL.AmbientAndDiffuse)
 

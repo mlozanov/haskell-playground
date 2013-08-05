@@ -89,8 +89,13 @@ render worldRef actorsRef renderStateRef = do
   world <- readIORef worldRef 
   actors <- readIORef actorsRef
 
+  let lightX = 400.0 * sin (3.14 * 0.151 * (worldDt world) * fromIntegral (worldTime world))
+  let lightY = 400.0 * cos (3.14 * 0.151 * (worldDt world) * fromIntegral (worldTime world))
+  let lightZ = 1000.0 * cos (3.14 * 0.14 * (worldDt world) * fromIntegral (worldTime world))
+
+
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-300)
+  let vm = Math.identity `mulMM` Math.translate (toGLfloat lightX) (toGLfloat lightY) (-300)
   let mm = Math.identity
   pokeArray (viewMatrix renderState) (toList vm)
   pokeArray (modelMatrix renderState) (toList mm)
@@ -99,10 +104,6 @@ render worldRef actorsRef renderStateRef = do
   -- draw all VBOs in renderstate
 
   let f = (fboMap renderState) M.! "default"
-
-  let lightX = 400.0 * sin (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
-  let lightY = 400.0 * cos (3.14 * 0.51 * (worldDt world) * fromIntegral (worldTime world))
-  let lightZ = 1000.0 * cos (3.14 * 0.4 * (worldDt world) * fromIntegral (worldTime world))
 
   --let player = getPlayer actors
   --let (lightX:lightY:rest) = Actor.position player
@@ -117,9 +118,9 @@ render worldRef actorsRef renderStateRef = do
   withFbo f $ do
     GL.depthFunc $= Just Lequal
 
-    GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-
     drawBuffers $= [FBOColorAttachment 0, FBOColorAttachment 1, FBOColorAttachment 2]
+
+    GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
     let pd = (shaderProgramsMap renderState) M.! "default"
     withProgram pd $ do
@@ -145,12 +146,12 @@ render worldRef actorsRef renderStateRef = do
       uniformMatrix4 uniformModelMatrix $= modelMatrix renderState
 
       uniform uniformLightPosition $= Vertex4 (toGLfloat lightX) (toGLfloat lightY) (toGLfloat lightZ) (0 :: GLfloat)
-      uniform uniformCameraPosition $= Vertex4 0 0 (-300) (0 :: GLfloat)
-      uniform uniformTermCoeff $= Vertex4 200.0 40.0 0.0001 (0.0 :: GLfloat)
+      uniform uniformCameraPosition $= Vertex4 (toGLfloat lightX) 0 (-300) (0 :: GLfloat)
+      uniform uniformTermCoeff $= Vertex4 10.0 10.0 0.0001 (0.000001 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
 
-      uniform uniformRimCoeff $= Vertex4 0.9 0.3 0.2 (10 :: GLfloat)
+      uniform uniformRimCoeff $= Vertex4 0.9 0.3 0.2 (1 :: GLfloat)
 
       uniform uniformColorDiffuse $= Vertex4 1 0.4 0.2 (1 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Ally) (bullets world))
@@ -175,8 +176,14 @@ render worldRef actorsRef renderStateRef = do
     attribLocation (program fsq) "in_Normal" $= AttribLocation 1
     bindFragDataLocation (program fsq) "Color" $= 0
 
-    texel <- getUniformLocation fsq "fb"
-    uniform texel $= Index1 (0 :: GLint)
+    albedo <- getUniformLocation fsq "albedo"
+    uniform albedo $= Index1 (0 :: GLint)
+
+    lighting <- getUniformLocation fsq "lighting"
+    uniform lighting $= Index1 (2 :: GLint)
+
+    bloom <- getUniformLocation fsq "bloom"
+    uniform bloom $= Index1 (1 :: GLint)
 
     activeTexture $= TextureUnit 0
     textureBinding Texture2D $= Just (albedoTarget f)
@@ -203,8 +210,8 @@ transformAndRenderVbo renderState n p q = do
   uniformModelMatrix <- getUniformLocation pd "modelMatrix"
   uniformLocalRotationMatrix <- getUniformLocation pd "localRotationMatrix"
   -- let rp = rotateVQ q p
-  let lrm = (Math.toMatrixQ q)
-  let mm = (Math.translate (x p) (y p) (z p)) -- `mulMM` (Math.toMatrixQ q)
+  let lrm = Math.toMatrixQ q
+  let mm = Math.translate (x p) (y p) (z p) -- `mulMM` (Math.toMatrixQ q)
 
   uniform uniformModelMatrix $= mm
   uniform uniformLocalRotationMatrix $= lrm
