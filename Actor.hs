@@ -98,12 +98,12 @@ newPlayer :: Actor
 newPlayer = Player "player" zeroV identityQ zeroV zeroV 0.15 0.0
 
 newEnemy :: Actor
-newEnemy = Enemy "enemy" 20.0 zeroV identityQ zeroV zeroV zeroV 0.1 Single 0.0 Type1
+newEnemy = Enemy "enemy" 120.0 zeroV identityQ zeroV zeroV zeroV 0.1 Single 0.0 Type1
 
 defaultEnemy :: Vector Float -> Actor
 defaultEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 p)
                           , enemyVelocity = mulScalarVec 30.0 p
-                          , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 180) 
+                          , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 90) 
                           , enemyOmega = [0.0, 0.0, -2.0] 
                           } 
 
@@ -112,6 +112,7 @@ rotatingEnemy = newEnemy { enemyOmega = [0.0, 0.0, 3.0] }
 position :: Actor -> Vector Float
 position actor@Player{} = playerPosition actor
 position actor@Enemy{} = enemyPosition actor
+position actor@Bullet{} = bulletPosition actor
 position actor@StaticActor{} = staticActorPosition actor
 position actor = zeroV
 
@@ -182,3 +183,6 @@ isAlive e@Enemy{} = enemyAge e > 0.0
 isAlive b@Bullet{} = bulletAge b > 0.0
 isAlive e@Explosion{} = explosionAge e > 0.0
 isAlive _ = True
+
+mkCircle :: Float -> Actor -> Shape Float
+mkCircle r e = Circle (Actor.position e) r

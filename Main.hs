@@ -177,11 +177,11 @@ simulate as w = runState state w
           return $ concat $ map (eachActor (bullets world)) actors
 
             where --f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 6.0), (Circle (bulletPosition b) 2.0)))
-                  f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide ((Circle (enemyPosition a) 12.0), (Circle (bulletPosition b) 2.0)))
+                  f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide (mkCircle 12.0 a, mkCircle 2.0 b))
                   f _ _ = False
 
                   eachActor :: Actors -> Actor -> Actors
-                  eachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) then [tinyExplosion (enemyPosition e), e { enemyAge = (enemyAge e) - 2.0}] else [e]
+                  eachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) then [tinyExplosion (position e), e { enemyAge = (enemyAge e) - 2.0}] else [e]
                   eachActor bs a = if (not . null $ filter (f a) bs) then [] else [a]
 
                   tinyExplosion p = Explosion "smallExplosion" p 1.5 8.0

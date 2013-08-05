@@ -33,7 +33,7 @@ fbo width height  = do [albedo,lighting,bloom] <- genObjectNames 3
                        textureBinding Texture2D $= Nothing
 
                        textureBinding Texture2D $= Just bloom
-                       texImage2D Nothing NoProxy 0 RGB8 (TextureSize2D 1280 720) 0 (PixelData RGB UnsignedByte (plusPtr nullPtr 0))
+                       texImage2D Nothing NoProxy 0 R32F (TextureSize2D 1280 720) 0 (PixelData Red Float (plusPtr nullPtr 0))
                        textureFilter Texture2D $= ((Linear', Nothing), Linear')
                        textureBinding Texture2D $= Nothing
 
