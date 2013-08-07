@@ -44,6 +44,9 @@ mulScalarVec :: Floating a => a -> Vector a -> Vector a
 mulScalarVec s [x,y,z,w] = [s*x,s*y,s*z,s*w]
 mulScalarVec s v = map (* s) v
 
+mulScalarAddVec :: Floating a => a -> Vector a -> Vector a
+mulScalarAddVec s v = addVec v $ mulScalarVec s v
+
 scaleVec :: Floating a => a -> Vector a -> Vector a
 scaleVec = mulScalarVec
 
@@ -87,8 +90,8 @@ rndVec2d = do
   return [rx,ry,0.0]
 
 rndPolarV :: StdGen -> (Vector Float, StdGen)
-rndPolarV gen = (v, nextGen)
-  where (azimut, nextGen) = randomR (-pi,pi) gen 
+rndPolarV gen = (v, gen')
+  where (azimut, gen') = randomR (-pi,pi) gen 
         x = cos azimut
         y = sin azimut
         v = [x,y,0.0]
@@ -324,6 +327,16 @@ translate x y z = M [1,0,0,0 -- column 1
                     ,0,0,1,0 -- column 3 etc
                     ,x,y,z,1] -- column major 
 
+
+translateXV :: Floating a => a -> Vector a -> Vector a
+translateXV offset = addVec [offset, 0.0, 0.0]
+
+translateYV :: Floating a => a -> Vector a -> Vector a
+translateYV offset = addVec [0.0, offset, 0.0]
+
+translateZV :: Floating a => a -> Vector a -> Vector a
+translateZV offset = addVec [0.0, 0.0, offset]
+
 rotate :: Floating a => a -> a -> a -> Matrix a
 rotate ax ay az = identity
 
@@ -334,6 +347,27 @@ rotate2d :: Floating a => a -> Vector a -> Vector a
 rotate2d angle (x:y:rest) = x':y':rest
   where x' = x*cos angle - y*sin angle
         y' = y*cos angle + x*sin angle
+
+rotateXQ :: Floating a => a -> Vector a -> Vector a
+rotateXQ angle = rotateVQ q
+  where q = rotationXQ angle
+
+rotateYQ :: Floating a => a -> Vector a -> Vector a
+rotateYQ angle = rotateVQ q
+  where q = rotationYQ angle
+
+rotateZQ :: Floating a => a -> Vector a -> Vector a
+rotateZQ angle = rotateVQ q
+  where q = rotationZQ angle
+
+rotationXQ :: Floating a => a -> Quaternion a
+rotationXQ angle = fromAxisAngleQ 1.0 0.0 0.0 (degToRad angle)
+
+rotationYQ :: Floating a => a -> Quaternion a
+rotationYQ angle = fromAxisAngleQ 0.0 1.0 0.0 (degToRad angle)
+
+rotationZQ :: Floating a => a -> Quaternion a
+rotationZQ angle = fromAxisAngleQ 0.0 0.0 1.0 (degToRad angle)
 
 -- curves
 --linearInterpolate :: Floating a => [a] -> a -> a

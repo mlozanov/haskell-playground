@@ -91,6 +91,13 @@ data ActorKey = ActorKeyBackground | ActorKeyDynamic deriving Show
 
 type ActorsMap = M.Map ActorKey Actors
 
+instance Show Actor where
+  show p@Player{} = "player:" ++ show (playerShootingTimer p) ++ "\n"
+  show b@Bullet{} = "bullet:" ++ show (bulletAge b) ++ "\n"
+  show e@Enemy{} = "enemy: " ++ show (enemyAge e) ++ "\n"
+  show sa@StaticActor{} = "static actor:" ++ (staticActorName sa) ++ "\n"
+  show a = show "actor" ++ "\n"
+
 actorsmap :: ActorsMap
 actorsmap = M.empty
 
@@ -145,6 +152,7 @@ setVelocity _ a = a
 setPosition :: Vector Float -> Actor -> Actor
 setPosition newPosition p@Player{} = p { playerPosition = newPosition }
 setPosition newPosition e@Enemy{} = e { enemyPosition = newPosition }
+setPosition newPosition s@StaticActor{} = s { staticActorPosition = newPosition }
 setPosition _ a = a
 
 bullet :: Actor
@@ -158,13 +166,6 @@ passthru a = [a]
 
 getPlayer :: Actors -> Actor
 getPlayer (player:actors) = player
-
-instance Show Actor where
-  show p@Player{} = "player:" ++ show (playerShootingTimer p) ++ "\n"
-  show b@Bullet{} = "bullet:" ++ show (bulletAge b) ++ "\n"
-  show e@Enemy{} = "enemy: " ++ show (enemyAge e) ++ "\n"
-  show sa@StaticActor{} = "static actor:" ++ (staticActorName sa) ++ "\n"
-  show a = show "actor" ++ "\n"
 
 isPlayer :: Actor -> Bool
 isPlayer Player{} = True

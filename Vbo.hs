@@ -21,6 +21,9 @@ data Vbo = Vbo { bufferArray :: VertexArrayObject
                     , ivboIndexBufferSize :: GLuint
                     }
 
+fromPairList :: PrimitiveMode -> ([GLfloat], [GLfloat]) -> IO Vbo
+fromPairList mode (vs, ns) = fromList mode vs ns
+
 fromList :: PrimitiveMode -> [GLfloat] -> [GLfloat] -> IO Vbo
 fromList mode vs ns = do
   [buffer] <- genObjectNames 1
@@ -53,6 +56,9 @@ fromList mode vs ns = do
            vsize = 4 * length elems
            vsLength = toEnum $ length vs
            nsLength = toEnum $ length ns
+
+fromPairList' :: PrimitiveMode -> ([GLfloat], [GLuint]) -> IO Vbo
+fromPairList' mode (vs,is) = fromList' mode vs is 
 
 fromList' :: PrimitiveMode -> [GLfloat] -> [GLuint] -> IO Vbo
 fromList' mode vs is = do
