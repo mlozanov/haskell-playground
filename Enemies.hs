@@ -4,16 +4,16 @@ import Math
 import Actor
 
 simpleEnemy :: Vector Float -> Actor
-simpleEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 p)
-                         , enemyVelocity = mulScalarVec 20.0 p
+simpleEnemy p = newEnemy { enemyPosition = addVec [0,0,0] (mulScalarVec 10.0 p)
+                         , enemyVelocity = zeroV -- mulScalarVec 20.0 p
                          , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 180) 
                          , enemyOmega = zeroV
                          , enemyShootingRate = 2.0
                          } 
 
 rotatorEnemy :: Vector Float -> Actor
-rotatorEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 p)
-                          , enemyVelocity = mulScalarVec 30.0 p
+rotatorEnemy p = newEnemy { enemyPosition = addVec [0,0,0] (mulScalarVec 20.0 p)
+                          , enemyVelocity = zeroV -- mulScalarVec 30.0 p
                           , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 180) 
                           , enemyOmega = [0.0, 0.0, -10.0] 
                           , enemyShootingRate = 1.6

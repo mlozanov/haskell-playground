@@ -24,11 +24,17 @@ executeEvent timesheet timestamp = fromMaybe' $ M.lookup timestamp timesheet
   where fromMaybe' (Just v) = v
         fromMaybe' Nothing = []
 
+processTimesheet :: Timesheet Int -> Actors -> State World Actors
+processTimesheet timesheet actors = do 
+  world <- get
+  return $ actors ++ (newActors world)
+    where newActors w = executeEvent timesheet (worldTime w)
+
 newTimesheetRow :: (Eq a, Ord a) => Timesheet a -> (a, Actors) -> Timesheet a
 newTimesheetRow timesheet (k, actors) = M.insert k actors timesheet 
 
 lineOfEnemies origin = map enemy positionsAndVelocities
-  where positionsAndVelocities = [ origin `addVec` [x,y,0.0] | x <- [4.0], y <- [-2.5, 0.0, 2.5] ]
+  where positionsAndVelocities = [ origin `addVec` [x,y,0.0] | x <- [-2.0], y <- [-2.5, 0.0, 2.5] ]
         enemy = simpleEnemy
 
 lineOfEnemiesHorizondal origin = map enemy positionsAndVelocities

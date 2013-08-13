@@ -215,11 +215,11 @@ simulate as w = runState state w
                                     | otherwise = e
                   explode a = a
 
-                  follow w = followTarget (worldDt w) player
-                  flee w = fleeTarget (worldDt w) player
+                  follow w = followTarget w player
+                  flee w = fleeTarget w player
 
                   behaviour :: World -> Actor -> Actor
-                  behaviour w = flee w . follow w . age w . timer w . explode . reset
+                  behaviour w = wander w . age w . timer w . explode . reset
 
                   enemyShoot :: World -> Actor -> Actors
                   enemyShoot w e@Enemy{} = 
@@ -228,12 +228,6 @@ simulate as w = runState state w
                       othewise -> shootOneBullet condtion e
                     where condtion = enemyShootingTimer e < -0.0001
                   enemyShoot w _ = []
-
-        processTimesheet :: Timesheet Int -> Actors -> State World Actors
-        processTimesheet timesheet actors = do 
-          world <- get
-          return $ actors ++ (newActors world)
-            where newActors w = executeEvent timesheet (worldTime w)
 
         processEvents :: Events Int -> Actors -> State World Actors
         processEvents = undefined
