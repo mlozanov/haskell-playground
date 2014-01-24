@@ -25,8 +25,17 @@ fleeTarget world target actor@Enemy{} = actor { enemyVelocity = v }
 
 fleeTarget world target actor = actor
 
-circleAroundPoint :: Vector Float -> Actor -> Actor
-circleAroundPoint target actor = undefined
+circle :: Float -> Float -> Actor -> Actor
+circle radius t = setPosition p
+  where p = mulScalarVec radius (circleVec t)
+
+trajectory :: Int -> Float -> Actor -> Actor
+trajectory time dt player@Player{} = player
+trajectory time dt e = setVelocity v e
+  where v = [vx,vy,0.0]
+        fTime = fromIntegral time / 60.0
+        vx = 50.0 * sin (1.0 * fTime)
+        vy = 50.0 * cos (1.0 * fTime)
 
 keepDistance :: Vector Float -> Actor -> Actor
 keepDistance target actor = undefined
@@ -35,6 +44,7 @@ steerOnSpline :: Spline Float -> Actor -> Actor
 steerOnSpline spline actor = undefined
 
 wander :: World -> Actor -> Actor
+wander world actor@Player{} = actor
 wander world actor = setVelocity v actor
   where r = mulScalarVec 45.0 $ fst $ rndPolarV g'
         sight = upV $ orientation actor
@@ -43,3 +53,11 @@ wander world actor = setVelocity v actor
         v = mulScalarVec 20.0 (normalizeV $ subVec (addVec leadingPoint r) p)
         (g, g') = split (gen world)
         dt = worldDt world
+
+explode :: Actor -> Actor
+explode e@Enemy{} | enemyAge e <= 0.01 = explosion (enemyPosition e)
+                  | otherwise = e
+explode a = a
+
+pathFollow :: World -> Actor -> Actor
+pathFollow world actor = actor

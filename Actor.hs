@@ -85,6 +85,9 @@ data Actor = SimpleActor
                        , explosionPower :: Float
                        }
 
+--type Group = [Actor]
+--type Actors = [Group]
+
 type Actors = [Actor]
 
 data ActorKey = ActorKeyBackground | ActorKeyDynamic deriving Show

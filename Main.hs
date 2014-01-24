@@ -121,11 +121,11 @@ simulate as w = runState state w
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
-                          condition = (lb || keySpace input) && (playerShootingTimer player <= 0.001)
+                          condition = (lb || keySpace input) && (playerShootingTimer player <= 0.0001)
 
         shootOneBullet :: Bool -> Actor -> Actors
         shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 10.0 pp initialVelocity zeroV passthru], b ]
-          where initialVelocity = mulScalarVec (200 + (lengthVec $ playerVelocity p)) direction
+          where initialVelocity = mulScalarVec (500 + (lengthVec $ playerVelocity p)) direction
                 direction = rightV $ playerOrientation p
 
         shootOneBullet b e@Enemy{} = [ bs | bs <- [Bullet "triangle" Opponent 10.0 (enemyPosition e) initialVelocity zeroV passthru], b ]
@@ -181,7 +181,9 @@ simulate as w = runState state w
                   f _ _ = False
 
                   eachActor :: Actors -> Actor -> Actors
-                  eachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) then [tinyExplosion (position e), e { enemyAge = (enemyAge e) - 2.0}] else [e]
+                  eachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) 
+                                           then [tinyExplosion (position e), e { enemyAge = (enemyAge e) - 4.0}] 
+                                           else [e]
                   eachActor bs a = if (not . null $ filter (f a) bs) then [] else [a]
 
                   tinyExplosion p = Explosion "smallExplosion" p 1.5 8.0
@@ -211,15 +213,11 @@ simulate as w = runState state w
                   age w e@Explosion{} = e { explosionAge = explosionAge e - (5.0 * worldDt w)}
                   age w a = a
 
-                  explode e@Enemy{} | enemyAge e <= 0.01 = explosion (enemyPosition e)
-                                    | otherwise = e
-                  explode a = a
-
                   follow w = followTarget w player
                   flee w = fleeTarget w player
 
                   behaviour :: World -> Actor -> Actor
-                  behaviour w = wander w . age w . timer w . explode . reset
+                  behaviour w = age w . timer w . explode . reset
 
                   enemyShoot :: World -> Actor -> Actors
                   enemyShoot w e@Enemy{} = 
@@ -237,14 +235,6 @@ simulate as w = runState state w
           modify $ \world -> world { bullets = map (updateMovement (worldDt world)) (bullets world) }
           world <- get
           return $ map (updateMovement (worldDt world)) actors
-
-        trajectory :: Int -> Float -> Actor -> Actor
-        trajectory time dt e@Enemy{} = e { enemyVelocity = f }
-          where f = [vx,vy,0.0]
-                fTime = fromIntegral time / 60.0
-                vx = 50.0 * sin (1.5 * fTime)
-                vy = 50.0 * cos (2.0 * fTime)
-        trajectory time dt a = a
 
         targetInRange :: (Float, Float) -> Actor -> Actor -> Bool
         targetInRange (rmin, rmax) target actor = inRange (rmin, rmax) distance

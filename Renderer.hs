@@ -34,6 +34,11 @@ import Vbo
 import Fbo
 import Shader
 
+class Animatable a where
+  animate :: Float -> RenderState -> a -> IO ()
+  animateST :: Float -> a -> a
+  
+
 class Drawable a where
   draw :: Float -> RenderState -> a -> IO ()
 

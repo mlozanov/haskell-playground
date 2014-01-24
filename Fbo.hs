@@ -23,17 +23,17 @@ bloomTarget fbo = bloom
 fbo :: GLuint -> GLuint -> IO Fbo
 fbo width height  = do [albedo,lighting,bloom] <- genObjectNames 3
                        textureBinding Texture2D $= Just albedo
-                       texImage2D Nothing NoProxy 0 RGB32F (TextureSize2D 1280 720) 0 (PixelData RGB Float (plusPtr nullPtr 0))
+                       texImage2D Texture2D NoProxy 0 RGB32F (TextureSize2D 1280 720) 0 (PixelData RGB Float (plusPtr nullPtr 0))
                        textureFilter Texture2D $= ((Linear', Nothing), Linear')
                        textureBinding Texture2D $= Nothing
 
                        textureBinding Texture2D $= Just lighting
-                       texImage2D Nothing NoProxy 0 R32F (TextureSize2D 1280 720) 0 (PixelData Red Float (plusPtr nullPtr 0))
+                       texImage2D Texture2D NoProxy 0 R32F (TextureSize2D 1280 720) 0 (PixelData Red Float (plusPtr nullPtr 0))
                        textureFilter Texture2D $= ((Linear', Nothing), Linear')
                        textureBinding Texture2D $= Nothing
 
                        textureBinding Texture2D $= Just bloom
-                       texImage2D Nothing NoProxy 0 R32F (TextureSize2D 1280 720) 0 (PixelData Red Float (plusPtr nullPtr 0))
+                       texImage2D Texture2D NoProxy 0 R32F (TextureSize2D 1280 720) 0 (PixelData Red Float (plusPtr nullPtr 0))
                        textureFilter Texture2D $= ((Linear', Nothing), Linear')
                        textureBinding Texture2D $= Nothing
 
@@ -45,9 +45,9 @@ fbo width height  = do [albedo,lighting,bloom] <- genObjectNames 3
                        renderbufferStorage Renderbuffer DepthComponent24 (RenderbufferSize 1280 720)
 
                        bindFramebuffer Framebuffer $= b1
-                       framebufferTexture2D Framebuffer (ColorAttachment 0) Nothing albedo 0
-                       framebufferTexture2D Framebuffer (ColorAttachment 1) Nothing lighting 0
-                       framebufferTexture2D Framebuffer (ColorAttachment 2) Nothing bloom 0
+                       framebufferTexture2D Framebuffer (ColorAttachment 0) Texture2D albedo 0
+                       framebufferTexture2D Framebuffer (ColorAttachment 1) Texture2D lighting 0
+                       framebufferTexture2D Framebuffer (ColorAttachment 2) Texture2D bloom 0
                        framebufferRenderbuffer Framebuffer DepthAttachment Renderbuffer rb
 
                        bindFramebuffer Framebuffer $= defaultFramebufferObject

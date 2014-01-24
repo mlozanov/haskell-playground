@@ -15,8 +15,8 @@ data ShaderProgramData = SP { vs :: String
                             }
 
 newProgram :: String -> String -> IO ShaderProgramData
-newProgram v f = do vs <- readAndCompileShader v
-                    fs <- readAndCompileShader f
+newProgram v f = do vs <- readAndCompileShader GL.VertexShader v
+                    fs <- readAndCompileShader GL.FragmentShader f
                     p <- linkShaders [vs] [fs]
                     return $ SP v f "" p
 
@@ -30,10 +30,11 @@ withProgram s a = do GL.currentProgram GL.$= Just (program s)
 
 getUniformLocation p s = GL.get $ GL.uniformLocation (program p) s 
 
-readAndCompileShader :: GL.Shader s => FilePath -> IO s
-readAndCompileShader filePath = do
+readAndCompileShader :: GL.ShaderType -> FilePath -> IO GL.Shader
+readAndCompileShader shaderType filePath = do
   src <- readFile filePath
-  [shader] <- GL.genObjectNames 1
+  --[shader] <- GL.genObjectNames 1
+  shader <- GL.createShader shaderType
   GL.shaderSource shader GL.$= [src]
   GL.compileShader shader
   GLUT.reportErrors
@@ -45,10 +46,11 @@ readAndCompileShader filePath = do
     ioError (userError "compilation failed")
   return shader
 
-linkShaders :: [GL.VertexShader] -> [GL.FragmentShader] -> IO GL.Program
+linkShaders :: [GL.Shader] -> [GL.Shader] -> IO GL.Program
 linkShaders vs fs = do
-  [prog] <- GL.genObjectNames 1
-  GL.attachedShaders prog GL.$= (vs, fs)
+  --[prog] <- GL.genObjectNames 1
+  prog <- GL.createProgram
+  GL.attachedShaders prog GL.$= vs ++ fs
   GL.linkProgram prog
   GLUT.reportErrors
   ok <- GL.get (GL.linkStatus prog)

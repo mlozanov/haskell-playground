@@ -5,12 +5,13 @@ TARGET = main
 HASKELL_OBJS = Main.hs 
 
 C_OBJS = 
-CPP_OBJS = test.cpp
+CPP_OBJS = 
+#test.cpp
 
 # -fexcess-precision -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
 
-GHC_CC_OPT = -threaded -rtsopts -fexcess-precision  -L/usr/local/lib -L/usr/lib -lglfw -lstdc++ --make -odir `uname -m` -hidir `uname -m`
-GHC_CC_OPTIMIZE = -O3 -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
+GHC_CC_OPT = -threaded -eventlog -rtsopts -fexcess-precision  -L/usr/local/lib -L/usr/lib -lglfw -lstdc++ --make -odir `uname -m` -hidir `uname -m`
+GHC_CC_OPTIMIZE = -O3 -optc-O2 -funbox-strict-fields -optc-msse2 -optc-msse3
 # -fllvm 
 GHC_LD_OPT = 
 GHC_LD_PACKAGES =
