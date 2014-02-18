@@ -158,6 +158,19 @@ setPosition newPosition e@Enemy{} = e { enemyPosition = newPosition }
 setPosition newPosition s@StaticActor{} = s { staticActorPosition = newPosition }
 setPosition _ a = a
 
+setShootingTimer :: Float -> Actor -> Actor
+setShootingTimer value p@Player{} = p { playerShootingTimer = value }
+setShootingTimer value e@Enemy{} = e { enemyShootingTimer = value }
+setShootingTimer value a = a
+
+getShootingTimer :: Actor -> Float
+getShootingTimer p@Player{} = playerShootingTimer p
+getShootingTimer e@Enemy{} = enemyShootingTimer e
+getShootingTimer actor = 0.0
+
+--modifyShootingTimer :: (Float -> Float) -> Actor -> Actor
+--modifyShootingTimer f a = setShootingTimer (f (getShootingTimer a)) a
+
 bullet :: Actor
 bullet = Bullet "bullet" Opponent 1.0 zeroV zeroV zeroV passthru
 

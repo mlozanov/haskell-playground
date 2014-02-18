@@ -199,9 +199,7 @@ simulate as w = runState state w
 
           return as
 
-            where timer w p@Player{} = p { playerShootingTimer = (playerShootingTimer p - (worldDt w)) }
-                  timer w e@Enemy{} = e { enemyShootingTimer = (enemyShootingTimer e - (worldDt w)) }
-                  timer w a = a
+            where timer w a = setShootingTimer (getShootingTimer a - (worldDt w)) a
 
                   reset p@Player{} | playerShootingTimer p < -0.0001 = p { playerShootingTimer = playerShootingRate p }
                                    | otherwise = p
@@ -213,11 +211,12 @@ simulate as w = runState state w
                   age w e@Explosion{} = e { explosionAge = explosionAge e - (5.0 * worldDt w)}
                   age w a = a
 
+                  follow, flee :: World -> Actor -> Actor
                   follow w = followTarget w player
                   flee w = fleeTarget w player
 
                   behaviour :: World -> Actor -> Actor
-                  behaviour w = age w . timer w . explode . reset
+                  behaviour w = follow w . age w . timer w . explode . reset
 
                   enemyShoot :: World -> Actor -> Actors
                   enemyShoot w e@Enemy{} = 
