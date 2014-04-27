@@ -100,7 +100,7 @@ render worldRef actorsRef renderStateRef = do
 
 
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-300)
+  let vm = Math.identity `mulMM` matrixFloatToGLfloat (Math.translate lightX lightY (-600))
   let mm = Math.identity
   pokeArray (viewMatrix renderState) (toList vm)
   pokeArray (modelMatrix renderState) (toList mm)
