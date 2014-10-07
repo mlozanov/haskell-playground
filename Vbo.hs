@@ -7,7 +7,7 @@ import Foreign
 import Foreign.Storable
 
 data Vbo = Vbo { bufferArray :: VertexArrayObject
-               , buffer :: BufferObject 
+               , buffer :: BufferObject
                , bufferSize :: GLuint
                , vertexBufferSize :: GLuint
                , normalBufferSize :: GLuint
@@ -30,11 +30,11 @@ fromList mode vs ns = do
   [ba] <- genObjectNames 1
 
   arr <- newListArray (0, vsize - 1) elems
-                  
+
   bindVertexArrayObject $= Just ba
   --GL.get GL.errors >>= print
 
-  bindBuffer ArrayBuffer $= Just buffer                     
+  bindBuffer ArrayBuffer $= Just buffer
   withStorableArray arr (\ptr -> bufferData ArrayBuffer $= (toEnum vsize, ptr, StaticDraw))
   --GL.get GL.errors >>= print
 
@@ -58,7 +58,7 @@ fromList mode vs ns = do
            nsLength = toEnum $ length ns
 
 fromPairList' :: PrimitiveMode -> ([GLfloat], [GLuint]) -> IO Vbo
-fromPairList' mode (vs,is) = fromList' mode vs is 
+fromPairList' mode (vs,is) = fromList' mode vs is
 
 fromList' :: PrimitiveMode -> [GLfloat] -> [GLuint] -> IO Vbo
 fromList' mode vs is = do
@@ -88,11 +88,11 @@ fromList' mode vs is = do
   bindVertexArrayObject $= Nothing
 
   return $ IndexVbo ba mode vbuffer ibuffer vssize issize
-    where vssize = f vs
-          issize = f is
+    where vssize = len vs
+          issize = len is
           varrSize = 4 * length vs
           iarrSize = 4 * length is
-          f = toEnum . length
+          len = toEnum . length
 
 
 renderVbo :: Vbo -> IO ()
@@ -101,7 +101,7 @@ renderVbo (Vbo va vs vsize vssize nssize mode) = do
   drawArrays mode 0 (convertType vsize)
   bindVertexArrayObject $= Nothing
 
-renderVbo vbo@(IndexVbo va mode elements indices essize issize) = do 
+renderVbo vbo@(IndexVbo va mode elements indices essize issize) = do
   bindVertexArrayObject $= Just va
   bindBuffer ElementArrayBuffer $= Just indices
   drawElements mode (convertType issize) UnsignedInt (offset 0)

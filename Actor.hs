@@ -23,7 +23,7 @@ data BulletTag = Ally | Opponent deriving (Eq, Ord)
 data ActorTag = Type1 | Type2 | Boss1 | Boss2 deriving (Eq, Ord, Show)
 
 data ActorAI = ActorAI { actorAiTag :: ActorTag
-                       , actorAiShootingString :: ShootingString 
+                       , actorAiShootingString :: ShootingString
                        }
                        deriving (Show)
 
@@ -56,7 +56,7 @@ data Actor = SimpleActor
                    , enemyTag :: ActorTag
                    }
 
-           | StaticActor { staticActorName :: String 
+           | StaticActor { staticActorName :: String
                          , staticActorPosition :: Vector Float
                          , staticActorOrientation :: Quaternion Float
 
@@ -79,7 +79,7 @@ data Actor = SimpleActor
                     , rocketCallback :: (Actor -> Actors)
                     }
 
-           | Explosion { explosionName :: String 
+           | Explosion { explosionName :: String
                        , explosionPosition :: (Vector Float)
                        , explosionAge :: Float
                        , explosionPower :: Float
@@ -113,9 +113,9 @@ newEnemy = Enemy "enemy" 120.0 zeroV identityQ zeroV zeroV zeroV 0.1 Single 0.0 
 defaultEnemy :: Vector Float -> Actor
 defaultEnemy p = newEnemy { enemyPosition = addVec [120,0,0] (mulScalarVec 60.0 p)
                           , enemyVelocity = mulScalarVec 30.0 p
-                          , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 90) 
-                          , enemyOmega = [0.0, 0.0, -2.0] 
-                          } 
+                          , enemyOrientation = fromAxisAngleQ 0.0 0.0 1.0 (degToRad 90)
+                          , enemyOmega = [0.0, 0.0, -2.0]
+                          }
 
 rotatingEnemy = newEnemy { enemyOmega = [0.0, 0.0, 3.0] }
 
@@ -157,6 +157,10 @@ setPosition newPosition p@Player{} = p { playerPosition = newPosition }
 setPosition newPosition e@Enemy{} = e { enemyPosition = newPosition }
 setPosition newPosition s@StaticActor{} = s { staticActorPosition = newPosition }
 setPosition _ a = a
+
+setOrientation :: Quaternion Float -> Actor -> Actor
+setOrientation newQ s@StaticActor = s { staticActorOrientation = newQ }
+setOrientation _ a = a
 
 bullet :: Actor
 bullet = Bullet "bullet" Opponent 1.0 zeroV zeroV zeroV passthru

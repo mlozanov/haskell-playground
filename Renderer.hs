@@ -15,6 +15,7 @@ import Control.Concurrent
 import System.Random
 import System.Mem
 import System.CPUTime
+import Unsafe.Coerce (unsafeCoerce)
 
 import Foreign.Ptr
 import Foreign.Marshal.Array
@@ -37,7 +38,7 @@ import Shader
 class Animatable a where
   animate :: Float -> RenderState -> a -> IO ()
   animateST :: Float -> a -> a
-  
+
 
 class Drawable a where
   draw :: Float -> RenderState -> a -> IO ()
@@ -62,18 +63,18 @@ instance Uniform ([Float]) where
   uniform location = makeStateVar getter setter
     where setter ms = withArray (toGLfloatList ms) fu
           getter = undefined
-          fu = glUniformMatrix4fv (GL.getUniformLocationID location) 1 0
+          fu = glUniformMatrix4fv (unsafeCoerce location) 1 0
   uniformv = undefined
 
 instance Uniform (Math.Matrix Float) where
   uniform location = makeStateVar getter setter
-    where setter = toPtrMatrix (\ptr -> glUniformMatrix4fv (GL.getUniformLocationID location) 1 0 ptr)
+    where setter = toPtrMatrix (\ptr -> glUniformMatrix4fv (unsafeCoerce location) 1 0 ptr)
           getter = undefined
   uniformv = undefined
 
 uniformMatrix4 :: UniformLocation -> StateVar (Ptr GLfloat)
 uniformMatrix4 location = makeStateVar getter setter
-  where setter = glUniformMatrix4fv (GL.getUniformLocationID location) 1 0
+  where setter = glUniformMatrix4fv (unsafeCoerce location) 1 0
         getter = undefined
 
 
@@ -84,14 +85,14 @@ toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
 toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 
 matrixFloatToGLfloat :: Math.Matrix Float -> Math.Matrix GLfloat
-matrixFloatToGLfloat (M ms) = M (map realToFrac ms)  
+matrixFloatToGLfloat (M ms) = M (map realToFrac ms)
 
 render :: IORef World -> IORef Actors -> IORef RenderState -> IO ()
 render worldRef actorsRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   renderState <- readIORef renderStateRef
-  world <- readIORef worldRef 
+  world <- readIORef worldRef
   actors <- readIORef actorsRef
 
   let lightX = 400.0 * sin (3.14 * 0.151 * (worldDt world) * fromIntegral (worldTime world))
@@ -100,7 +101,7 @@ render worldRef actorsRef renderStateRef = do
 
 
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  let vm = Math.identity `mulMM` matrixFloatToGLfloat (Math.translate lightX lightY (-600))
+  let vm = Math.identity `mulMM` matrixFloatToGLfloat (Math.translate 0.0 0.0 (-600))
   let mm = Math.identity
   pokeArray (viewMatrix renderState) (toList vm)
   pokeArray (modelMatrix renderState) (toList mm)
@@ -165,7 +166,7 @@ render worldRef actorsRef renderStateRef = do
 
       uniform uniformColorDiffuse $= Vertex4 1 0.4 0.2 (1 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
-  
+
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
 
@@ -177,7 +178,7 @@ render worldRef actorsRef renderStateRef = do
   GL.depthFunc $= Nothing
 
   -- run pass thru shader that display final image
-  let fsq = (shaderProgramsMap renderState) M.! "passthru" 
+  let fsq = (shaderProgramsMap renderState) M.! "passthru"
   withProgram fsq $ do
     attribLocation (program fsq) "in_Position" $= AttribLocation 0
     attribLocation (program fsq) "in_Normal" $= AttribLocation 1
@@ -223,4 +224,3 @@ transformAndRenderVbo renderState n p q = do
   uniform uniformModelMatrix $= mm
   uniform uniformLocalRotationMatrix $= lrm
   draw 0.0166667 renderState (vboMap renderState M.! n)
-
