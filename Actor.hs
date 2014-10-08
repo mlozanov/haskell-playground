@@ -159,7 +159,7 @@ setPosition newPosition s@StaticActor{} = s { staticActorPosition = newPosition 
 setPosition _ a = a
 
 setOrientation :: Quaternion Float -> Actor -> Actor
-setOrientation newQ s@StaticActor = s { staticActorOrientation = newQ }
+setOrientation newQ s@StaticActor{} = s { staticActorOrientation = newQ }
 setOrientation _ a = a
 
 bullet :: Actor
