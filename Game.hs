@@ -2,7 +2,7 @@ module Game (setupAction,
              renderActions,
              simulate,
              ioActions)
-  where 
+  where
 
 import Control.Monad.State.Strict
 
@@ -98,7 +98,7 @@ createFramebuffers = do
 
 createShaderPrograms :: IO (Map String ShaderProgramData)
 createShaderPrograms = do
-  defaultProgram <- newProgram "data/shaders/320/default.vert" "data/shaders/320/default.frag" 
+  defaultProgram <- newProgram "data/shaders/320/default.vert" "data/shaders/320/default.frag"
   passthruProgram <- newProgram "data/shaders/320/empty.vert" "data/shaders/320/blit.frag"
 
   return $ M.fromList [("default", defaultProgram), ("passthru", passthruProgram)]
@@ -111,7 +111,7 @@ ioActions = []
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = processTimesheet (stageOneTimesheet w) as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processCollisions >>= movement 
+  where state = processTimesheet (stageOneTimesheet w) as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processCollisions >>= movement
 
         player@(Player pn pp pq pv pa psr pst) = getPlayer as
 
@@ -125,7 +125,7 @@ simulate as w = runState state w
             where shootOneBulletByPlayer :: Input -> Actors
                   shootOneBulletByPlayer input = shootOneBullet condition player
                     where (lb,rb) = inputMouseButtons input
-                          condition = (lb || keySpace input) && (playerShootingTimer player <= 0.0001)
+                          condition = (lb || keySpace input || btnA input) && (playerShootingTimer player <= 0.0001)
 
         shootOneBullet :: Bool -> Actor -> Actors
         shootOneBullet b p@Player{} = [ bs | bs <- [Bullet "circle" Ally 10.0 pp initialVelocity zeroV passthru], b ]
@@ -152,7 +152,8 @@ simulate as w = runState state w
           world <- get
 
           let (x:y:rest) = inputAxisL (worldInput world)
-              a = mulScalarVec 2200.0 (mulMV [x,y,0.0] (toMatrixQ (playerOrientation pl)))
+              [jx, jy] = take 2 (inputJoystickAxisL (worldInput world))
+              a = mulScalarVec 2200.0 (mulMV [x + jx,y + jy,0.0] (toMatrixQ (playerOrientation pl)))
               pl' = pl { playerAcceleration = a }
            in return (pl':as)
 
@@ -185,8 +186,8 @@ simulate as w = runState state w
                   f _ _ = False
 
                   eachActor :: Actors -> Actor -> Actors
-                  eachActor bs e@Enemy{} = if (not . null $ filter (f e) bs) 
-                                           then [tinyExplosion (position e), e { enemyAge = (enemyAge e) - 4.0}] 
+                  eachActor bs e@Enemy{} = if (not . null $ filter (f e) bs)
+                                           then [tinyExplosion (position e), e { enemyAge = (enemyAge e) - 4.0}]
                                            else [e]
                   eachActor bs a = if (not . null $ filter (f a) bs) then [] else [a]
 
@@ -223,8 +224,8 @@ simulate as w = runState state w
                   behaviour w = follow w . age w . timer w . explode . reset
 
                   enemyShoot :: World -> Actor -> Actors
-                  enemyShoot w e@Enemy{} = 
-                    case (enemyTag e) of 
+                  enemyShoot w e@Enemy{} =
+                    case (enemyTag e) of
                       Boss1 -> shootOneExplosiveBullet condtion e
                       othewise -> shootOneBullet condtion e
                     where condtion = enemyShootingTimer e < -0.0001

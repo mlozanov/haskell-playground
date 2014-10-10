@@ -151,7 +151,7 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
       GL.flush
       GLFW.swapBuffers
 
-      --performGC
+      performGC
 
       t1 <- getCPUTime
 
@@ -168,7 +168,7 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
       unless (p == GLFW.Press) $
         do
           -- sleep for 1ms to yield CPU to other applications
-          GLFW.sleep 0.001
+          GLFW.sleep 0.003
 
           -- only continue when the window is not closed
           windowOpenStatus <- getParam Opened

@@ -2,11 +2,12 @@
 
 module Shader where
 
+import Control.Applicative
 import Control.Monad
 import Control.Monad.State.Strict
 
 import qualified Graphics.Rendering.OpenGL as GL
-import Graphics.UI.GLUT as GLUT (reportErrors)
+import           Graphics.UI.GLUT as GLUT (reportErrors)
 
 data ShaderProgramData = SP { vs :: String
                             , fs :: String
@@ -21,14 +22,14 @@ newProgram v f = do vs <- readAndCompileShader GL.VertexShader v
                     return $ SP v f "" p
 
 newtype ShaderProgram a = ShaderProgram (StateT ShaderProgramData IO a)
-  deriving (Monad, MonadIO, MonadState ShaderProgramData, MonadPlus)
+  deriving (Monad, MonadIO, MonadState ShaderProgramData, MonadPlus, Alternative, Functor, Applicative)
 
 withProgram :: ShaderProgramData -> IO () -> IO ()
 withProgram s a = do GL.currentProgram GL.$= Just (program s)
                      a
                      GL.currentProgram GL.$= Nothing
 
-getUniformLocation p s = GL.get $ GL.uniformLocation (program p) s 
+getUniformLocation p s = GL.get $ GL.uniformLocation (program p) s
 
 readAndCompileShader :: GL.ShaderType -> FilePath -> IO GL.Shader
 readAndCompileShader shaderType filePath = do
@@ -41,7 +42,7 @@ readAndCompileShader shaderType filePath = do
   ok <- GL.get (GL.compileStatus shader)
   infoLog <- GL.get (GL.shaderInfoLog shader)
   mapM_ putStrLn ["Shader >" ++ filePath ++ ":", infoLog ]
-  unless ok $ do 
+  unless ok $ do
     GL.deleteObjectNames [shader]
     ioError (userError "compilation failed")
   return shader
@@ -57,6 +58,5 @@ linkShaders vs fs = do
   infoLog <- GL.get (GL.programInfoLog prog)
   mapM_ putStrLn ["Program >", infoLog]
   unless ok $ do GL.deleteObjectNames [prog]
-                 ioError (userError "linking failed")  
+                 ioError (userError "linking failed")
   return prog
-
