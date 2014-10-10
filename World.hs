@@ -3,6 +3,7 @@ module World where
 import System.Random
 import Data.IORef
 
+import Math
 import Input
 import Camera
 import Actor
@@ -12,11 +13,12 @@ data Statistics = Statistics { statShootAccuracy :: Float
                              } deriving Show
 
 data World = World { worldTime :: !Int
-                   , worldInput :: !Input 
+                   , worldInput :: !Input
                    , worldDt :: !Float
                    , cameras :: !Cameras
                    , bullets :: !Actors
                    , gen :: !StdGen
+                   , worldCameraPosition :: Math.Vector Float -- temp
                    } deriving Show
 
 worldInputButtons :: World -> [Bool]
@@ -42,4 +44,3 @@ debugInput worldRef = do world <- readIORef worldRef
 
 debugWorld :: IORef World -> IO ()
 debugWorld worldRef = readIORef worldRef >>= print
-

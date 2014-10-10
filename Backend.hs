@@ -51,7 +51,7 @@ type SimulateAction = Actors -> World -> (Actors, World) --(Float -> World -> Wo
 type IOActions = [(IORef World -> IO ())]
 
 emptyWorld :: World
-emptyWorld = (World 0 i 0.0166667 cs bs (mkStdGen 1023))
+emptyWorld = (World 0 i 0.0166667 cs bs (mkStdGen 1023) zeroV)
     where i = Input zeroV zeroV [False, False, False, False, False, False, False, False] S.empty (0,0) (False,False) zeroV zeroV [False, False]
           cs = [EmptyCamera]
           bs = [] :: Actors
@@ -162,6 +162,7 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
       -- in modifyIORef worldRef (storeDt dt)
 
       --debugInput worldRef
+      debugWorld worldRef
 
       -- check whether ESC is pressed for termination
       p <- GLFW.getKey GLFW.ESC

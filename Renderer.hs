@@ -90,7 +90,14 @@ matrixFloatToGLfloat :: Math.Matrix Float -> Math.Matrix GLfloat
 matrixFloatToGLfloat (M ms) = M (map realToFrac ms)
 
 toVertex4 :: Math.Vector GLfloat -> Vertex4 GLfloat
+toVertex4 [x,y,z] = Vertex4 x y z 1.0
 toVertex4 [x,y,z,w] = Vertex4 x y z w
+
+fromFloatToGLfloat :: Float -> GLfloat
+fromFloatToGLfloat v = realToFrac v
+
+fromFloatVToGLfloatV :: Math.Vector Float -> Math.Vector GLfloat
+fromFloatVToGLfloatV v = map fromFloatToGLfloat v
 
 render :: IORef World -> IORef Actors -> IORef RenderState -> IO ()
 render worldRef actorsRef renderStateRef = do
@@ -104,9 +111,12 @@ render worldRef actorsRef renderStateRef = do
   let lightY = 400.0 * cos (3.14 * 0.151 * (worldDt world) * fromIntegral (worldTime world))
   let lightZ = 1000.0 * cos (3.14 * 0.14 * (worldDt world) * fromIntegral (worldTime world))
 
+  let cpx = -1.0 * (fromFloatToGLfloat $ Math.x (worldCameraPosition world))
+  let cpy = -1.0 * (fromFloatToGLfloat $ Math.y (worldCameraPosition world))
+  let cpz = fromFloatToGLfloat $ Math.z (worldCameraPosition world)
 
   pokeArray (projectionMatrix renderState) (toList Math.perspective)
-  let vm = Math.identity `mulMM` Math.translate 0.0 0.0 (-300)
+  let vm = Math.identity `mulMM` Math.translate cpx cpy cpz
   let mm = Math.identity
   pokeArray (viewMatrix renderState) (toList vm)
   pokeArray (modelMatrix renderState) (toList mm)
@@ -159,7 +169,7 @@ render worldRef actorsRef renderStateRef = do
       uniformMatrix4 uniformModelMatrix $= modelMatrix renderState
 
       uniform uniformLightPosition $= Vertex4 (toGLfloat lightX) (toGLfloat lightY) (toGLfloat lightZ) (0 :: GLfloat)
-      uniform uniformCameraPosition $= Vertex4 0 0 (-300) (1 :: GLfloat)
+      uniform uniformCameraPosition $= toVertex4 (fromFloatVToGLfloatV (worldCameraPosition world))
       uniform uniformTermCoeff $= Vertex4 10.0 40.0 0.0001 (0.000001 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)

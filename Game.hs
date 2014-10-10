@@ -151,7 +151,20 @@ simulate as w = runState state w
         processInput as = do
           world <- get
 
+          let jp = (inputJoystickAxisL (worldInput w))
+              (ocpx:ocpy:rest) = worldCameraPosition world
+              cp = [(Math.x jp) + ocpx, (Math.y jp) + ocpy, (-300.0), 1.0]
+           in put $ world { worldCameraPosition = cp }
+
           return $ map (applyInput world) as
+
+        applyInput :: World -> Actor -> Actor
+        applyInput w player@Player{} = player { playerAcceleration = a }
+                   where a = mulScalarVec 2200.0 (mulMV [x + jx,y + jy,0.0] (toMatrixQ (playerOrientation player)))
+                         (x:y:rest) = inputAxisL (worldInput w)
+                         [jx, jy] = take 2 (inputJoystickAxisL (worldInput w))
+
+        applyInput w a = a
 
         executeBulletCallback :: Actors -> State World Actors
         executeBulletCallback actors = do
@@ -241,15 +254,6 @@ simulate as w = runState state w
 
         targetInRangeDefault :: Actor -> Actor -> Bool
         targetInRangeDefault = targetInRange (5.0, 10.0)
-
-        applyInput :: World -> Actor -> Actor
-        applyInput w player@Player{} = player { playerAcceleration = a }
-                   where a = mulScalarVec 2200.0 (mulMV [x + jx,y + jy,0.0] (toMatrixQ (playerOrientation player)))
-                         (x:y:rest) = inputAxisL (worldInput w)
-                         [jx, jy] = take 2 (inputJoystickAxisL (worldInput w))
-
-        applyInput w a = a
-
 
         -- animated background to simulate speeding through the world
         background :: Actors -> State World Actors
