@@ -9,9 +9,9 @@ data Camera = EmptyCamera
             | Camera { cameraTransform :: Matrix Float
                      , cameraPosition :: Vector Float
                      , cameraOrientation :: Quaternion Float
-                     , up :: Vector Float
-                     , direction :: Vector Float
-                     , fov :: Float }
+                     , cameraUp :: Vector Float
+                     , cameraDirection :: Vector Float
+                     , cameraFov :: Float }
             | TargetCamera { transform :: Matrix Float
                            , position :: Vector Float
                            , orientation :: Quaternion Float
@@ -29,7 +29,7 @@ data Command a = Nop
 type Cameras = [Camera]
 type Commands a = [Command a]
 
---- 
+---
 cameraFixed :: Camera -> State Actors Camera
 cameraFixed camera = return camera
 
@@ -64,4 +64,3 @@ executeCommand cam (Pan from to) = cam
 executeCommand cam (Dolly from to) = cam
 executeCommand cam (Tilt from to) = cam
 executeCommand cam (Zoom from to) = cam
-

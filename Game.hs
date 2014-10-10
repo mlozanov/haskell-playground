@@ -111,7 +111,7 @@ ioActions = []
 
 simulate :: Actors -> World -> (Actors, World)
 simulate as w = runState state w
-  where state = processTimesheet (stageOneTimesheet w) as >>= playerInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processCollisions >>= movement
+  where state = processTimesheet (stageOneTimesheet w) as >>= processInput >>= processActors >>= executeBulletCallback >>= filterBullets >>= produceBullets >>= processCollisions >>= movement
 
         player@(Player pn pp pq pv pa psr pst) = getPlayer as
 
@@ -147,16 +147,11 @@ simulate as w = runState state w
         makeExplosion p = map (\d -> Bullet "circle" Opponent 2.0 p (mulScalarVec 180 d) zeroV passthru) directions
           where directions = map circleVec [-pi, -(pi - (pi/3)) .. pi]
 
-        playerInput :: Actors -> State World Actors
-        playerInput (pl:as) = do
+        processInput :: Actors -> State World Actors
+        processInput as = do
           world <- get
 
-          let (x:y:rest) = inputAxisL (worldInput world)
-              [jx, jy] = take 2 (inputJoystickAxisL (worldInput world))
-              a = mulScalarVec 2200.0 (mulMV [x + jx,y + jy,0.0] (toMatrixQ (playerOrientation pl)))
-              pl' = pl { playerAcceleration = a }
-           in return (pl':as)
-
+          return $ map (applyInput world) as
 
         executeBulletCallback :: Actors -> State World Actors
         executeBulletCallback actors = do
@@ -181,7 +176,7 @@ simulate as w = runState state w
 
           return $ concat $ map (eachActor (bullets world)) actors
 
-            where --f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 6.0), (Circle (bulletPosition b) 2.0)))
+            where -- f pl@(Player{}) b = (bulletTag b == Opponent) && (not $ collide ((Circle (playerPosition pl) 6.0), (Circle (bulletPosition b) 2.0)))
                   f a@(Enemy{}) b = (bulletTag b == Ally) && (not $ collide (mkCircle 12.0 a, mkCircle 2.0 b))
                   f _ _ = False
 
@@ -246,6 +241,15 @@ simulate as w = runState state w
 
         targetInRangeDefault :: Actor -> Actor -> Bool
         targetInRangeDefault = targetInRange (5.0, 10.0)
+
+        applyInput :: World -> Actor -> Actor
+        applyInput w player@Player{} = player { playerAcceleration = a }
+                   where a = mulScalarVec 2200.0 (mulMV [x + jx,y + jy,0.0] (toMatrixQ (playerOrientation player)))
+                         (x:y:rest) = inputAxisL (worldInput w)
+                         [jx, jy] = take 2 (inputJoystickAxisL (worldInput w))
+
+        applyInput w a = a
+
 
         -- animated background to simulate speeding through the world
         background :: Actors -> State World Actors

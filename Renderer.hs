@@ -40,7 +40,7 @@ fromUniformLocation location = unsafeCoerce location
 class Animatable a where
   animate :: Float -> RenderState -> a -> IO ()
   animateST :: Float -> a -> a
-  
+
 
 class Drawable a where
   draw :: Float -> RenderState -> a -> IO ()
@@ -87,14 +87,17 @@ toGLMatrix :: Math.Matrix GLfloat -> IO (GLmatrix GLfloat)
 toGLMatrix m = newMatrix GL.RowMajor (Math.toList m) :: IO (GLmatrix GLfloat)
 
 matrixFloatToGLfloat :: Math.Matrix Float -> Math.Matrix GLfloat
-matrixFloatToGLfloat (M ms) = M (map realToFrac ms)  
+matrixFloatToGLfloat (M ms) = M (map realToFrac ms)
+
+toVertex4 :: Math.Vector GLfloat -> Vertex4 GLfloat
+toVertex4 [x,y,z,w] = Vertex4 x y z w
 
 render :: IORef World -> IORef Actors -> IORef RenderState -> IO ()
 render worldRef actorsRef renderStateRef = do
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   renderState <- readIORef renderStateRef
-  world <- readIORef worldRef 
+  world <- readIORef worldRef
   actors <- readIORef actorsRef
 
   let lightX = 400.0 * sin (3.14 * 0.151 * (worldDt world) * fromIntegral (worldTime world))
@@ -156,7 +159,7 @@ render worldRef actorsRef renderStateRef = do
       uniformMatrix4 uniformModelMatrix $= modelMatrix renderState
 
       uniform uniformLightPosition $= Vertex4 (toGLfloat lightX) (toGLfloat lightY) (toGLfloat lightZ) (0 :: GLfloat)
-      uniform uniformCameraPosition $= Vertex4 0 0 (-300) (0 :: GLfloat)
+      uniform uniformCameraPosition $= Vertex4 0 0 (-300) (1 :: GLfloat)
       uniform uniformTermCoeff $= Vertex4 10.0 40.0 0.0001 (0.000001 :: GLfloat)
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       uniform uniformColorSpecular $= Vertex4 1 1 1 (1 :: GLfloat)
@@ -168,7 +171,7 @@ render worldRef actorsRef renderStateRef = do
 
       uniform uniformColorDiffuse $= Vertex4 1 0.4 0.2 (1 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (\b -> bulletTag b == Opponent) (bullets world))
-  
+
       uniform uniformColorDiffuse $= Vertex4 1 1 1 (1 :: GLfloat)
       mapM_ (draw (worldDt world) renderState) (filter (not . isStatic) actors)
 
@@ -180,7 +183,7 @@ render worldRef actorsRef renderStateRef = do
   GL.depthFunc $= Nothing
 
   -- run pass thru shader that display final image
-  let fsq = (shaderProgramsMap renderState) M.! "passthru" 
+  let fsq = (shaderProgramsMap renderState) M.! "passthru"
   withProgram fsq $ do
     attribLocation (program fsq) "in_Position" $= AttribLocation 0
     attribLocation (program fsq) "in_Normal" $= AttribLocation 1
@@ -226,4 +229,3 @@ transformAndRenderVbo renderState n p q = do
   uniform uniformModelMatrix $= mm
   uniform uniformLocalRotationMatrix $= lrm
   draw 0.0166667 renderState (vboMap renderState M.! n)
-
