@@ -1,6 +1,6 @@
 module Backend (
-  setup, 
-  World(..), 
+  setup,
+  World(..),
   RenderState(..),
   SetupAction,
   RenderAction,
@@ -60,9 +60,9 @@ setupOpenGL32 :: IO ()
 setupOpenGL32 = sequence_ [GLFW.openWindowHint GLFW.OpenGLVersionMajor 3, GLFW.openWindowHint GLFW.OpenGLVersionMinor 2, GLFW.openWindowHint GLFW.OpenGLProfile GLFW.OpenGLCoreProfile]
 
 setup :: Int -> Int -> String -> SetupAction -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
-setup wx wy title setupAction renderActions simulateAction ioActions = do 
+setup wx wy title setupAction renderActions simulateAction ioActions = do
   GLFW.initialize
-  
+
   setupOpenGL32
 
   -- open window
@@ -79,9 +79,9 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   GL.depthFunc $= Just Lequal
 
   GL.pointSize $= 4.0
-  
+
   --GL.cullFace $= Just Front
-   
+
   --GL.colorMaterial $= Just (GL.FrontAndBack, GL.AmbientAndDiffuse)
 
   -- set 2D perspective view inside windowSizeCallback because
@@ -89,12 +89,12 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
   -- OpenGL Viewport.
   GLFW.windowSizeCallback $= \ size@(GL.Size w h) ->
        do GL.viewport   $= (GL.Position 0 0, size)
- 
+
   GL.get GL.vendor >>= print
   GL.get GL.renderer >>= print
   GL.get GL.glVersion >>= print
   GL.get GL.shadingLanguageVersion >>= print
-  
+
   projMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   viewMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
   modelMatrixArray <- newArray $ replicate 16 (0.0 :: GLfloat)
@@ -128,13 +128,13 @@ setup wx wy title setupAction renderActions simulateAction ioActions = do
 
 mainLoop :: IORef World -> IORef Actors -> IORef RenderState -> [RenderAction] -> SimulateAction -> IOActions -> IO ()
 mainLoop world actors renderState renderActions simulateAction ioActions = loop 0 world actors renderState
-  where 
- 
+  where
+
     loop :: Int -> IORef World -> IORef Actors -> IORef RenderState -> IO ()
     loop t worldRef actorsRef renderStateRef = do
       t0 <- getCPUTime
 
-      --updateJoystickState worldRef
+      updateJoystickState worldRef
 
       mapM_ (\action -> action worldRef) ioActions
 
@@ -158,8 +158,10 @@ mainLoop world actors renderState renderActions simulateAction ioActions = loop 
       let dt = ((fromIntegral (t1 - t0)) / (10^12)) :: Float
 
       --writeIORef worldRef (world' { worldDt = dt })
-      --let storeDt dt' w = w { worldDt = dt' } 
+      --let storeDt dt' w = w { worldDt = dt' }
       -- in modifyIORef worldRef (storeDt dt)
+
+      --debugInput worldRef
 
       -- check whether ESC is pressed for termination
       p <- GLFW.getKey GLFW.ESC
@@ -202,7 +204,7 @@ keyboardCallback worldRef key Release = modifyIORef worldRef readKeys  -- >> pri
 mousePositionCallback :: IORef World -> MousePosCallback
 mousePositionCallback worldRef (Position x y) = modifyIORef worldRef readMousePosition
   where readMousePosition world = world { worldInput = input { inputMousePosition = (fromIntegral x, fromIntegral y) } }
-          where input = worldInput world 
+          where input = worldInput world
 
 mouseBtnCallback :: IORef World -> MouseButtonCallback
 mouseBtnCallback worldRef button state = modifyIORef worldRef readMouseButtons
@@ -215,7 +217,7 @@ mouseBtnCallback worldRef button state = modifyIORef worldRef readMouseButtons
                    | otherwise = b2o
 
 updateJoystickState :: IORef World -> IO ()
-updateJoystickState worldRef = do 
+updateJoystickState worldRef = do
   axises <- GL.get $ GLFW.joystickPos firstJoystick 4
   bs <- GL.get $ GLFW.joystickButtons firstJoystick
 
@@ -227,6 +229,3 @@ updateJoystickState worldRef = do
                 axisL = [jlx,jly,0,0]
                 axisR = [jrx,jry,0,0]
                 bs = map (\s -> s == Press) buttonStates
-
-
-

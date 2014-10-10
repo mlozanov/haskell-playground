@@ -15,6 +15,7 @@ import Control.Concurrent
 import System.Random
 import System.Mem
 import System.CPUTime
+import Unsafe.Coerce (unsafeCoerce)
 
 import Foreign.Ptr
 import Foreign.Marshal.Array
@@ -33,6 +34,8 @@ import Actor
 import Vbo
 import Fbo
 import Shader
+
+fromUniformLocation location = unsafeCoerce location
 
 class Animatable a where
   animate :: Float -> RenderState -> a -> IO ()
@@ -62,18 +65,18 @@ instance Uniform ([Float]) where
   uniform location = makeStateVar getter setter
     where setter ms = withArray (toGLfloatList ms) fu
           getter = undefined
-          fu = glUniformMatrix4fv (GL.getUniformLocationID location) 1 0
+          fu = glUniformMatrix4fv (fromUniformLocation location) 1 0
   uniformv = undefined
 
 instance Uniform (Math.Matrix Float) where
   uniform location = makeStateVar getter setter
-    where setter = toPtrMatrix (\ptr -> glUniformMatrix4fv (GL.getUniformLocationID location) 1 0 ptr)
+    where setter = toPtrMatrix (\ptr -> glUniformMatrix4fv (fromUniformLocation location) 1 0 ptr)
           getter = undefined
   uniformv = undefined
 
 uniformMatrix4 :: UniformLocation -> StateVar (Ptr GLfloat)
 uniformMatrix4 location = makeStateVar getter setter
-  where setter = glUniformMatrix4fv (GL.getUniformLocationID location) 1 0
+  where setter = glUniformMatrix4fv (fromUniformLocation location) 1 0
         getter = undefined
 
 

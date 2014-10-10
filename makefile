@@ -1,21 +1,20 @@
-
 .PHONY: build
 
 TARGET = main
-HASKELL_OBJS = Main.hs 
+HASKELL_OBJS = Main.hs
 
-C_OBJS = 
-CPP_OBJS = 
+C_OBJS =
+CPP_OBJS =
 #test.cpp
 
 # -fexcess-precision -optc-O2 -funbox-strict-fields -optc-mfpmath=sse -optc-msse2 -optc-msse3
 
-GHC_CC_OPT = -threaded -eventlog -rtsopts -fexcess-precision  -L/usr/local/lib -L/usr/lib -lglfw -lstdc++ --make -odir `uname -m` -hidir `uname -m`
+GHC_CC_OPT = -threaded -eventlog -rtsopts -fexcess-precision -package GLFW  -L/usr/local/lib -L/usr/lib -lstdc++ --make -odir `uname -m` -hidir `uname -m`
 GHC_CC_OPTIMIZE = -O3 -optc-O2 -funbox-strict-fields -optc-msse2 -optc-msse3
-# -fllvm 
-GHC_LD_OPT = 
+# -fllvm
+GHC_LD_OPT =
 GHC_LD_PACKAGES =
-GHC_CC_PROF_OPT = -prof -auto-all $(GHC_CC_OPT) 
+GHC_CC_PROF_OPT = -prof -auto-all $(GHC_CC_OPT)
 GHC_CC_COVERAGE_OPT = -fhpc $(GHC_CC_OPT)
 
 CLANG_CC_OPT =  -g -O3 -o `uname -m`/%.o
@@ -30,19 +29,19 @@ CLANG_CPP_OPT =  -g -O3
 # %.o: %.cpp
 # 	g++ $(GCC_CPP_OPT) -c $< -o $@
 
-# all: $(C_OBJS) $(CPP_OBJS) $(HASKELL_OBJS) 
+# all: $(C_OBJS) $(CPP_OBJS) $(HASKELL_OBJS)
 # 	ghc $(GHC_LD_OPT) $(GHC_LD_PACKAGES) $(HASKELL_OBJS) $(C_OBJS) $(CPP_OBJS) -o $(TARGET)
 
-build: 
+build:
 	ghc $(GHC_CC_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(C_OBJS) $(CPP_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
 
-profile: 
+profile:
 	ghc $(GHC_CC_PROF_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(C_OBJS) $(CPP_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
 
 coverage:
 	ghc $(GHC_CC_PROF_OPT) $(GHC_CC_COVERAGE_OPT) $(GHC_CC_OPTIMIZE) $(HASKELL_OBJS) $(C_OBJS) $(CPP_OBJS) $(GHC_LD_OPT) $(GHC_LD_PACKAGES) -o $(TARGET)
 
-clean: 
+clean:
 	@rm -rf `uname -m` $(TARGET)
 
 clean_coverage:
